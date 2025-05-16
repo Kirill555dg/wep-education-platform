@@ -17,7 +17,7 @@ describe("Блок авторизации", () => {
     cy.get('input[name="email"]').type(validEmail)
     cy.get('input[name="password"]').type("wrongpass")
     cy.get('button[type="submit"]').click()
-    cy.contains("Ошибка").should("exist")
+    cy.contains("Неверная почта или пароль.").should("exist")
     cy.url().should("include", "/login")
   })
 
@@ -37,7 +37,7 @@ describe("Блок авторизации", () => {
     cy.visit("/reset-password")
     cy.get('input[name="email"]').type(validEmail)
     cy.get('button[type="submit"]').click()
-    cy.contains("Письмо отправлено").should("exist")
+    cy.contains("Мы отправили инструкции по восстановлению пароля").should("exist")
   })
 
   it("Успешная регистрация нового ученика", () => {

@@ -11,6 +11,7 @@ import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
 import { authApi } from "@/features/auth/api/api";
 import { toast } from "@/shared/lib/toast";
+import { AuthCardFooter, FormFieldWithIcon, FormLink } from "@/widgets/auth";
 
 export function ResetPasswordForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -27,7 +28,6 @@ export function ResetPasswordForm() {
 
   const onSubmit = async (data: ResetPasswordData) => {
     await authApi.resetPassword(data.email);
-    toast.success("Письмо отправлено", "Проверьте вашу почту");
     setSubmittedEmail(data.email);
     setIsSubmitted(true);
   };
@@ -46,20 +46,15 @@ export function ResetPasswordForm() {
       <CardContent>
         {!isSubmitted ? (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@school.edu"
-                  className="pl-10"
-                  {...register("email")}
-                />
-              </div>
-              {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
-            </div>
+            <FormFieldWithIcon
+              id="email"
+              label="Email"
+              type="email"
+              placeholder="example@school.edu"
+              icon={Mail}
+              error={errors.email}
+              registerProps={register("email")}
+            />
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Отправка..." : "Отправить инструкции"}
@@ -80,15 +75,11 @@ export function ResetPasswordForm() {
           </div>
         )}
       </CardContent>
-
-      <CardFooter className="flex flex-col space-y-4">
-        <div className="text-center text-sm">
-          <Link to="/login" className="text-blue-600 hover:underline font-medium flex items-center justify-center">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Вернуться на страницу входа
-          </Link>
-        </div>
-      </CardFooter>
+      <AuthCardFooter>
+        <FormLink to="/login" icon={ArrowLeft}>
+          Вернуться на страницу входа
+        </FormLink>
+      </AuthCardFooter>
     </Card>
   );
 }
