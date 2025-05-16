@@ -2,7 +2,6 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterData } from "@/features/auth/model/schema";
 import { useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
 import { User, Mail, Lock, Calendar } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/shared/ui/card";

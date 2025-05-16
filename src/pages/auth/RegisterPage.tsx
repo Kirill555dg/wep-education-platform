@@ -1,4 +1,3 @@
-// pages/auth/RegisterPage.tsx
 import { AuthLayout } from "@/widgets/auth-layout/AuthLayout";
 import { RegisterForm } from "@/pages/auth/ui/RegisterForm";
 

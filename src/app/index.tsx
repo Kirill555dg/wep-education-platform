@@ -2,12 +2,12 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
-import RoleProtectedRoute from "@/shared/lib/router/RoleProtectedRoute";
 import ProfilePage from "@/pages/profile/ProfilePage";
 import StudentPage from "@/pages/student/StudentPage";
 import TeacherPage from "@/pages/teacher/TeacherPage";
-import { AuthBootstrapper } from "./providers/AuthBootstrapper";
 import { Toaster } from "@/shared/ui/toaster";
+import AuthBootstrapper from "./providers/AuthBootstrapper";
+import RoleProtectedRoute from "./router/RoleProtectedRoute"
 
 function App() {
   return (

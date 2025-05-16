@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useAuthStore } from "@/features/auth/model/store";
 
-export function AuthBootstrapper() {
+export default function AuthBootstrapper() {
   const checkAuth = useAuthStore((s) => s.checkAuth);
 
   useEffect(() => {
