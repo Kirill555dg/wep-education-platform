@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterData } from "@/features/auth/model/schema";
 import { useNavigate, Link } from "react-router-dom";
@@ -24,6 +24,7 @@ export function RegisterForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setValue,
@@ -47,8 +48,9 @@ export function RegisterForm() {
     setError(null);
     try {
       await performRegister(data);
-      toast.success("Регистрация завершена", `Вы вошли как ${data.role === "teacher" ? "учитель" : "ученик"}`);
-      navigate("/");
+      const role = useAuthStore.getState().activeRole;
+      toast.success("Регистрация завершена", `Вы вошли как ${role === "teacher" ? "учитель" : "ученик"}`);
+      navigate(`/${role}`);
     } catch {
       setError("Произошла ошибка. Попробуйте снова.");
       toast.error("Ошибка", "Регистрация не удалась");
@@ -153,7 +155,17 @@ export function RegisterForm() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Checkbox id="agreeTerms" {...register("agreeTerms")} />
+            <Controller
+              name="agreeTerms"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  id="agreeTerms"
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked)}
+                />
+              )}
+            />
             <Label htmlFor="agreeTerms" className="text-sm cursor-pointer">
               Я принимаю условия использования
             </Label>

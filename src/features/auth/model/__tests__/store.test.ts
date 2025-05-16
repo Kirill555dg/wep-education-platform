@@ -1,11 +1,8 @@
+import { describe, beforeEach, it, expect } from "vitest"
 import { useAuthStore } from "../store"
 import { setAuthApi } from "@/features/auth/api/api"
 import { authApiMock } from "@/features/auth/api/mock-api"
 import { mockUsers } from "@/features/auth/lib/mock-users"
-
-beforeAll(() => {
-  setAuthApi(authApiMock)
-})
 
 beforeEach(() => {
   useAuthStore.setState({
@@ -16,63 +13,57 @@ beforeEach(() => {
     error: null,
   })
   localStorage.clear()
+
+  setAuthApi(authApiMock)
 })
 
 describe("auth store", () => {
-  it("should login successfully", async () => {
-    const { login } = useAuthStore.getState()
+  it("логин с валидными данными", async () => {
     const validUser = mockUsers[0]
+    await useAuthStore.getState().login({ email: validUser.email, password: validUser.password, rememberMe: true })
 
-    await login({ email: validUser.email, password: validUser.password })
-
-    const { user, isAuthenticated, activeRole } = useAuthStore.getState()
-    expect(user?.email).toBe(validUser.email)
-    expect(isAuthenticated).toBe(true)
-    expect(activeRole).toBe(validUser.role)
+    const state = useAuthStore.getState()
+    expect(state.isAuthenticated).toBe(true)
+    expect(state.user?.email).toBe(validUser.email)
+    expect(state.activeRole).toBe(validUser.role)
   })
 
-  it("should fail login with wrong password", async () => {
-    const { login } = useAuthStore.getState()
+  it("логин с неверным паролем", async () => {
+    const result = useAuthStore.getState().login({ email: "example@school.edu", password: "wrong", rememberMe: true })
 
-    await expect(
-      login({ email: "example@school.edu", password: "wrongpass" })
-    ).rejects.toThrow("Неверный email или пароль")
+    await expect(result).rejects.toThrow("Неверный email или пароль")
 
-    const { isAuthenticated, user, error } = useAuthStore.getState()
-    expect(isAuthenticated).toBe(false)
-    expect(user).toBeNull()
-    expect(error).toBe("Неверный email или пароль")
+    const state = useAuthStore.getState()
+    expect(state.isAuthenticated).toBe(false)
+    expect(state.user).toBeNull()
+    expect(state.error).toBe("Неверный email или пароль")
   })
 
-  it("should logout properly", async () => {
-    const { login, logout } = useAuthStore.getState()
+  it("выход из аккаунта", async () => {
     const validUser = mockUsers[0]
+    await useAuthStore.getState().login({ email: validUser.email, password: validUser.password, rememberMe: true })
 
-    await login({ email: validUser.email, password: validUser.password })
-    logout()
+    useAuthStore.getState().logout()
 
-    const { user, isAuthenticated, activeRole } = useAuthStore.getState()
-    expect(user).toBeNull()
-    expect(isAuthenticated).toBe(false)
-    expect(activeRole).toBeNull()
+    const state = useAuthStore.getState()
+    expect(state.isAuthenticated).toBe(false)
+    expect(state.user).toBeNull()
+    expect(state.activeRole).toBeNull()
   })
 
-  it("should set role manually", () => {
-    const { setRole } = useAuthStore.getState()
-    setRole("teacher")
-
+  it("переключение роли", () => {
+    useAuthStore.getState().setRole("teacher")
     expect(useAuthStore.getState().activeRole).toBe("teacher")
   })
 
-  it("should checkAuth and restore user", async () => {
+  it("восстановление пользователя через checkAuth", async () => {
     const validUser = mockUsers[0]
     localStorage.setItem("auth-user", JSON.stringify(validUser))
 
-    const { checkAuth } = useAuthStore.getState()
-    await checkAuth()
+    await useAuthStore.getState().checkAuth()
 
-    const { isAuthenticated, user } = useAuthStore.getState()
-    expect(isAuthenticated).toBe(true)
-    expect(user?.email).toBe(validUser.email)
+    const state = useAuthStore.getState()
+    expect(state.isAuthenticated).toBe(true)
+    expect(state.user?.email).toBe(validUser.email)
   })
 })

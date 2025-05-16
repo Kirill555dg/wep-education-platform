@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginData } from "@/features/auth/model/schema";
 import { useAuthStore } from "@/features/auth/model/store";
@@ -22,6 +22,7 @@ export function LoginForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginData>({
@@ -37,8 +38,9 @@ export function LoginForm() {
     setError(null);
     try {
       await login(data);
+      const role = useAuthStore.getState().activeRole;
       toast.success("Успешный вход", `Добро пожаловать!`);
-      navigate("/");
+      navigate(`/${role}`);
     } catch (_) {
       setError("Неверный email или пароль.");
       toast.error("Ошибка", "Неверный email или пароль");
@@ -89,7 +91,13 @@ export function LoginForm() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox id="rememberMe" {...register("rememberMe")} />
+              <Controller
+                name="rememberMe"
+                control={control}
+                render={({ field }) => (
+                  <Checkbox id="rememberMe" checked={field.value} onCheckedChange={field.onChange} />
+                )}
+              />
               <Label htmlFor="rememberMe" className="text-sm cursor-pointer">
                 Запомнить меня
               </Label>
