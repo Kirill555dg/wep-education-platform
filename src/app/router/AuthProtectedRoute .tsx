@@ -2,15 +2,13 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/model/store";
 import { Loader } from "@/shared/ui/loader";
 
-export default function RoleProtectedRoute({ requiredRole }: { requiredRole: "student" | "teacher" }) {
-  const activeRole = useAuthStore((s) => s.activeRole);
+export default function AuthProtectedRoute() {
+  const user = useAuthStore((s) => s.user);
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
 
   if (!bootstrapped) return <Loader />;
 
-  if (activeRole !== requiredRole) {
-    return <Navigate to="/profile" replace />;
-  }
+  if (!user) return <Navigate to="/login" replace />;
 
   return <Outlet />;
 }

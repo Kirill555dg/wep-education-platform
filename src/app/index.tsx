@@ -7,19 +7,24 @@ import StudentPage from "@/pages/student/StudentPage";
 import TeacherPage from "@/pages/teacher/TeacherPage";
 import { Toaster } from "@/shared/ui/toaster";
 import AuthBootstrapper from "./providers/AuthBootstrapper";
-import RoleProtectedRoute from "./router/RoleProtectedRoute"
+import RoleProtectedRoute from "./router/RoleProtectedRoute";
+import { useAuthStore } from "@/features/auth/model/store";
+import AuthProtectedRoute from "./router/AuthProtectedRoute ";
 
 function App() {
   return (
     <>
       <Toaster />
       <AuthBootstrapper />
+
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route element={<AuthProtectedRoute />}>
+          <Route path="/profile" element={<ProfilePage />} />
+        </Route>
 
         <Route element={<RoleProtectedRoute requiredRole="student" />}>
           <Route path="/student" element={<StudentPage />} />

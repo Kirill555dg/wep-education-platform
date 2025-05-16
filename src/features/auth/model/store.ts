@@ -9,12 +9,15 @@ interface AuthState {
   activeRole: UserRole | null
   loading: boolean
   error: string | null
+  bootstrapped: boolean
 
   login: (data: LoginData) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
   setError: (message: string | null) => void
   setRole: (role: UserRole) => void
+  setUser: (user: User | null) => void
+  setBootstrapped: () => void
   checkAuth: () => Promise<void>
 }
 
@@ -24,14 +27,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   activeRole: null,
   loading: false,
   error: null,
+  bootstrapped: false,
 
   async login(data) {
     set({ loading: true, error: null })
     try {
       const user = await authApi.login(data)
-      if (data.rememberMe) {
-        localStorage.setItem("auth-user", JSON.stringify(user))
-      }
+      const storage = data.rememberMe ? localStorage : sessionStorage
+      storage.setItem("auth-user", JSON.stringify(user))
+
       set({
         user,
         isAuthenticated: true,
@@ -62,8 +66,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-
-
   async checkAuth() {
     set({ loading: true })
     try {
@@ -81,6 +83,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout() {
+    localStorage.removeItem("auth-user")
+    sessionStorage.removeItem("auth-user")
     set({
       user: null,
       isAuthenticated: false,
@@ -94,5 +98,17 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setRole(role) {
     set({ activeRole: role })
+  },
+
+  setUser(user) {
+    set({
+      user,
+      isAuthenticated: !!user,
+      activeRole: user?.role ?? null,
+    })
+  },
+
+  setBootstrapped() {
+    set({ bootstrapped: true })
   },
 }))
