@@ -2,7 +2,7 @@ import { describe, beforeEach, it, expect } from "vitest"
 import { useAuthStore } from "../store"
 import { setAuthApi } from "@/features/auth/api/api"
 import { authApiMock } from "@/features/auth/api/mock-api"
-import { mockUsers } from "@/features/auth/lib/mock-users"
+import { mockUsers } from "@/features/auth/lib/mock-auth"
 
 beforeEach(() => {
   useAuthStore.setState({

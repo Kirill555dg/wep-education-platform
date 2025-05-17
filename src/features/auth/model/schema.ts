@@ -31,7 +31,12 @@ export const registerSchema = z.object({
   agreeTerms: z.boolean().refine((v) => v === true, {
     message: "Необходимо согласие с условиями использования",
   }),
-  role: z.enum(["student", "teacher"]),
+  role: z.enum(["student", "teacher"], {
+    required_error: "Выберите роль",
+  }),
+  gender: z.enum(["male", "female"], {
+    required_error: "Выберите пол",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   path: ["confirmPassword"],
   message: "Пароли не совпадают",

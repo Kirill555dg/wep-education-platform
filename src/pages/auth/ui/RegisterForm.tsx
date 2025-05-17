@@ -17,6 +17,7 @@ import {
   FormErrorMessage,
   FormFieldWithIcon,
   FormLink,
+  RadioButtonGroup,
 } from "@/widgets/auth";
 
 export function RegisterForm() {
@@ -45,9 +46,12 @@ export function RegisterForm() {
       dateOfBirth: "",
       description: "",
       role: "student",
+      gender: "male",
       agreeTerms: false,
     },
   });
+
+  const gender = watch("gender");
 
   const onSubmit = async (data: RegisterData) => {
     setError(null);
@@ -68,6 +72,18 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormErrorAlert message={error} />
 
+          <RadioButtonGroup
+            label="Роль"
+            name="role"
+            value={watch("role")}
+            error={errors.role}
+            onChange={(val) => setValue("role", val as "student" | "teacher")}
+            options={[
+              { value: "student", label: "Ученик" },
+              { value: "teacher", label: "Учитель" },
+            ]}
+          />
+
           <div className="space-y-4">
             {["lastName", "firstName", "middleName"].map((field, index) => (
               <FormFieldWithIcon
@@ -81,6 +97,27 @@ export function RegisterForm() {
               />
             ))}
           </div>
+
+          <RadioButtonGroup
+            label="Пол"
+            name="gender"
+            value={gender}
+            error={errors.gender}
+            onChange={(val) => setValue("gender", val as "male" | "female")}
+            options={[
+              { value: "male", label: "Мужской" },
+              { value: "female", label: "Женский" },
+            ]}
+          />
+
+          <FormFieldWithIcon
+            id="dateOfBirth"
+            label="Дата рождения"
+            type="date"
+            icon={Calendar}
+            error={errors.dateOfBirth}
+            registerProps={register("dateOfBirth")}
+          />
 
           <FormFieldWithIcon
             id="email"
@@ -112,36 +149,9 @@ export function RegisterForm() {
             registerProps={register("confirmPassword")}
           />
 
-          <FormFieldWithIcon
-            id="dateOfBirth"
-            label="Дата рождения"
-            type="date"
-            icon={Calendar}
-            error={errors.dateOfBirth}
-            registerProps={register("dateOfBirth")}
-          />
-
           <div className="space-y-2">
             <label htmlFor="description">Описание (необязательно)</label>
             <Textarea id="description" placeholder="Расскажите немного о себе" {...register("description")} />
-          </div>
-
-          <div className="space-y-2">
-            <label>Роль</label>
-            <div className="flex gap-2">
-              {["student", "teacher"].map((role) => (
-                <Button
-                  key={role}
-                  type="button"
-                  className="flex-1"
-                  variant={watch("role") === role ? "default" : "outline"}
-                  onClick={() => setValue("role", role as "student" | "teacher")}
-                >
-                  {role === "student" ? "Ученик" : "Учитель"}
-                </Button>
-              ))}
-            </div>
-            <FormErrorMessage error={errors.role} />
           </div>
 
           <FormCheckbox name="agreeTerms" control={control} label="Я принимаю условия использования" />

@@ -1,28 +1,43 @@
-import { mockUsers } from "@/features/auth/lib/mock-users"
-import type { AuthApi } from "./api"
-import type { AuthUser } from "@/features/auth/model/types"
 import { nanoid } from "nanoid"
+import { mockUsers } from "@/entities/user/model/mock"
+import { mockCredentials, addMockCredential } from "@/features/auth/lib/mock-auth"
+import type { AuthApi } from "./api"
+import type { User } from "@/entities/user/model/types"
 
 export const authApiMock: AuthApi = {
   async login({ email, password }) {
     await new Promise((r) => setTimeout(r, 800))
-    const user = mockUsers.find((u) => u.email === email && u.password === password)
-    if (!user) throw new Error("Неверный email или пароль")
-    const { password: _, ...safeUser } = user
-    return safeUser
+
+    const expected = mockCredentials[email]
+    if (!expected || expected !== password) {
+      throw new Error("Неверный email или пароль")
+    }
+
+    const user = mockUsers.find((u) => u.email === email)
+    if (!user) {
+      throw new Error("Пользователь не найден")
+    }
+
+    return user
   },
 
   async register(data) {
     await new Promise((r) => setTimeout(r, 1000))
-    const { password, ...safe } = data
-    const newUser: AuthUser = {
+
+    const newUser: User = {
       id: nanoid(),
-      ...safe,
-      password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      middleName: data.middleName,
+      email: data.email,
+      role: data.role,
+      avatar: "https://i.pravatar.cc/150?u=" + data.email,
     }
+
     mockUsers.push(newUser)
-    const { password: _, ...safeUser } = newUser
-    return safeUser
+    addMockCredential(data.email, data.password)
+
+    return newUser
   },
 
   async resetPassword(email) {
@@ -32,9 +47,8 @@ export const authApiMock: AuthApi = {
 
   async checkAuth() {
     await new Promise((r) => setTimeout(r, 300))
-    const userJson = localStorage.getItem("auth-user")
+    const userJson = localStorage.getItem("auth-user") || sessionStorage.getItem("auth-user")
     if (!userJson) return null
-    const user = JSON.parse(userJson)
-    return user
+    return JSON.parse(userJson) as User
   }
 }

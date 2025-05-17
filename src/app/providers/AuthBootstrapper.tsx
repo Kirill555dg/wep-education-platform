@@ -1,24 +1,18 @@
 import { useEffect } from "react";
 import { useAuthStore } from "@/features/auth/model/store";
+import { authApi } from "@/features/auth/api/api";
 
 export default function AuthBootstrapper() {
   const setUser = useAuthStore((s) => s.setUser);
   const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("auth-user") || localStorage.getItem("auth-user");
-
-    if (raw) {
-      try {
-        const user = JSON.parse(raw);
-        setUser(user);
-      } catch {
-        sessionStorage.removeItem("auth-user");
-        localStorage.removeItem("auth-user");
-      }
-    }
-
-    setBootstrapped();
+    authApi
+      .checkAuth()
+      .then((user) => {
+        if (user) setUser(user);
+      })
+      .finally(() => setBootstrapped());
   }, [setUser, setBootstrapped]);
 
   return null;

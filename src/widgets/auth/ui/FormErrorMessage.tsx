@@ -1,5 +1,7 @@
+import { FieldError } from "react-hook-form";
+
 type Props = {
-  error?: { message?: string };
+  error?: FieldError;
 };
 
 export function FormErrorMessage({ error }: Props) {
