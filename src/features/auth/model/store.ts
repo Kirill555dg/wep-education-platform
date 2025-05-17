@@ -1,12 +1,9 @@
 import { create } from "zustand"
 import { authApi } from "@/features/auth/api/api"
-import type { User, UserRole } from "@/entities/user/model/types"
 import type { LoginData, RegisterData } from "./schema"
+import { useUserStore } from "@/entities/user/model/store"
 
 interface AuthState {
-  user: User | null
-  isAuthenticated: boolean
-  activeRole: UserRole | null
   loading: boolean
   error: string | null
   bootstrapped: boolean
@@ -14,17 +11,12 @@ interface AuthState {
   login: (data: LoginData) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => void
-  setError: (message: string | null) => void
-  setRole: (role: UserRole) => void
-  setUser: (user: User | null) => void
-  setBootstrapped: () => void
   checkAuth: () => Promise<void>
+  setError: (message: string | null) => void
+  setBootstrapped: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
-  activeRole: null,
   loading: false,
   error: null,
   bootstrapped: false,
@@ -35,12 +27,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await authApi.login(data)
       const storage = data.rememberMe ? localStorage : sessionStorage
       storage.setItem("auth-user", JSON.stringify(user))
-
-      set({
-        user,
-        isAuthenticated: true,
-        activeRole: user.role,
-      })
+      useUserStore.getState().setUser(user)
     } catch (e: any) {
       set({ error: e.message || "Ошибка авторизации" })
       throw e
@@ -53,11 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true, error: null })
     try {
       const user = await authApi.register(data)
-      set({
-        user,
-        isAuthenticated: true,
-        activeRole: user.role,
-      })
+      useUserStore.getState().setUser(user)
     } catch (e: any) {
       set({ error: e.message || "Ошибка регистрации" })
       throw e
@@ -71,11 +54,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const user = await authApi.checkAuth()
       if (user) {
-        set({
-          user,
-          isAuthenticated: true,
-          activeRole: user.role,
-        })
+        useUserStore.getState().setUser(user)
       }
     } finally {
       set({ loading: false })
@@ -85,27 +64,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout() {
     localStorage.removeItem("auth-user")
     sessionStorage.removeItem("auth-user")
-    set({
-      user: null,
-      isAuthenticated: false,
-      activeRole: null,
-    })
+    useUserStore.getState().setUser(null)
   },
 
   setError(message) {
     set({ error: message })
-  },
-
-  setRole(role) {
-    set({ activeRole: role })
-  },
-
-  setUser(user) {
-    set({
-      user,
-      isAuthenticated: !!user,
-      activeRole: user?.role ?? null,
-    })
   },
 
   setBootstrapped() {

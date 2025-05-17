@@ -10,6 +10,7 @@ import AuthBootstrapper from "./providers/AuthBootstrapper";
 import RoleProtectedRoute from "./router/RoleProtectedRoute";
 import { useAuthStore } from "@/features/auth/model/store";
 import AuthProtectedRoute from "./router/AuthProtectedRoute ";
+import { MainRedirect } from "./router/MainRedirect";
 
 function App() {
   return (
@@ -24,17 +25,19 @@ function App() {
 
         <Route element={<AuthProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
+
+          <Route element={<RoleProtectedRoute requiredRole="student" />}>
+            <Route path="/student" element={<StudentPage />} />
+          </Route>
+
+          <Route element={<RoleProtectedRoute requiredRole="teacher" />}>
+            <Route path="/teacher" element={<TeacherPage />} />
+          </Route>
+
+          <Route path="/" element={<MainRedirect />} />
         </Route>
 
-        <Route element={<RoleProtectedRoute requiredRole="student" />}>
-          <Route path="/student" element={<StudentPage />} />
-        </Route>
-
-        <Route element={<RoleProtectedRoute requiredRole="teacher" />}>
-          <Route path="/teacher" element={<TeacherPage />} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/profile" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

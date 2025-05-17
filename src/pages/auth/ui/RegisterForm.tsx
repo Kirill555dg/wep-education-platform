@@ -19,6 +19,7 @@ import {
   FormLink,
   RadioButtonGroup,
 } from "@/widgets/auth";
+import { useUserStore } from "@/entities/user/model/store";
 
 export function RegisterForm() {
   const navigate = useNavigate();
@@ -57,7 +58,7 @@ export function RegisterForm() {
     setError(null);
     try {
       await performRegister(data);
-      const role = useAuthStore.getState().activeRole;
+      const role = useUserStore.getState().user?.role;
       toast.info("Регистрация завершена", `Добро пожаловать!`);
       navigate(`/${role}`);
     } catch {

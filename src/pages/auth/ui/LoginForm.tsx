@@ -19,6 +19,7 @@ import {
   FormFieldWithIcon,
   FormLink,
 } from "@/widgets/auth";
+import { useUserStore } from "@/entities/user/model/store";
 
 export function LoginForm() {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ export function LoginForm() {
     setError(null);
     try {
       await login(data);
-      const role = useAuthStore.getState().activeRole;
+      const role = useUserStore.getState().user?.role;
       toast.info("Успешный вход", `Вы вошли как ${role === "teacher" ? "преподаватель" : "ученик"}`);
       navigate(`/${role}`);
     } catch (_) {

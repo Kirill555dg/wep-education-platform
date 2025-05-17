@@ -1,5 +1,7 @@
-import { useNavigate } from "react-router-dom";
-import { Bell, ChevronLeft, GraduationCap, LogOut, Settings, User as UserIcon } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Bell, GraduationCap, ChevronLeft, LogOut, Settings, User as UserIcon } from "lucide-react";
+import { useUserStore } from "@/entities/user/model/store";
+import { useAuthStore } from "@/features/auth/model/store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import {
   DropdownMenu,
@@ -10,27 +12,45 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { useAuthStore } from "@/features/auth/model/store";
 import { getFullName } from "@/entities/user/lib/format";
 
-interface ResponsiveHeaderProps {
-  title?: string;
-  backUrl?: string;
-  pageTitle?: string;
-}
-
-export function ResponsiveHeader({ title, backUrl, pageTitle }: ResponsiveHeaderProps) {
-  const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+export function ResponsiveHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const user = useUserStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
 
   if (!user) return null;
+
+  const pathname = location.pathname;
+
+  // 👇 Автоматическая логика заголовков и кнопок
+  let title = "Платформа";
+  let backTo: string | null = null;
+  let backLabel = "Назад";
+
+  if (pathname === "/profile") {
+    title = "Профиль";
+    backTo = "/";
+    backLabel = "На главную";
+  } else if (pathname.startsWith("/teacher/class/")) {
+    title = "Класс преподавателя";
+    backTo = "/teacher";
+  } else if (pathname.startsWith("/student/class/")) {
+    title = "Класс ученика";
+    backTo = "/student";
+  } else if (pathname.startsWith("/teacher")) {
+    title = "Панель преподавателя";
+    backTo = "/";
+  } else if (pathname.startsWith("/student")) {
+    title = "Панель ученика";
+    backTo = "/";
+  }
 
   const initials = [user.firstName, user.lastName]
     .map((n) => n?.[0])
     .join("")
     .toUpperCase();
-
   const isTeacher = user.role === "teacher";
 
   const handleLogout = () => {
@@ -39,11 +59,12 @@ export function ResponsiveHeader({ title, backUrl, pageTitle }: ResponsiveHeader
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <header className="bg-white border-b sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop */}
         <div className="hidden sm:flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
+            {/* Логотип */}
             <button onClick={() => navigate("/")} className="flex items-center">
               <div className="bg-blue-900 rounded-full p-2">
                 <GraduationCap className="text-white h-5 w-5" />
@@ -51,30 +72,34 @@ export function ResponsiveHeader({ title, backUrl, pageTitle }: ResponsiveHeader
               <h1 className="text-2xl font-bold text-blue-900 ml-2">WEP</h1>
             </button>
 
-            {backUrl && (
+            {/* Назад + Заголовок */}
+            {backTo && (
               <div className="flex items-center ml-6">
                 <button
+                  onClick={() => navigate(backTo)}
                   className="flex items-center text-gray-600 hover:text-gray-900"
-                  onClick={() => navigate(backUrl)}
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
-                  <span>Назад</span>
+                  <span>{backLabel}</span>
                 </button>
-                {title && <h2 className="text-lg font-bold text-gray-900 ml-4">{title}</h2>}
+                <h2 className="text-lg font-bold text-gray-900 ml-4">{title}</h2>
               </div>
             )}
 
-            {pageTitle && !backUrl && <h1 className="text-xl font-bold text-gray-900 ml-6">{pageTitle}</h1>}
+            {!backTo && <h1 className="text-xl font-bold text-gray-900 ml-6">{title}</h1>}
           </div>
 
+          {/* Правый блок */}
           <div className="flex items-center space-x-4">
-            {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 bg-red-500" variant="default">
-                    3
+                  <Badge
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500"
+                    variant="default"
+                  >
+                    0
                   </Badge>
                 </Button>
               </DropdownMenuTrigger>
@@ -86,7 +111,6 @@ export function ResponsiveHeader({ title, backUrl, pageTitle }: ResponsiveHeader
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* User menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center space-x-3 cursor-pointer">
@@ -95,7 +119,7 @@ export function ResponsiveHeader({ title, backUrl, pageTitle }: ResponsiveHeader
                     <span className="text-gray-700 font-medium">{getFullName(user)}</span>
                   </div>
                   <Avatar>
-                    <AvatarImage src="/placeholder.svg" />
+                    <AvatarImage src={user.avatar || "/placeholder.svg"} />
                     <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                 </div>
@@ -125,36 +149,33 @@ export function ResponsiveHeader({ title, backUrl, pageTitle }: ResponsiveHeader
               </div>
               <h1 className="text-xl font-bold text-blue-900 ml-2">WEP</h1>
             </button>
-
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon">
                 <Bell className="h-5 w-5" />
               </Button>
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg" />
+                <AvatarImage src={user.avatar || "/placeholder.svg"} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
             </div>
           </div>
 
-          {(backUrl || pageTitle) && (
-            <div className="flex items-center justify-between border-t pt-2">
-              {backUrl ? (
-                <>
-                  <button
-                    onClick={() => navigate(backUrl)}
-                    className="flex items-center text-gray-600 hover:text-gray-900"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    <span>Назад</span>
-                  </button>
-                  {title && <h2 className="text-base font-bold text-gray-900">{title}</h2>}
-                </>
-              ) : (
-                <h2 className="text-base font-bold text-gray-900">{pageTitle}</h2>
-              )}
-            </div>
-          )}
+          <div className="flex items-center justify-between border-t pt-2">
+            {backTo ? (
+              <>
+                <button
+                  onClick={() => navigate(backTo)}
+                  className="flex items-center text-gray-600 hover:text-gray-900"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  <span>{backLabel}</span>
+                </button>
+                <h2 className="text-base font-bold text-gray-900">{title}</h2>
+              </>
+            ) : (
+              <h2 className="text-base font-bold text-gray-900">{title}</h2>
+            )}
+          </div>
         </div>
       </div>
     </header>
