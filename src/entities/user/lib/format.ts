@@ -1,14 +1,10 @@
-export function getFullName(user: {
-  lastName?: string
-  firstName?: string
-  middleName?: string
-}) {
-  return [user.lastName, user.firstName, user.middleName].filter(Boolean).join(" ")
-}
-
-export function getLastFisrtNames(user: {
-  lastName?: string
-  firstName?: string
-}) {
-  return [user.lastName, user.firstName].filter(Boolean).join(" ")
+export function getFullNameAdaptive(
+  user: { lastName?: string; firstName?: string; middleName?: string },
+  showMiddle: boolean
+) {
+  const parts = [user.lastName, user.firstName]
+  if (showMiddle && user.middleName) {
+    parts.push(user.middleName)
+  }
+  return parts.filter(Boolean).join(" ")
 }

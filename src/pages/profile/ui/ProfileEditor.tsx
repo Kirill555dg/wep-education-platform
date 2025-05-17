@@ -4,7 +4,7 @@ import { Card } from "@/shared/ui/card";
 import { Calendar, Mail, MapPin, Phone, Link as LinkIcon, User as UserIcon } from "lucide-react";
 import { ProfileEditableField } from "./ProfileEditableField";
 import { ProfileAvatarBlock } from "./ProfileAvatarBlock";
-import { getFullName } from "@/entities/user/lib/format";
+import { getFullNameAdaptive } from "@/entities/user/lib/format";
 import type { User, UserRole } from "@/entities/user/model/types";
 
 interface ProfileEditorProps {
@@ -62,7 +62,7 @@ export function ProfileEditor({ user, onSave, onCancel }: ProfileEditorProps) {
     <Card className="bg-white rounded-none sm:rounded-lg shadow p-4 sm:p-6">
       <div className="flex flex-col md:flex-row gap-8">
         <ProfileAvatarBlock
-          fullName={getFullName(formData)}
+          fullName={getFullNameAdaptive(formData, true)}
           avatarUrl={formData.avatar}
           isEditing
           activeRole={formData.role}

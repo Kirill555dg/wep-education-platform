@@ -32,14 +32,12 @@ export default function ProfilePage() {
   };
 
   return (
-    <MainLayout title="Профиль">
-      <div className="w-full sm:max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {isEditing ? (
-          <ProfileEditor user={user} onSave={handleSave} onCancel={handleCancel} />
-        ) : (
-          <ProfileViewer user={user} onEditClick={() => setIsEditing(true)} onSwitchRole={handleRoleSwitch} />
-        )}
-      </div>
+    <MainLayout title="Профиль" footer="full" back={{ label: "На главную", to: "/" }}>
+      {isEditing ? (
+        <ProfileEditor user={user} onSave={handleSave} onCancel={handleCancel} />
+      ) : (
+        <ProfileViewer user={user} onEditClick={() => setIsEditing(true)} onSwitchRole={handleRoleSwitch} />
+      )}
     </MainLayout>
   );
 }
