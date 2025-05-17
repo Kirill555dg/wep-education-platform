@@ -24,6 +24,9 @@ export const authApiMock: AuthApi = {
   async register(data) {
     await new Promise((r) => setTimeout(r, 1000))
 
+    const randomIndex = Math.floor(Math.random() * 5) + 1
+    const avatar = `/avatars/${data.gender === "female" ? "female" : "male"}${randomIndex}.png`
+
     const newUser: User = {
       id: nanoid(),
       firstName: data.firstName,
@@ -31,7 +34,7 @@ export const authApiMock: AuthApi = {
       middleName: data.middleName,
       email: data.email,
       role: data.role,
-      avatar: "https://i.pravatar.cc/150?u=" + data.email,
+      avatar: avatar
     }
 
     mockUsers.push(newUser)
