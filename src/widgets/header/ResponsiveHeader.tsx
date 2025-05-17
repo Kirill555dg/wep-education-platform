@@ -14,6 +14,7 @@ import { useUserStore } from "@/entities/user/model/store";
 import { useAuthStore } from "@/features/auth/model/store";
 import { getFullNameAdaptive } from "@/entities/user/lib/format";
 import { useMediaQuery } from "@/shared/hooks/use-media-query";
+import { UserAvatar } from "@/entities/user/ui/UserAvatar";
 
 interface Props {
   title?: string;
@@ -104,10 +105,7 @@ export function ResponsiveHeader({ title, overrideBack }: Props) {
                       <span className="text-sm text-gray-700 font-medium truncate">{displayName}</span>
                     </div>
                   )}
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                    <AvatarFallback>{initials}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar size="h-8 w-8" />
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

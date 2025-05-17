@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Camera } from "lucide-react";
+import { UserAvatar } from "@/entities/user/ui/UserAvatar";
 
 interface Props {
   fullName: string;
@@ -23,13 +24,6 @@ export function ProfileAvatarBlock({
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const initials = fullName
-    .split(" ")
-    .map((p) => p[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase();
-
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
@@ -42,10 +36,7 @@ export function ProfileAvatarBlock({
   return (
     <div className="flex flex-col items-center">
       <div className="relative">
-        <Avatar className="h-32 w-32 sm:h-48 sm:w-48">
-          <AvatarImage src={avatarUrl} alt={fullName} />
-          <AvatarFallback className="text-2xl">{initials}</AvatarFallback>
-        </Avatar>
+        <UserAvatar avatar={avatarUrl} size="h-32 w-32 sm:h-48 sm:w-48" className="border-2" />
 
         {isEditing && (
           <>
