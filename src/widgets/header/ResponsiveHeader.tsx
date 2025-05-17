@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { Bell, GraduationCap, LogOut, Settings, User as UserIcon, ChevronLeft } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,

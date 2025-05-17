@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Camera } from "lucide-react";
 import { UserAvatar } from "@/entities/user/ui/UserAvatar";

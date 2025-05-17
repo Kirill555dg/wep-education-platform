@@ -1,12 +1,11 @@
 import { useUserStore } from "@/entities/user/model/store";
 import { useState } from "react";
 import { profileApi } from "@/features/profile/api/profile-api";
-import type { User, UserRole } from "@/entities/user/model/types";
+import type { UserRole } from "@/entities/user/model/types";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/widgets/layout/MainLayout";
-import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { Calendar, Mail, MapPin, Phone, User as UserIcon, Link as LinkIcon, Pencil, Venus } from "lucide-react";
+import { Calendar, Mail, MapPin, Phone, User as UserIcon, Pencil } from "lucide-react";
 import { ProfileAvatarBlock } from "./ui/ProfileAvatarBlock";
 import { ProfileEditableField } from "./ui/ProfileEditableField";
 import { getFullNameAdaptive } from "@/entities/user/lib/format";
