@@ -15,8 +15,8 @@ export const mockUsers: User[] = [
     birthDate: "1982-03-15",
     about: "Преподаватель математики. Работаю в школе №123 более 10 лет.",
     contacts: {
-      telegram: "https://t.me/ivan_math",
-      vk: "https://vk.com/ivan.math",
+      telegram: "https://t.me/example_DNnviJDfui",
+      vk: "https://vk.com/example_DNnviJDfui",
     },
   },
   {
@@ -32,8 +32,8 @@ export const mockUsers: User[] = [
     birthDate: "2009-11-01",
     about: "Ученик 10А класса. Увлекаюсь физикой и веб-дизайном.",
     contacts: {
-      telegram: "https://t.me/maria_design",
-      vk: "https://vk.com/maria.school",
+      telegram: "https://t.me/example_HXQWdiJDfu",
+      vk: "https://vk.com/example_HXQWdiJDfu",
     },
   },
 ]

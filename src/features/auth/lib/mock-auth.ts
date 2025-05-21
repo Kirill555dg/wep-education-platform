@@ -1,4 +1,4 @@
-import { mockUsers } from "@/entities/user/model/mock"
+import { mockUsers } from "@/entities/user/model/mock-users"
 
 export const mockCredentials: Record<string, string> = {
   "example@school.edu": "123456",

@@ -3,7 +3,7 @@ import { useAuthStore } from "@/features/auth/model/store"
 import { setAuthApi } from "@/features/auth/api/api"
 import { authApiMock } from "@/features/auth/api/api-mock"
 import { useUserStore } from "@/entities/user/model/store"
-import { mockUsers } from "@/entities/user/model/mock"
+import { mockUsers } from "@/entities/user/model/mock-users"
 import type { LoginData, RegisterData } from "@/features/auth/model/schema"
 
 beforeEach(() => {

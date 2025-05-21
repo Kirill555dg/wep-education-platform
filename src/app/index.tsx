@@ -5,10 +5,10 @@ import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import ProfilePage from "@/pages/profile/ProfilePage";
 import StudentPage from "@/pages/student/StudentPage";
 import TeacherPage from "@/pages/teacher/TeacherPage";
+import NotificationsPage from "@/pages/notifications/NotificationsPage";
 import { Toaster } from "@/shared/ui/toaster";
 import AuthBootstrapper from "./providers/AuthBootstrapper";
 import RoleProtectedRoute from "./router/RoleProtectedRoute";
-import { useAuthStore } from "@/features/auth/model/store";
 import AuthProtectedRoute from "./router/AuthProtectedRoute ";
 import { MainRedirect } from "./router/MainRedirect";
 
@@ -25,6 +25,7 @@ function App() {
 
         <Route element={<AuthProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
 
           <Route element={<RoleProtectedRoute requiredRole="student" />}>
             <Route path="/student" element={<StudentPage />} />

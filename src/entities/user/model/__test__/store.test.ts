@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest"
 import { useUserStore } from "@/entities/user/model/store"
-import { mockUsers } from "@/entities/user/model/mock"
+import { mockUsers } from "@/entities/user/model/mock-users"
 
 describe("userStore", () => {
   beforeEach(() => {

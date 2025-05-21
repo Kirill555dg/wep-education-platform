@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import { mockUsers } from "@/entities/user/model/mock"
+import { mockUsers } from "@/entities/user/model/mock-users"
 import { mockCredentials, addMockCredential } from "@/features/auth/lib/mock-auth"
 import type { AuthApi } from "./api"
 import type { User } from "@/entities/user/model/types"
