@@ -1,9 +1,12 @@
 describe("Уведомления — страница", () => {
   beforeEach(() => {
     cy.visit("/login")
+
     cy.get('input[name="email"]').type("example@school.edu")
     cy.get('input[name="password"]').type("123456")
     cy.get("button[type=submit]").click()
+
+    cy.url().should("include", "/teacher")
     cy.visit("/notifications")
   })
 
