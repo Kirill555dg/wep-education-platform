@@ -14,6 +14,7 @@ interface NotificationCardProps {
 export function NotificationCard({ notification, onMarkRead, onNavigate }: NotificationCardProps) {
   return (
     <Card
+      data-testid="notification-card"
       className={`overflow-hidden transition-colors ${notification.read ? "bg-white" : "bg-blue-50 border-blue-100"}`}
     >
       <CardContent className="p-0">

@@ -1,14 +1,11 @@
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginData } from "@/features/auth/model/schema";
 import { useAuthStore } from "@/features/auth/model/store";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/shared/ui/card";
+import { Card, CardContent } from "@/shared/ui/card";
 import { Mail, Lock } from "lucide-react";
 import { toast } from "@/shared/lib/toast";
 import {
