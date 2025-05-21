@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Notification } from "../model/types";
-import { getNotificationIcon, getNotificationBadge } from "../lib/ui";
+import { getNotificationIcon, getNotificationBadge } from "../lib";
 import { formatDate } from "../lib/formatDate";
 
 interface NotificationCardProps {

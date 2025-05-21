@@ -1,4 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useUserStore } from "@/entities/user/model/store";
+import { useAuthStore } from "@/features/auth/model/store";
+import { useMediaQuery } from "@/shared/hooks/use-media-query";
+import { useNotificationPreview } from "@/features/notifications/model/useNotificationPreview";
+
 import { Bell, GraduationCap, LogOut, Settings, User as UserIcon, ChevronLeft } from "lucide-react";
 import {
   DropdownMenu,
@@ -9,10 +14,8 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { useUserStore } from "@/entities/user/model/store";
-import { useAuthStore } from "@/features/auth/model/store";
+
 import { getFullNameAdaptive } from "@/entities/user/lib/format";
-import { useMediaQuery } from "@/shared/hooks/use-media-query";
 import { UserAvatar } from "@/entities/user/ui/UserAvatar";
 
 interface Props {
@@ -30,14 +33,11 @@ export function ResponsiveHeader({ title, overrideBack }: Props) {
 
   const isWide = useMediaQuery("(min-width: 900px)");
   const isMobileWide = useMediaQuery("(min-width: 480px)");
+  const { unreadCount, unreadPreview } = useNotificationPreview();
 
   if (!user) return null;
 
   const displayName = getFullNameAdaptive(user, user.role === "teacher" && isWide);
-  const initials = [user.firstName, user.lastName]
-    .map((n) => n?.[0])
-    .join("")
-    .toUpperCase();
 
   const handleLogout = () => {
     logout();
@@ -80,15 +80,39 @@ export function ResponsiveHeader({ title, overrideBack }: Props) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500">
-                    0
-                  </Badge>
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-xs">
+                      {unreadCount}
+                    </Badge>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <div className="p-4">
-                  <h3 className="font-medium mb-2">Уведомления</h3>
-                  <p className="text-sm text-muted-foreground">В разработке</p>
+
+              <DropdownMenuContent align="end" className="w-80 max-h-[400px] overflow-y-auto">
+                <div className="p-4 pb-2">
+                  <h3 className="font-medium mb-3 text-sm text-gray-700">Непрочитанные</h3>
+                  {unreadPreview.length === 0 ? (
+                    <p className="text-sm text-gray-400">Нет новых уведомлений</p>
+                  ) : (
+                    <ul className="space-y-2 text-sm">
+                      {unreadPreview.map((n) => (
+                        <li
+                          key={n.id}
+                          onClick={() => navigate(n.link)}
+                          className="cursor-pointer hover:bg-gray-100 rounded px-2 py-1 transition"
+                        >
+                          <div className="font-medium text-gray-900">{n.title}</div>
+                          <div className="text-gray-500 text-xs truncate">{n.description}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="border-t p-2">
+                  <Button variant="ghost" className="w-full text-sm" onClick={() => navigate("/notifications")}>
+                    Перейти ко всем уведомлениям
+                  </Button>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
