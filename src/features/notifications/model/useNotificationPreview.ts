@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react"
-import { Notification } from "@/entities/notification/model/types"
-import { notificationsApi } from "../api/notifications-api"
+import { useEffect } from "react"
+import { useNotificationStore } from "@/entities/notification/model/store"
 
 export function useNotificationPreview() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const { notifications, fetch } = useNotificationStore()
 
   useEffect(() => {
-    notificationsApi.getAll().then(setNotifications)
-  }, [])
+    fetch()
+  }, [fetch])
 
   const unread = notifications.filter((n) => !n.read)
   const unreadCount = unread.length
