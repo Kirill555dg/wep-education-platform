@@ -1,5 +1,5 @@
 import { MainLayout } from "@/widgets/layout/MainLayout";
-import { StudentClassesSection } from "@/widgets/student-dashboard/ui/StudentClassesSection";
+import { StudentClassesSection } from "@/pages/student/ui/StudentClassesSection";
 
 export default function StudentPage() {
   return (

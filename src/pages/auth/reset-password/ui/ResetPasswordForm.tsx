@@ -11,7 +11,7 @@ import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
 import { authApi } from "@/features/auth/api/api";
 import { toast } from "@/shared/lib/toast";
-import { AuthCardFooter, FormFieldWithIcon, FormLink } from "@/widgets/auth";
+import { AuthCardFooter, FormFieldWithIcon, FormLink } from "@/pages/auth/ui";
 
 export function ResetPasswordForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);

@@ -16,7 +16,7 @@ export function NotificationsFilterDropdown({ value, onChange }: Props) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-full justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             {getFilterIcon(value)}
             <span>{current?.label || "Фильтр"}</span>
           </div>

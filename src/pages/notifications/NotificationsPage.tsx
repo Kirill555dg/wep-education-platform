@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/features/notifications/model/useNotifications";
-import { NotificationsHeader } from "@/widgets/notifications/ui/NotificationsHeader";
-import { NotificationsList } from "@/widgets/notifications/ui/NotificationsList";
+import { NotificationsHeader } from "@/pages/notifications/ui/NotificationsHeader";
+import { NotificationsList } from "@/pages/notifications/ui/NotificationsList";
 import { MainLayout } from "@/widgets/layout/MainLayout";
 
 export default function NotificationsPage() {

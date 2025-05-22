@@ -15,7 +15,7 @@ import {
   FormErrorAlert,
   FormFieldWithIcon,
   FormLink,
-} from "@/widgets/auth";
+} from "@/pages/auth/ui";
 import { useUserStore } from "@/entities/user/model/store";
 
 export function LoginForm() {

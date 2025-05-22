@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/widgets/layout/MainLayout";
 import { Button } from "@/shared/ui/button";
 import { Calendar, Mail, MapPin, Phone, User as UserIcon, Pencil } from "lucide-react";
-import { ProfileAvatarBlock } from "../../widgets/profile/ProfileAvatarBlock";
+import { ProfileAvatarBlock } from "./ui/ProfileAvatarBlock";
 import { ProfileEditableField } from "./ui/ProfileEditableField";
 import { getFullNameAdaptive } from "@/entities/user/lib/format";
 import { SocialIcon } from "@/shared/ui/social-icon";
