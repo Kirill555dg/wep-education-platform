@@ -25,7 +25,7 @@ export const authApiMock: AuthApi = {
     await new Promise((r) => setTimeout(r, 1000))
 
     const randomIndex = Math.floor(Math.random() * 5) + 1
-    const avatar = `/avatars/${data.gender === "female" ? "female" : "male"}${randomIndex}.png`
+    const avatar = `/avatar/${data.gender === "female" ? "female" : "male"}${randomIndex}.png`
 
     const newUser: User = {
       id: nanoid(),
