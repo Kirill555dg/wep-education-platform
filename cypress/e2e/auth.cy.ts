@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 describe("Блок авторизации", () => {
   const validEmail = "example@school.edu"
   const validPassword = "123456"
