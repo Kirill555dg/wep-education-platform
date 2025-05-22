@@ -1,15 +1,19 @@
 import { useClassStore } from "@/entities/class/model/store";
 import { ClassCard } from "@/entities/class/ui/ClassCard";
 import { JoinClassDialog } from "@/features/join-class/ui/JoinClassDialog";
+import { useMediaQuery } from "@/shared/hooks/use-media-query";
 
 export const StudentClassesSection = () => {
   const classes = useClassStore((s) => s.joinedClasses);
+  const isNarrow = useMediaQuery("(max-width: 440px)");
 
   return (
-    <section className="w-full sm:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <header className="flex flex-col-reverse sm:flex-row justify-between items-center mb-6 gap-4">
+    <section className="w-full sm:max-w-7xl mx-auto px-4 sm:px-0 py-4 sm:py-0">
+      <header className="flex flex-wrap justify-between items-start sm:items-center mb-6 gap-4">
         <h2 className="text-xl font-semibold text-gray-800">Текущие классы</h2>
-        <JoinClassDialog />
+        <div className={isNarrow ? "w-full" : "w-auto"}>
+          <JoinClassDialog fullWidth={isNarrow} />
+        </div>
       </header>
 
       {classes.length === 0 ? (

@@ -11,12 +11,14 @@ import AuthBootstrapper from "./providers/AuthBootstrapper";
 import RoleProtectedRoute from "./router/RoleProtectedRoute";
 import AuthProtectedRoute from "./router/AuthProtectedRoute ";
 import { MainRedirect } from "./router/MainRedirect";
+import { ClassBootstrapper } from "./providers/ClassBootstrapper";
 
 function App() {
   return (
     <>
       <Toaster />
       <AuthBootstrapper />
+      <ClassBootstrapper />
 
       <Routes>
         <Route path="/login" element={<LoginPage />} />

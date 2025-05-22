@@ -5,6 +5,7 @@ interface ClassStore {
   joinedClasses: ClassInfo[]
   addClass: (newClass: ClassInfo) => void
   hasClass: (entryCode: string) => boolean
+  resetClasses: (classes: ClassInfo[]) => void
 }
 
 export const useClassStore = create<ClassStore>((set, get) => ({
@@ -17,4 +18,9 @@ export const useClassStore = create<ClassStore>((set, get) => ({
 
   hasClass: (entryCode) =>
     get().joinedClasses.some((cls) => cls.entryCode === entryCode),
+
+  resetClasses: (classes) =>
+    set(() => ({
+      joinedClasses: classes,
+    })),
 }))

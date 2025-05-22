@@ -1,8 +1,9 @@
-import { nanoid } from "nanoid"
+import { customAlphabet } from "nanoid"
 import { mockUsers } from "@/entities/user/model/mock-users"
 import { mockCredentials, addMockCredential } from "@/features/auth/lib/mock-auth"
 import type { AuthApi } from "./api"
 import type { User } from "@/entities/user/model/types"
+import { number } from "zod"
 
 export const authApiMock: AuthApi = {
   async login({ email, password }) {
@@ -27,8 +28,10 @@ export const authApiMock: AuthApi = {
     const randomIndex = Math.floor(Math.random() * 5) + 1
     const avatar = `/avatar/${data.gender === "female" ? "female" : "male"}${randomIndex}.png`
 
+    const nanoid = customAlphabet('0123456789', 5)
+
     const newUser: User = {
-      id: nanoid(),
+      id: Number(nanoid()),
       firstName: data.firstName,
       lastName: data.lastName,
       middleName: data.middleName,

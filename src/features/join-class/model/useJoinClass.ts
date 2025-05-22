@@ -8,7 +8,7 @@ export function useJoinClass() {
   const addClass = useClassStore((s) => s.addClass)
   const hasClass = useClassStore((s) => s.hasClass)
 
-  const joinClass = async (code: string) => {
+  const joinClass = async (code: string): Promise<boolean> => {
     setLoading(true)
     setError(null)
 
@@ -18,12 +18,17 @@ export function useJoinClass() {
       if (hasClass(found.entryCode)) throw new Error("Вы уже присоединились к этому классу")
 
       addClass(found)
+      return true
     } catch (err: any) {
       setError(err.message || "Не удалось присоединиться к классу")
+      return false
     } finally {
       setLoading(false)
     }
   }
 
-  return { joinClass, loading, error }
+  const clearError = () => setError(null)
+
+  return { joinClass, loading, error, clearError }
 }
+

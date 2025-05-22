@@ -2,7 +2,7 @@ import { User } from "./types"
 
 export const mockUsers: User[] = [
   {
-    id: "u1",
+    id: 1,
     firstName: "Иван",
     lastName: "Смирнов",
     middleName: "Александрович",
@@ -20,7 +20,7 @@ export const mockUsers: User[] = [
     },
   },
   {
-    id: "u2",
+    id: 2,
     firstName: "Мария",
     lastName: "Смирнова",
     email: "student@school.edu",

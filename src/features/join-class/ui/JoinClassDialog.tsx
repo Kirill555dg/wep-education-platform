@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,21 +14,31 @@ import { Label } from "@/shared/ui/label";
 import { Plus } from "lucide-react";
 import { useJoinClass } from "../model/useJoinClass";
 
-export const JoinClassDialog = () => {
+export const JoinClassDialog = ({ fullWidth = false }: { fullWidth?: boolean }) => {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
-  const { joinClass, loading } = useJoinClass();
+  const { joinClass, loading, error, clearError } = useJoinClass();
 
   const handleJoin = async () => {
-    await joinClass(code);
-    setCode("");
-    setOpen(false);
+    const success = await joinClass(code);
+    if (success) {
+      setOpen(false);
+      setCode("");
+    }
   };
+
+  // Сброс ошибки и поля при открытии/закрытии
+  useEffect(() => {
+    if (!open) {
+      setCode("");
+      clearError?.();
+    }
+  }, [open, clearError]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className={fullWidth ? "w-full" : "w-auto"}>
           <Plus className="h-4 w-4 mr-2" />
           Вступить в класс
         </Button>
@@ -47,11 +57,9 @@ export const JoinClassDialog = () => {
             placeholder="Например: XYZ123"
             className="mt-2"
           />
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
         <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-0">
-          <Button variant="outline" onClick={() => setOpen(false)} className="w-full sm:w-auto">
-            Отмена
-          </Button>
           <Button onClick={handleJoin} className="w-full sm:w-auto" disabled={loading}>
             {loading ? "Присоединение..." : "Присоединиться"}
           </Button>

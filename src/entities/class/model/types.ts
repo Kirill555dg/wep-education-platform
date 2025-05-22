@@ -1,13 +1,3 @@
-import type { User } from "@/entities/user/model/types"
-
-export interface Student extends Pick<User,
-  "id" | "firstName" | "lastName" | "email" | "avatar" | "gender"
-> {
-  averageGrade: number
-  lastActive: string
-}
-
-
 export interface ClassInfo {
   id: number
   name: string
@@ -19,5 +9,4 @@ export interface ClassInfo {
   teacher: string
   activeAssignments: number
   image: string
-  students: Student[]
 }
