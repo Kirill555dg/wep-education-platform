@@ -38,6 +38,8 @@ export function ProfileEditableField({
   const isLink = id === "telegram" || id === "vk";
   const isDate = type === "date";
 
+  if (!value && !isEditing) return null;
+
   return (
     <div className="flex flex-col gap-1">
       <Label htmlFor={id} className="flex items-center gap-2">
