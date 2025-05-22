@@ -6,7 +6,7 @@ export interface ClassInfo {
   schedule: string
   classroom: string
   entryCode: string
-  teacher: string
+  teacherId: number
   activeAssignments: number
   image: string
 }

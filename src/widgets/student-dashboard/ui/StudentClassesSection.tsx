@@ -1,5 +1,7 @@
 import { useClassStore } from "@/entities/class/model/store";
 import { ClassCard } from "@/entities/class/ui/ClassCard";
+import { formatTeacherName } from "@/entities/teacher/lib/formatTeacherName";
+import { getTeacherById } from "@/entities/teacher/lib/getTeacherById";
 import { JoinClassDialog } from "@/features/join-class/ui/JoinClassDialog";
 import { useMediaQuery } from "@/shared/hooks/use-media-query";
 
@@ -20,9 +22,21 @@ export const StudentClassesSection = () => {
         <p className="text-gray-600 text-sm">Вы ещё не присоединились ни к одному классу.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes.map((cls) => (
-            <ClassCard key={cls.id} {...cls} />
-          ))}
+          {classes.map((cls) => {
+            const teacher = getTeacherById(cls.teacherId);
+            const teacherName = teacher ? formatTeacherName(teacher) : "Неизвестный преподаватель";
+
+            return (
+              <ClassCard
+                key={cls.id}
+                id={cls.id}
+                name={cls.name}
+                teacherName={teacherName}
+                activeAssignments={cls.activeAssignments}
+                image={cls.image}
+              />
+            );
+          })}
         </div>
       )}
     </section>

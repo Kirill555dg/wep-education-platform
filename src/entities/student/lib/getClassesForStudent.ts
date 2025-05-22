@@ -1,4 +1,4 @@
-import { classMemberships } from "@/entities/many-to-many/class-memberships"
+import { classMemberships } from "@/entities/many-to-many/student-classes"
 import { mockClasses } from "@/entities/class/model/mock-classes"
 import type { ClassInfo } from "@/entities/class/model/types"
 

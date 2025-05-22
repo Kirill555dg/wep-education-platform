@@ -2,16 +2,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Link } from "react-router-dom";
+import { Teacher } from "@/entities/teacher/model/types";
 
 export interface ClassCardProps {
   id: number;
   name: string;
-  teacher: string;
+  teacherName: string;
   activeAssignments: number;
   image: string;
 }
 
-export const ClassCard = ({ id, name, teacher, activeAssignments, image }: ClassCardProps) => {
+export const ClassCard = ({ id, name, teacherName, activeAssignments, image }: ClassCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
       <div className="h-40 overflow-hidden">
@@ -19,7 +20,7 @@ export const ClassCard = ({ id, name, teacher, activeAssignments, image }: Class
       </div>
       <CardHeader className="pb-2">
         <CardTitle>{name}</CardTitle>
-        <CardDescription>{teacher}</CardDescription>
+        <CardDescription>{teacherName}</CardDescription>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="flex justify-between items-center">
