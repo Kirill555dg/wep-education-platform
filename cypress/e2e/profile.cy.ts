@@ -2,7 +2,7 @@ describe("Страница профиля", () => {
   beforeEach(() => {
     cy.visit("/login")
 
-    cy.get('input[name="email"]').type("example@school.edu")
+    cy.get('input[name="email"]').type("teacher@school.edu")
     cy.get('input[name="password"]').type("123456")
     cy.get("button[type=submit]").click()
 
@@ -13,7 +13,7 @@ describe("Страница профиля", () => {
   it("отображает базовую информацию профиля", () => {
     cy.contains("Профиль")
     cy.contains("Смирнов") // фамилия
-    cy.contains("example@school.edu") // email
+    cy.contains("teacher@school.edu") // email
     cy.contains("Мужской")
     cy.get("img").should("exist")
     cy.contains("О себе")

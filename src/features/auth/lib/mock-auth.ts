@@ -1,7 +1,7 @@
 import { mockUsers } from "@/entities/user/model/mock-users"
 
 export const mockCredentials: Record<string, string> = {
-  "example@school.edu": "123456",
+  "teacher@school.edu": "123456",
   "student@school.edu": "654321",
 }
 
