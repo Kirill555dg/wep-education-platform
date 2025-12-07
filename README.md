@@ -14,7 +14,15 @@ wep-education-platform/
 │   ├── cypress/      # E2E тесты
 │   └── README.md     # Документация фронтенда
 │
-└── backend/          # Backend (планируется)
+└── backend/           # FastAPI backend
+    ├── app/          # Исходный код
+    │   ├── api/      # API endpoints (контроллеры)
+    │   ├── services/ # Бизнес-логика
+    │   ├── repositories/ # Работа с БД
+    │   ├── models/   # SQLAlchemy ORM модели
+    │   └── schemas/  # Pydantic схемы
+    ├── pyproject.toml
+    └── README.md     # Документация backend
 ```
 
 ## 🚀 Быстрый старт
@@ -31,7 +39,13 @@ bun run dev
 
 ### Backend
 
-> 🚧 Backend находится в разработке
+```bash
+cd backend
+pip install -e .
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Подробная документация: [`backend/README.md`](./backend/README.md)
 
 ## 🛠 Технологии
 
@@ -42,14 +56,17 @@ bun run dev
 - Tailwind CSS + Radix UI
 - Vitest + Cypress
 
-### Backend (планируется)
-- Node.js / Bun
-- PostgreSQL / MongoDB
-- REST API / GraphQL
+### Backend
+- FastAPI
+- SQLAlchemy
+- PostgreSQL / SQLite
+- REST API
+- Pydantic
 
 ## 📄 Требования
 
-- **Bun** >= 1.0.0 (или Node.js >= 18.x)
+- **Bun** >= 1.0.0 (для фронтенда)
+- **Python** >= 3.10 (для бекенда)
 - **Git**
 
 ### Установка Bun
@@ -68,7 +85,7 @@ bun --version
 - ✅ Профили пользователей
 - ✅ Система классов
 - ✅ Уведомления
-- 🚧 Backend API (в разработке)
+- ✅ Backend API (FastAPI)
 
 ## 📝 Git Workflow
 
@@ -93,7 +110,7 @@ git checkout -b feature/название-функции
 ## 📚 Документация
 
 - [Frontend Documentation](./frontend/README.md)
-- Backend Documentation (в разработке)
+- [Backend Documentation](./backend/README.md)
 
 ## 📄 License
 
