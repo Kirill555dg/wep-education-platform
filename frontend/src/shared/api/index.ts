@@ -7,6 +7,7 @@ export { authApi } from "./auth.api";
 export { classroomsApi } from "./classrooms.api";
 export { lessonsApi } from "./lessons.api";
 export { homeworkApi } from "./homework.api";
+export { problemsApi } from "./problems.api";
 export { statisticsApi } from "./statistics.api";
 
 // Export axios instance for custom requests

@@ -57,9 +57,31 @@ async def get_lesson_homework(
     - Teachers see all homework (including unpublished)
     - Students see only published homework
     """
-    # This would need to be implemented in HomeworkService
-    # For now, returning empty list as placeholder
-    return []
+    from app.repositories.homework_repository import HomeworkRepository
+    from app.repositories.user_repository import TeacherRepository
+    from app.repositories.lesson_repository import LessonRepository
+    from app.db.session import get_db
+    
+    db = next(get_db())
+    homework_repo = HomeworkRepository(db)
+    teacher_repo = TeacherRepository(db)
+    lesson_repo = LessonRepository(db)
+    
+    # Check if user is teacher of this lesson's classroom
+    lesson = lesson_repo.get_by_id(lesson_id)
+    if not lesson:
+        return []
+    
+    teacher = teacher_repo.get_by_user_id(current_user.id)
+    
+    if teacher:
+        # Teacher sees all homework
+        homeworks = homework_repo.get_by_lesson(lesson_id, skip, limit)
+    else:
+        # Students see only published
+        homeworks = homework_repo.get_published(lesson_id, skip, limit)
+    
+    return [HomeworkResponse.model_validate(hw) for hw in homeworks]
 
 
 @router.get("/{homework_id}", response_model=HomeworkDetailResponse)

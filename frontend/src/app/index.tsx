@@ -6,6 +6,8 @@ import ProfilePage from "@/pages/profile/ProfilePage";
 import StudentPage from "@/pages/student/StudentPage";
 import TeacherPage from "@/pages/teacher/TeacherPage";
 import NotificationsPage from "@/pages/notifications/NotificationsPage";
+import TeacherManagePage from "@/pages/teacher/manage/TeacherManagePage";
+import StudentHomeworkPage from "@/pages/student/homework/StudentHomeworkPage";
 import { Toaster } from "@/shared/ui/toaster";
 import AuthBootstrapper from "./providers/AuthBootstrapper";
 import RoleProtectedRoute from "./router/RoleProtectedRoute";
@@ -31,10 +33,12 @@ function App() {
 
           <Route element={<RoleProtectedRoute requiredRole="student" />}>
             <Route path="/student" element={<StudentPage />} />
+            <Route path="/student/homework/:homeworkId" element={<StudentHomeworkPage />} />
           </Route>
 
           <Route element={<RoleProtectedRoute requiredRole="teacher" />}>
             <Route path="/teacher" element={<TeacherPage />} />
+            <Route path="/teacher/manage" element={<TeacherManagePage />} />
           </Route>
 
           <Route path="/" element={<MainRedirect />} />

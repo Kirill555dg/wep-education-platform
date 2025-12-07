@@ -9,6 +9,7 @@ from app.api.v1 import (
     classrooms,
     lessons,
     homework,
+    problems,
     testing,
     statistics,
 )
@@ -21,6 +22,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(classrooms.router, prefix="/classrooms", tags=["Classrooms"])
 api_router.include_router(lessons.router, prefix="/lessons", tags=["Lessons"])
 api_router.include_router(homework.router, prefix="/homework", tags=["Homework"])
+api_router.include_router(problems.router, prefix="/problems", tags=["Problems"])
 api_router.include_router(testing.router, prefix="/testing", tags=["Testing"])
 api_router.include_router(statistics.router, prefix="/statistics", tags=["Statistics"])
 
