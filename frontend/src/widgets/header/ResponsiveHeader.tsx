@@ -28,6 +28,7 @@ interface Props {
 
 export function ResponsiveHeader({ title, overrideBack }: Props) {
   const user = useUserStore((s) => s.user);
+  const currentRole = useUserStore((s) => s.currentRole);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
 
@@ -37,10 +38,11 @@ export function ResponsiveHeader({ title, overrideBack }: Props) {
 
   if (!user) return null;
 
-  const displayName = getFullNameAdaptive(user, user.role === "teacher" && isWide);
+  const activeRole = currentRole || user.role;
+  const displayName = getFullNameAdaptive(user, activeRole === "teacher" && isWide);
   
   const getRoleBadge = () => {
-    if (user.role === "teacher") {
+    if (activeRole === "teacher") {
       return { label: "Преподаватель", color: "bg-blue-100 text-blue-800" };
     }
     return { label: "Ученик", color: "bg-green-100 text-green-800" };
@@ -145,7 +147,7 @@ export function ResponsiveHeader({ title, overrideBack }: Props) {
                       <Badge 
                         className={`absolute -bottom-1 -right-1 text-[8px] px-1 py-0 h-3 ${roleBadge.color} border-white border`}
                       >
-                        {user.role === "teacher" ? "П" : "У"}
+                        {activeRole === "teacher" ? "П" : "У"}
                       </Badge>
                     )}
                   </div>
