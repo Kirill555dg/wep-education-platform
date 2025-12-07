@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/widgets/layout/MainLayout";
 import { lessonsApi, homeworkApi, type LessonDetail, type Homework } from "@/shared/api";
+import { CreateHomeworkDialog } from "@/features/create-homework/ui/CreateHomeworkDialog";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { ArrowLeft, Plus, BookOpen, FileText, BarChart } from "lucide-react";
@@ -20,6 +21,16 @@ export default function TeacherLessonPage() {
   const [loading, setLoading] = useState(true);
   const [createHomeworkOpen, setCreateHomeworkOpen] = useState(false);
 
+  const fetchHomeworks = async () => {
+    if (!lessonId) return;
+    try {
+      // TODO: Fetch homeworks for this lesson
+      setHomeworks([]);
+    } catch (error) {
+      console.error("Failed to fetch homeworks", error);
+    }
+  };
+
   useEffect(() => {
     if (!lessonId) return;
 
@@ -27,11 +38,8 @@ export default function TeacherLessonPage() {
       try {
         const lessonData = await lessonsApi.getById(parseInt(lessonId));
         setLesson(lessonData);
-
-        // TODO: Fetch homeworks for this lesson
-        // const homeworksData = await homeworkApi.getByLesson(parseInt(lessonId));
-        // setHomeworks(homeworksData);
-        setHomeworks([]);
+        
+        await fetchHomeworks();
       } catch (error) {
         toast({
           title: "❌ Ошибка",
@@ -45,6 +53,11 @@ export default function TeacherLessonPage() {
 
     fetchData();
   }, [lessonId, toast]);
+
+  const handleHomeworkCreated = (homeworkId: number) => {
+    fetchHomeworks();
+    // Could also navigate to homework page: navigate(`/teacher/homework/${homeworkId}`)
+  };
 
   if (loading) {
     return (
@@ -148,23 +161,14 @@ export default function TeacherLessonPage() {
           )}
         </div>
 
-        {/* TODO: Add CreateHomeworkDialog */}
-        {createHomeworkOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-lg m-4">
-              <CardHeader>
-                <CardTitle>Создание ДЗ временно недоступно</CardTitle>
-                <CardDescription>
-                  Эта функция находится в разработке
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button onClick={() => setCreateHomeworkOpen(false)}>
-                  Закрыть
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Create Homework Dialog */}
+        {lesson && (
+          <CreateHomeworkDialog
+            lessonId={lesson.id}
+            open={createHomeworkOpen}
+            onOpenChange={setCreateHomeworkOpen}
+            onSuccess={handleHomeworkCreated}
+          />
         )}
       </div>
     </MainLayout>
