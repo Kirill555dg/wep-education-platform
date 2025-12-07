@@ -9,7 +9,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { ArrowLeft, Plus, BookOpen, Users, Code, Calendar } from "lucide-react";
-import { useToast } from "@/shared/ui/use-toast";
+import { useToast } from "@/shared/hooks/use-toast";
 
 export default function TeacherClassroomPage() {
   const { classroomId } = useParams<{ classroomId: string }>();

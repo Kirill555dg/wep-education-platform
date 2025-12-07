@@ -15,7 +15,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
-import { useToast } from "@/shared/ui/use-toast";
+import { useToast } from "@/shared/hooks/use-toast";
 
 interface CreateClassroomDialogProps {
   open: boolean;
