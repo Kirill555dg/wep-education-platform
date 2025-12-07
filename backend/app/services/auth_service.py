@@ -72,11 +72,10 @@ class AuthService:
         hashed_password = get_password_hash(user_data.password)
         self.login_repo.create_for_user(user.id, hashed_password)
 
-        # Create teacher or student profile
-        if user_data.is_teacher:
-            self.teacher_repo.create({"user_id": user.id})
-        else:
-            self.student_repo.create({"user_id": user.id})
+        # Create BOTH teacher and student profiles
+        # This allows users to switch between roles
+        self.teacher_repo.create({"user_id": user.id})
+        self.student_repo.create({"user_id": user.id})
 
         return UserResponse.model_validate(user)
 

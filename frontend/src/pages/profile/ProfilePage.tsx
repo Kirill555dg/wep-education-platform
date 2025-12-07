@@ -14,6 +14,7 @@ import { GenderEditableField } from "./ui/GenderEditableField";
 
 export default function ProfilePage() {
   const user = useUserStore((s) => s.user);
+  const setUser = useUserStore((s) => s.setUser);
   const { updateProfile, loading: saving } = useUpdateProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(() => ({
@@ -75,10 +76,14 @@ export default function ProfilePage() {
     setFormData((prev) => ({ ...prev, avatar: url }));
   };
 
-  const handleRoleSwitch = async (role: UserRole) => {
-    const result = await profileApi.updateProfile({ ...user, role });
-    setUser(result);
-    navigate(`/${role}`);
+  const handleRoleSwitch = (role: UserRole) => {
+    // Simply navigate to the appropriate page for the selected role
+    // Backend creates both Teacher and Student profiles for each user
+    if (role === "teacher") {
+      navigate("/teacher");
+    } else if (role === "student") {
+      navigate("/student");
+    }
   };
 
   return (
