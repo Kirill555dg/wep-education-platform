@@ -8,6 +8,9 @@ import TeacherPage from "@/pages/teacher/TeacherPage";
 import NotificationsPage from "@/pages/notifications/NotificationsPage";
 import TeacherManagePage from "@/pages/teacher/manage/TeacherManagePage";
 import TeacherClassroomPage from "@/pages/teacher/classroom/TeacherClassroomPage";
+import TeacherLessonPage from "@/pages/teacher/lesson/TeacherLessonPage";
+import StudentClassroomPage from "@/pages/student/classroom/StudentClassroomPage";
+import StudentLessonPage from "@/pages/student/lesson/StudentLessonPage";
 import StudentHomeworkPage from "@/pages/student/homework/StudentHomeworkPage";
 import { Toaster } from "@/shared/ui/toaster";
 import AuthBootstrapper from "./providers/AuthBootstrapper";
@@ -34,12 +37,15 @@ function App() {
 
           <Route element={<RoleProtectedRoute requiredRole="student" />}>
             <Route path="/student" element={<StudentPage />} />
+            <Route path="/student/classroom/:classroomId" element={<StudentClassroomPage />} />
+            <Route path="/student/lesson/:lessonId" element={<StudentLessonPage />} />
             <Route path="/student/homework/:homeworkId" element={<StudentHomeworkPage />} />
           </Route>
 
           <Route element={<RoleProtectedRoute requiredRole="teacher" />}>
             <Route path="/teacher" element={<TeacherPage />} />
             <Route path="/teacher/classroom/:classroomId" element={<TeacherClassroomPage />} />
+            <Route path="/teacher/lesson/:lessonId" element={<TeacherLessonPage />} />
             <Route path="/teacher/manage" element={<TeacherManagePage />} />
           </Route>
 

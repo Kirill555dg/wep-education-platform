@@ -29,7 +29,7 @@ export const ClassCard = ({ id, name, teacherName, activeAssignments, image }: C
         </div>
       </CardContent>
       <CardFooter>
-        <Link to={`/student/class/${id}`} className="w-full">
+        <Link to={`/student/classroom/${id}`} className="w-full">
           <Button variant="outline" className="w-full">
             Перейти к классу
           </Button>

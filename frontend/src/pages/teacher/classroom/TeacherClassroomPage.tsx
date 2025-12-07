@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/widgets/layout/MainLayout";
 import { classroomsApi, lessonsApi, type Classroom, type Lesson } from "@/shared/api";
+import { CreateLessonDialog } from "@/features/create-lesson/ui/CreateLessonDialog";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -19,30 +20,36 @@ export default function TeacherClassroomPage() {
   const [classroom, setClassroom] = useState<Classroom | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createLessonOpen, setCreateLessonOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!classroomId) return;
 
-    const fetchData = async () => {
-      try {
-        const classroomData = await classroomsApi.getById(parseInt(classroomId));
-        setClassroom(classroomData);
+    try {
+      const classroomData = await classroomsApi.getById(parseInt(classroomId));
+      setClassroom(classroomData);
 
-        const lessonsData = await lessonsApi.getByClassroom(parseInt(classroomId));
-        setLessons(lessonsData);
-      } catch (error) {
-        toast({
-          title: "❌ Ошибка",
-          description: "Не удалось загрузить данные класса",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+      const lessonsData = await lessonsApi.getByClassroom(parseInt(classroomId));
+      setLessons(lessonsData);
+    } catch (error) {
+      toast({
+        title: "❌ Ошибка",
+        description: "Не удалось загрузить данные класса",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, [classroomId, toast]);
+
+  const handleLessonCreated = (lessonId: number) => {
+    fetchData();
+    navigate(`/teacher/lesson/${lessonId}`);
+  };
 
   if (loading) {
     return (
@@ -135,7 +142,7 @@ export default function TeacherClassroomPage() {
           <TabsContent value="lessons" className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Уроки</h2>
-              <Button onClick={() => navigate("/teacher/manage")}>
+              <Button onClick={() => setCreateLessonOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Создать урок
               </Button>
@@ -149,7 +156,7 @@ export default function TeacherClassroomPage() {
                   <p className="text-sm text-muted-foreground mb-4 text-center">
                     Создайте первый урок для этого класса
                   </p>
-                  <Button onClick={() => navigate("/teacher/manage")}>
+                  <Button onClick={() => setCreateLessonOpen(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Создать урок
                   </Button>
@@ -158,7 +165,11 @@ export default function TeacherClassroomPage() {
             ) : (
               <div className="grid gap-4">
                 {lessons.map((lesson) => (
-                  <Card key={lesson.id} className="hover:shadow-md transition-shadow">
+                  <Card 
+                    key={lesson.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => navigate(`/teacher/lesson/${lesson.id}`)}
+                  >
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <span>{lesson.title}</span>
@@ -169,13 +180,8 @@ export default function TeacherClassroomPage() {
                       )}
                     </CardHeader>
                     <CardContent>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          Управление
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          Статистика
-                        </Button>
+                      <div className="flex gap-2 text-sm text-muted-foreground">
+                        <span>Домашних заданий: 0</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -220,6 +226,16 @@ export default function TeacherClassroomPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Create Lesson Dialog */}
+        {classroom && (
+          <CreateLessonDialog
+            classroomId={classroom.id}
+            open={createLessonOpen}
+            onOpenChange={setCreateLessonOpen}
+            onSuccess={handleLessonCreated}
+          />
+        )}
       </div>
     </MainLayout>
   );
