@@ -1,0 +1,46 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files (will be passed via docker-compose)
+.env
+.env.local
+
+# Database data
+database/postgres_data/
+*.db
+*.sqlite
+
+# Node modules (handled in frontend Dockerfile)
+frontend/node_modules/
+
+# Python cache (handled in backend Dockerfile)
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.egg-info/
+
+# Build outputs
+frontend/dist/
+frontend/build/
+backend/dist/
+backend/build/
+

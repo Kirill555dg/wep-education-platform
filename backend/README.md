@@ -230,7 +230,36 @@ class UserResponse(UserBase):
 
 ## 🚀 Быстрый старт
 
-### 1. Установка зависимостей
+### 🐳 Docker (Рекомендуется)
+
+**Запуск всей системы (backend + frontend + database):**
+
+```bash
+# Из корня репозитория
+docker-compose up -d
+```
+
+**Приложение будет доступно:**
+- 🚀 API: http://localhost:8000
+- 📖 Swagger UI: http://localhost:8000/api/docs
+- 📘 ReDoc: http://localhost:8000/api/redoc
+- 🌐 Frontend: http://localhost
+
+**Полезные команды:**
+```bash
+# Просмотр логов backend
+docker-compose logs -f backend
+
+# Перезапуск backend после изменений
+docker-compose up -d --build backend
+
+# Остановка
+docker-compose down
+```
+
+### 💻 Локальная разработка
+
+#### 1. Установка зависимостей
 
 ```bash
 # Используя pip
@@ -240,7 +269,7 @@ pip install -e .
 pip install -e ".[dev]"
 ```
 
-### 2. Настройка окружения
+#### 2. Настройка окружения
 
 Скопируйте `.env.example` в `.env` и настройте переменные:
 
@@ -248,14 +277,32 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-### 3. Запуск сервера
+**Важно**: Для локальной разработки убедитесь, что PostgreSQL запущен:
+
+```bash
+# Из корня репозитория
+cd database
+make up
+```
+
+#### 3. Запуск миграций
+
+```bash
+# Создать все таблицы
+alembic upgrade head
+
+# Создать новую миграцию (при изменении моделей)
+alembic revision --autogenerate -m "описание изменений"
+```
+
+#### 4. Запуск сервера
 
 ```bash
 # Из директории backend/
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Приложение будет доступно:
+**Приложение будет доступно:**
 - API: http://localhost:8000
 - Документация (Swagger): http://localhost:8000/api/docs
 - Документация (ReDoc): http://localhost:8000/api/redoc
