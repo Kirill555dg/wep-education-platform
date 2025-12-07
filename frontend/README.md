@@ -166,6 +166,230 @@ import { useAuth } from "@/features/auth/model/store";
 
 Переключение на реальное API выполняется в `src/main.tsx`.
 
+## 🌐 API-слой (Работа с Backend)
+
+Фронтенд имеет полноценный типизированный API-клиент для работы с FastAPI бекендом.
+
+### Структура API-слоя
+
+```
+src/shared/api/
+├── types/                  # TypeScript типы (синхронизированы с Pydantic)
+│   ├── user.types.ts       # User, Teacher, Student, Auth
+│   ├── classroom.types.ts  # Classroom, Invite
+│   ├── lesson.types.ts     # Lesson, TheoryMaterial
+│   ├── homework.types.ts   # Homework, Problem
+│   ├── statistics.types.ts # Statistics, Progress
+│   └── index.ts            # Централизованный экспорт типов
+│
+├── auth.api.ts             # Авторизация и регистрация
+├── classrooms.api.ts       # Управление классами
+├── lessons.api.ts          # Уроки и материалы
+├── homework.api.ts         # Домашние задания и тестирование
+├── statistics.api.ts       # Статистика и прогресс
+├── axios.ts                # Настройка Axios (JWT interceptors)
+└── index.ts                # Централизованный экспорт API
+```
+
+### Использование API
+
+#### 1. Авторизация
+
+```typescript
+import { authApi } from "@/shared/api";
+
+// Регистрация
+const user = await authApi.register({
+  username: "john_doe",
+  email: "john@example.com",
+  password: "securepass123",
+  full_name: "John Doe",
+  is_teacher: false,
+});
+
+// Вход (JWT токен автоматически сохраняется)
+const { access_token, user } = await authApi.login({
+  username_or_email: "john_doe",
+  password: "securepass123",
+});
+
+// Получить текущего пользователя
+const currentUser = await authApi.getCurrentUser();
+
+// Получить роль
+const { role } = await authApi.getCurrentUserRole(); // "teacher" | "student"
+
+// Выход
+authApi.logout();
+```
+
+#### 2. Классы
+
+```typescript
+import { classroomsApi } from "@/shared/api";
+
+// Создать класс (учитель)
+const classroom = await classroomsApi.create({
+  name: "Математика 10А",
+  subject: "Математика",
+  grade_level: 10,
+  description: "Алгебра и геометрия",
+});
+
+// Получить все классы пользователя
+const classrooms = await classroomsApi.getAll();
+
+// Присоединиться к классу (студент)
+const joined = await classroomsApi.join({
+  invite_code: "ABC123XYZ",
+});
+
+// Получить студентов класса (учитель)
+const students = await classroomsApi.getStudents(classroomId);
+```
+
+#### 3. Уроки
+
+```typescript
+import { lessonsApi } from "@/shared/api";
+
+// Создать урок (учитель)
+const lesson = await lessonsApi.create({
+  classroom_id: 1,
+  title: "Тригонометрия",
+  description: "Основы тригонометрических функций",
+  theory_material_ids: [5, 6, 7],
+});
+
+// Получить уроки класса
+const lessons = await lessonsApi.getByClassroom(classroomId);
+
+// Обновить урок
+await lessonsApi.update(lessonId, { is_published: true });
+```
+
+#### 4. Домашние задания
+
+```typescript
+import { homeworkApi } from "@/shared/api";
+
+// Создать ДЗ (учитель)
+const homework = await homeworkApi.create({
+  lesson_id: 1,
+  title: "Задачи на синус и косинус",
+  max_score: 100,
+  deadline: "2024-12-20T23:59:00",
+  problem_ids: [10, 11, 12],
+  problem_points: [30, 30, 40],
+});
+
+// Получить задачи ДЗ
+const problems = await homeworkApi.getProblems(homeworkId);
+
+// Отправить ответ (студент)
+const stats = await homeworkApi.submitAnswer({
+  homework_id: 1,
+  problem_id: 10,
+  answer: "0.5",
+  time_spent_minutes: 15,
+});
+
+// Финальная отправка ДЗ
+await homeworkApi.submitHomework(homeworkId);
+
+// Проверить статус
+const status = await homeworkApi.getStatus(homeworkId);
+```
+
+#### 5. Статистика
+
+```typescript
+import { statisticsApi } from "@/shared/api";
+
+// Получить свою статистику (студент)
+const myStats = await statisticsApi.getMy();
+
+// Получить свой прогресс
+const progress = await statisticsApi.getMyProgress();
+// {
+//   total_homeworks: 15,
+//   completed: 10,
+//   in_progress: 3,
+//   not_started: 2,
+//   average_score_percentage: 87.5
+// }
+
+// Получить статистику по ДЗ (учитель)
+const homeworkStats = await statisticsApi.getHomeworkStats(homeworkId);
+
+// Прогресс класса (учитель)
+const classProgress = await statisticsApi.getClassroomProgress(classroomId);
+```
+
+### TypeScript типы
+
+Все типы автоматически синхронизированы с Pydantic схемами бекенда:
+
+```typescript
+import type {
+  User,
+  Classroom,
+  Lesson,
+  Homework,
+  Problem,
+  Statistics,
+} from "@/shared/api";
+
+const user: User = {
+  id: 1,
+  username: "john_doe",
+  email: "john@example.com",
+  full_name: "John Doe",
+  // ... и т.д. (полностью типизировано)
+};
+```
+
+### Конфигурация
+
+Backend URL настраивается через переменную окружения:
+
+```bash
+# .env
+VITE_API_URL=http://localhost:8000
+```
+
+По умолчанию: `http://localhost:8000`
+
+### JWT Authentication
+
+- JWT токен автоматически добавляется ко всем запросам через Axios interceptor
+- При 401 ошибке пользователь автоматически перенаправляется на `/login`
+- Токен хранится в `localStorage`
+
+### Интеграция с React Query
+
+Рекомендуется использовать API-клиенты вместе с TanStack Query:
+
+```typescript
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { classroomsApi } from "@/shared/api";
+
+// Получение данных
+const { data: classrooms, isLoading } = useQuery({
+  queryKey: ["classrooms"],
+  queryFn: () => classroomsApi.getAll(),
+});
+
+// Мутации
+const joinMutation = useMutation({
+  mutationFn: (code: string) => classroomsApi.join({ invite_code: code }),
+  onSuccess: () => {
+    // Обновить список классов
+    queryClient.invalidateQueries({ queryKey: ["classrooms"] });
+  },
+});
+```
+
 ---
 
 **Приятной разработки! 🚀**
