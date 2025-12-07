@@ -2,41 +2,23 @@
  * Student Homework Page
  * Allows students to view and complete homework
  */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { homeworkApi } from "@/shared/api";
+import { useViewHomework } from "@/features/view-homework/model/useViewHomework";
 import { useSubmitHomework } from "@/features/submit-homework/model/useSubmitHomework";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Card } from "@/shared/ui/card";
-import type { Homework, Problem } from "@/shared/api";
 
 export default function StudentHomeworkPage() {
   const { homeworkId } = useParams<{ homeworkId: string }>();
+  const parsedHomeworkId = homeworkId ? parseInt(homeworkId) : null;
+  
+  const { homework, problems, loading: loadingHomework, error: homeworkError } = useViewHomework(parsedHomeworkId);
   const { submitAnswer, submitHomework, loading } = useSubmitHomework();
 
-  const [homework, setHomework] = useState<Homework | null>(null);
-  const [problems, setProblems] = useState<Problem[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [message, setMessage] = useState<string>("");
-
-  useEffect(() => {
-    if (!homeworkId) return;
-
-    const fetchHomework = async () => {
-      try {
-        const hw = await homeworkApi.getById(parseInt(homeworkId));
-        setHomework(hw);
-
-        const probs = await homeworkApi.getProblems(parseInt(homeworkId));
-        setProblems(probs as Problem[]);
-      } catch (error) {
-        setMessage("❌ Ошибка загрузки задания");
-      }
-    };
-
-    fetchHomework();
-  }, [homeworkId]);
 
   const handleAnswerChange = (problemId: number, answer: string) => {
     setAnswers({
@@ -46,14 +28,14 @@ export default function StudentHomeworkPage() {
   };
 
   const handleSubmitAnswer = async (problemId: number) => {
-    if (!homeworkId || !answers[problemId]) {
+    if (!parsedHomeworkId || !answers[problemId]) {
       setMessage("❌ Введите ответ");
       return;
     }
 
     try {
       const stats = await submitAnswer({
-        homework_id: parseInt(homeworkId),
+        homework_id: parsedHomeworkId,
         problem_id: problemId,
         answer: answers[problemId],
         time_spent_minutes: 5,
@@ -66,18 +48,22 @@ export default function StudentHomeworkPage() {
   };
 
   const handleFinalSubmit = async () => {
-    if (!homeworkId) return;
+    if (!parsedHomeworkId) return;
 
     try {
-      const stats = await submitHomework(parseInt(homeworkId));
+      const stats = await submitHomework(parsedHomeworkId);
       setMessage(`✅ Задание отправлено! Итоговый балл: ${stats.score}/${stats.max_score}`);
     } catch (error) {
       setMessage("❌ Ошибка финальной отправки");
     }
   };
 
-  if (!homework) {
+  if (loadingHomework) {
     return <div className="container mx-auto p-6">Загрузка...</div>;
+  }
+
+  if (homeworkError || !homework) {
+    return <div className="container mx-auto p-6">{homeworkError || "Задание не найдено"}</div>;
   }
 
   return (

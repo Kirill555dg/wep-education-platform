@@ -1,6 +1,6 @@
 import { useUserStore } from "@/entities/user/model/store";
 import { useState } from "react";
-import { profileApi } from "@/features/profile/api/profile-api";
+import { useUpdateProfile } from "@/features/profile/model/useUpdateProfile";
 import type { UserRole } from "@/entities/user/model/types";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/widgets/layout/MainLayout";
@@ -14,9 +14,8 @@ import { GenderEditableField } from "./ui/GenderEditableField";
 
 export default function ProfilePage() {
   const user = useUserStore((s) => s.user);
-  const setUser = useUserStore((s) => s.setUser);
+  const { updateProfile, loading: saving } = useUpdateProfile();
   const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(() => ({
     ...user!,
     phone: user?.phone || "",
@@ -39,19 +38,18 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      const result = await profileApi.updateProfile({
+      await updateProfile({
         ...formData,
         contacts: {
           telegram: formData.telegram,
           vk: formData.vk,
         },
       });
-      setUser(result);
       setIsEditing(false);
-    } finally {
-      setSaving(false);
+    } catch (error) {
+      // Error is already logged by the hook
+      console.error("Failed to save profile");
     }
   };
 

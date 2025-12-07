@@ -2,22 +2,23 @@
 Classroom management endpoints
 """
 import typing as tp
-from fastapi import APIRouter, Depends, status, Query
+
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import (
     get_classroom_service,
-    get_current_user,
-    get_current_teacher,
     get_current_student,
-)
-from app.services.classroom_service import ClassroomService
-from app.schemas.classrooms import (
-    ClassroomCreate,
-    ClassroomUpdate,
-    ClassroomResponse,
-    JoinClassroomRequest,
+    get_current_teacher,
+    get_current_user,
 )
 from app.models.users import User
+from app.schemas.classrooms import (
+    ClassroomCreate,
+    ClassroomResponse,
+    ClassroomUpdate,
+    JoinClassroomRequest,
+)
+from app.services.classroom_service import ClassroomService
 
 router = APIRouter()
 
@@ -56,7 +57,7 @@ async def get_my_classrooms(
     teacher_classrooms = classroom_service.get_teacher_classrooms(current_user.id, skip, limit)
     if teacher_classrooms:
         return teacher_classrooms
-    
+
     # Otherwise get as student
     return classroom_service.get_student_classrooms(current_user.id, skip, limit)
 

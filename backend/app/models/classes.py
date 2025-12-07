@@ -1,11 +1,11 @@
 """
 Classroom models: Classroom, StudentClassroom, Invite
 """
-import typing as tp
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Enum
-from sqlalchemy.orm import relationship
 import enum
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 from app.db.session import Base
 
@@ -21,7 +21,7 @@ class InviteStatus(str, enum.Enum):
 class Classroom(Base):
     """Classroom/Class model"""
     __tablename__ = "classrooms"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -33,14 +33,14 @@ class Classroom(Base):
     invite_code = Column(String(50), unique=True, nullable=True)  # код для присоединения
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+
     # Relationships
     teacher = relationship("Teacher", back_populates="classrooms")
     student_memberships = relationship("StudentClassroom", back_populates="classroom", cascade="all, delete-orphan")
     lessons = relationship("Lesson", back_populates="classroom", cascade="all, delete-orphan")
     invites = relationship("Invite", back_populates="classroom", cascade="all, delete-orphan")
     chat = relationship("Chat", back_populates="classroom", uselist=False, cascade="all, delete-orphan")
-    
+
     def __repr__(self) -> str:
         return f"<Classroom(id={self.id}, name='{self.name}', subject='{self.subject}')>"
 
@@ -48,17 +48,17 @@ class Classroom(Base):
 class StudentClassroom(Base):
     """Many-to-many relationship between Students and Classrooms"""
     __tablename__ = "student_classrooms"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
     classroom_id = Column(Integer, ForeignKey("classrooms.id", ondelete="CASCADE"), nullable=False)
     enrolled_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    
+
     # Relationships
     student = relationship("Student", back_populates="classroom_memberships")
     classroom = relationship("Classroom", back_populates="student_memberships")
-    
+
     def __repr__(self) -> str:
         return f"<StudentClassroom(student_id={self.student_id}, classroom_id={self.classroom_id})>"
 
@@ -66,7 +66,7 @@ class StudentClassroom(Base):
 class Invite(Base):
     """Invitation to join classroom"""
     __tablename__ = "invites"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     classroom_id = Column(Integer, ForeignKey("classrooms.id", ondelete="CASCADE"), nullable=False)
     invite_code = Column(String(100), unique=True, nullable=False, index=True)
@@ -75,10 +75,10 @@ class Invite(Base):
     status = Column(Enum(InviteStatus), default=InviteStatus.PENDING, nullable=False)
     expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    
+
     # Relationships
     classroom = relationship("Classroom", back_populates="invites")
-    
+
     def __repr__(self) -> str:
         return f"<Invite(id={self.id}, code='{self.invite_code}', status='{self.status}')>"
 

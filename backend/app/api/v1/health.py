@@ -2,8 +2,9 @@
 Health check endpoints
 """
 import typing as tp
-from fastapi import APIRouter
 from datetime import datetime
+
+from fastapi import APIRouter
 
 from app.core.config import settings
 

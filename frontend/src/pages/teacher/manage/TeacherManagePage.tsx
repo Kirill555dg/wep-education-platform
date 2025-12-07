@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useCreateClassroom } from "@/features/create-classroom/model/useCreateClassroom";
 import { useCreateLesson } from "@/features/create-lesson/model/useCreateLesson";
 import { useCreateHomework } from "@/features/create-homework/model/useCreateHomework";
-import { problemsApi } from "@/shared/api";
+import { useManageProblems } from "@/features/manage-problems/model/useManageProblems";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -15,7 +15,8 @@ import { Card } from "@/shared/ui/card";
 export default function TeacherManagePage() {
   const { createClassroom, loading: classroomLoading } = useCreateClassroom();
   const { createLesson, loading: lessonLoading } = useCreateLesson();
-  const { createHomework, createProblem, loading: homeworkLoading } = useCreateHomework();
+  const { createHomework, createProblem: createHomeworkProblem, loading: homeworkLoading } = useCreateHomework();
+  const { createProblem, loading: problemLoading } = useManageProblems();
 
   const [classroomId, setClassroomId] = useState<number | null>(null);
   const [lessonId, setLessonId] = useState<number | null>(null);

@@ -2,10 +2,11 @@
 Authentication endpoints
 """
 from fastapi import APIRouter, Depends, status
+
 from app.api.dependencies import get_auth_service, get_current_user
-from app.services.auth_service import AuthService
-from app.schemas.users import UserCreate, UserResponse, LoginRequest, TokenResponse
 from app.models.users import User
+from app.schemas.users import LoginRequest, TokenResponse, UserCreate, UserResponse
+from app.services.auth_service import AuthService
 
 router = APIRouter()
 

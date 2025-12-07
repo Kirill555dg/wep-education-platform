@@ -1,10 +1,9 @@
 """
 File storage model
 """
-import typing as tp
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, BigInteger, Boolean
-from sqlalchemy.orm import relationship
+
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Integer, String
 
 from app.db.session import Base
 
@@ -12,7 +11,7 @@ from app.db.session import Base
 class File(Base):
     """File storage model for uploaded files"""
     __tablename__ = "files"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String(255), nullable=False)
     original_filename = Column(String(255), nullable=False)
@@ -23,7 +22,7 @@ class File(Base):
     is_public = Column(Boolean, default=False, nullable=False)
     uploaded_by = Column(Integer, nullable=True)  # user_id who uploaded
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    
+
     def __repr__(self) -> str:
         return f"<File(id={self.id}, filename='{self.filename}', size={self.file_size})>"
 

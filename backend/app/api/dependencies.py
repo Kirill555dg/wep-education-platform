@@ -2,20 +2,22 @@
 FastAPI dependencies for dependency injection
 """
 import typing as tp
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
 from app.core.security import decode_access_token
+from app.db.session import get_db
 from app.models.users import User
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.classroom_service import ClassroomService
-from app.services.lesson_service import LessonService
 from app.services.homework_service import HomeworkService
-from app.services.testing_service import TestingService
+from app.services.lesson_service import LessonService
+from app.services.problem_service import ProblemService
 from app.services.result_service import ResultService
+from app.services.testing_service import TestingService
 
 # Security
 security = HTTPBearer()
@@ -32,14 +34,14 @@ def get_current_user_id(
     """
     token = credentials.credentials
     payload = decode_access_token(token)
-    
+
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user_id: tp.Optional[str] = payload.get("sub")
     if not user_id:
         raise HTTPException(
@@ -47,7 +49,7 @@ def get_current_user_id(
             detail="Invalid token payload",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
         return int(user_id)
     except ValueError:
@@ -70,19 +72,19 @@ def get_current_user(
     """
     user_repo = UserRepository(db)
     user = user_repo.get_by_id(user_id)
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive"
         )
-    
+
     return user
 
 
@@ -99,13 +101,13 @@ def get_current_teacher(
     from app.repositories.user_repository import TeacherRepository
     teacher_repo = TeacherRepository(db)
     teacher = teacher_repo.get_by_user_id(current_user.id)
-    
+
     if not teacher:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only teachers can access this resource"
         )
-    
+
     return current_user
 
 
@@ -122,13 +124,13 @@ def get_current_student(
     from app.repositories.user_repository import StudentRepository
     student_repo = StudentRepository(db)
     student = student_repo.get_by_user_id(current_user.id)
-    
+
     if not student:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only students can access this resource"
         )
-    
+
     return current_user
 
 
@@ -161,4 +163,10 @@ def get_testing_service(db: Session = Depends(get_db)) -> TestingService:
 def get_result_service(db: Session = Depends(get_db)) -> ResultService:
     """Get ResultService instance"""
     return ResultService(db)
+
+
+def get_problem_service(db: Session = Depends(get_db)) -> ProblemService:
+    """Get ProblemService instance"""
+    from app.repositories.homework_repository import ProblemRepository
+    return ProblemService(ProblemRepository(db))
 

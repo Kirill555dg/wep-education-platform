@@ -3,7 +3,8 @@ Classroom Pydantic schemas (DTOs)
 """
 import typing as tp
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ClassroomBase(BaseModel):
@@ -39,7 +40,7 @@ class ClassroomResponse(ClassroomBase):
     created_at: datetime
     updated_at: datetime
     students_count: int = 0  # Calculated field
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -67,7 +68,7 @@ class InviteResponse(BaseModel):
     status: str
     expires_at: tp.Optional[datetime]
     created_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -1,18 +1,18 @@
 """
 Testing/Answer submission endpoints
 """
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 
 from app.api.dependencies import (
-    get_testing_service,
     get_current_student,
+    get_testing_service,
 )
-from app.services.testing_service import TestingService
+from app.models.users import User
 from app.schemas.homework import (
     AnswerSubmit,
     StatisticsResponse,
 )
-from app.models.users import User
+from app.services.testing_service import TestingService
 
 router = APIRouter()
 
@@ -61,26 +61,5 @@ async def get_homework_status(
     
     Returns statistics including score, attempts, time spent
     """
-    from app.repositories.user_repository import StudentRepository
-    from app.repositories.homework_repository import StatisticsRepository
-    from app.db.session import get_db
-    from fastapi import Depends as FastAPIDepends
-    
-    # This is a simplified version - ideally we'd have a method in TestingService
-    # For now, using direct repository access
-    db = next(get_db())
-    student_repo = StudentRepository(db)
-    stats_repo = StatisticsRepository(db)
-    
-    student = student_repo.get_by_user_id(current_user.id)
-    if not student:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Student not found")
-    
-    stats = stats_repo.get_student_homework_stats(student.id, homework_id)
-    if not stats:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="No attempts found")
-    
-    return StatisticsResponse.model_validate(stats)
+    return testing_service.get_homework_status(homework_id, current_user.id)
 

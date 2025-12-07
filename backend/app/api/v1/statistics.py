@@ -2,17 +2,17 @@
 Statistics and results endpoints
 """
 import typing as tp
+
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import (
-    get_result_service,
-    get_current_user,
-    get_current_teacher,
     get_current_student,
+    get_current_teacher,
+    get_result_service,
 )
-from app.services.result_service import ResultService
-from app.schemas.homework import StatisticsResponse
 from app.models.users import User
+from app.schemas.homework import StatisticsResponse
+from app.services.result_service import ResultService
 
 router = APIRouter()
 

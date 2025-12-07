@@ -1,63 +1,60 @@
 """
 Pydantic schemas (DTOs - Data Transfer Objects)
 """
-from app.schemas.users import (
-    UserBase,
-    UserCreate,
-    UserUpdate,
-    UserResponse,
-    UserInDB,
-    TeacherBase,
-    TeacherCreate,
-    TeacherUpdate,
-    TeacherResponse,
-    StudentBase,
-    StudentCreate,
-    StudentUpdate,
-    StudentResponse,
-    LoginRequest,
-    TokenResponse,
-)
-
 from app.schemas.classrooms import (
     ClassroomBase,
     ClassroomCreate,
-    ClassroomUpdate,
-    ClassroomResponse,
     ClassroomDetailResponse,
+    ClassroomResponse,
+    ClassroomUpdate,
     InviteCreate,
     InviteResponse,
     JoinClassroomRequest,
 )
-
+from app.schemas.homework import (
+    AnswerSubmit,
+    HomeworkBase,
+    HomeworkCreate,
+    HomeworkDetailResponse,
+    HomeworkResponse,
+    HomeworkUpdate,
+    ProblemBase,
+    ProblemCreate,
+    ProblemFullResponse,
+    ProblemResponse,
+    ProblemUpdate,
+    StatisticsBase,
+    StatisticsCreate,
+    StatisticsResponse,
+    StatisticsUpdate,
+)
 from app.schemas.lessons import (
     LessonBase,
     LessonCreate,
-    LessonUpdate,
-    LessonResponse,
     LessonDetailResponse,
+    LessonResponse,
+    LessonUpdate,
     TheoryMaterialBase,
     TheoryMaterialCreate,
-    TheoryMaterialUpdate,
     TheoryMaterialResponse,
+    TheoryMaterialUpdate,
 )
-
-from app.schemas.homework import (
-    HomeworkBase,
-    HomeworkCreate,
-    HomeworkUpdate,
-    HomeworkResponse,
-    HomeworkDetailResponse,
-    ProblemBase,
-    ProblemCreate,
-    ProblemUpdate,
-    ProblemResponse,
-    ProblemFullResponse,
-    StatisticsBase,
-    StatisticsCreate,
-    StatisticsUpdate,
-    StatisticsResponse,
-    AnswerSubmit,
+from app.schemas.users import (
+    LoginRequest,
+    StudentBase,
+    StudentCreate,
+    StudentResponse,
+    StudentUpdate,
+    TeacherBase,
+    TeacherCreate,
+    TeacherResponse,
+    TeacherUpdate,
+    TokenResponse,
+    UserBase,
+    UserCreate,
+    UserInDB,
+    UserResponse,
+    UserUpdate,
 )
 
 __all__ = [
@@ -77,7 +74,7 @@ __all__ = [
     "StudentResponse",
     "LoginRequest",
     "TokenResponse",
-    
+
     # Classrooms
     "ClassroomBase",
     "ClassroomCreate",
@@ -87,7 +84,7 @@ __all__ = [
     "InviteCreate",
     "InviteResponse",
     "JoinClassroomRequest",
-    
+
     # Lessons
     "LessonBase",
     "LessonCreate",
@@ -98,7 +95,7 @@ __all__ = [
     "TheoryMaterialCreate",
     "TheoryMaterialUpdate",
     "TheoryMaterialResponse",
-    
+
     # Homework
     "HomeworkBase",
     "HomeworkCreate",

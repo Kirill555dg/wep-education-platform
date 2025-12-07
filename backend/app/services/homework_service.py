@@ -2,20 +2,25 @@
 Homework service
 """
 import typing as tp
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 
-from app.repositories.homework_repository import HomeworkRepository, HomeworkProblemRepository, ProblemRepository
-from app.repositories.lesson_repository import LessonRepository
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.repositories.classroom_repository import ClassroomRepository
-from app.repositories.user_repository import TeacherRepository, StudentRepository
+from app.repositories.homework_repository import (
+    HomeworkProblemRepository,
+    HomeworkRepository,
+    ProblemRepository,
+)
+from app.repositories.lesson_repository import LessonRepository
+from app.repositories.user_repository import StudentRepository, TeacherRepository
 from app.schemas.homework import (
     HomeworkCreate,
-    HomeworkUpdate,
-    HomeworkResponse,
     HomeworkDetailResponse,
+    HomeworkResponse,
+    HomeworkUpdate,
+    ProblemFullResponse,
     ProblemResponse,
-    ProblemFullResponse
 )
 
 
@@ -25,7 +30,7 @@ class HomeworkService:
     
     Handles homework creation, problem assignment, viewing
     """
-    
+
     def __init__(self, db: Session):
         self.db = db
         self.homework_repo = HomeworkRepository(db)
@@ -35,7 +40,7 @@ class HomeworkService:
         self.classroom_repo = ClassroomRepository(db)
         self.teacher_repo = TeacherRepository(db)
         self.student_repo = StudentRepository(db)
-    
+
     def create_homework(self, homework_data: HomeworkCreate, teacher_user_id: int) -> HomeworkResponse:
         """
         Create new homework
@@ -57,21 +62,21 @@ class HomeworkService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Lesson not found"
             )
-        
+
         # Verify teacher owns classroom
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(teacher_user_id)
-        
+
         if not teacher or not classroom or classroom.teacher_id != teacher.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only classroom owner can create homework"
             )
-        
+
         # Create homework
         homework_dict = homework_data.model_dump(exclude={"problem_ids", "problem_points"})
         homework = self.homework_repo.create(homework_dict)
-        
+
         # Add problems
         points_list = homework_data.problem_points or []
         for idx, problem_id in enumerate(homework_data.problem_ids):
@@ -79,11 +84,11 @@ class HomeworkService:
             self.hw_problem_repo.add_problem_to_homework(
                 homework.id, problem_id, points=points, order_number=idx
             )
-        
+
         response = HomeworkResponse.model_validate(homework)
         response.problems_count = len(homework_data.problem_ids)
         return response
-    
+
     def get_homework(self, homework_id: int, user_id: int) -> HomeworkDetailResponse:
         """
         Get homework by ID
@@ -101,15 +106,15 @@ class HomeworkService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Homework not found"
             )
-        
+
         # Check if published for students
         lesson = self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
-        
+
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(user_id)
-        
+
         # If not teacher of this classroom and homework not published, deny access
         is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
         if not is_teacher and not homework.is_published:
@@ -117,11 +122,11 @@ class HomeworkService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Homework not published yet"
             )
-        
+
         response = HomeworkDetailResponse.model_validate(homework)
         response.problems_count = len(self.hw_problem_repo.get_by_homework(homework_id))
         return response
-    
+
     def get_homework_problems(self, homework_id: int, user_id: int) -> tp.List[tp.Union[ProblemResponse, ProblemFullResponse]]:
         """
         Get problems for homework
@@ -134,29 +139,29 @@ class HomeworkService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Homework not found"
             )
-        
+
         lesson = self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
-        
+
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(user_id)
         is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
-        
+
         # Get homework problems
         hw_problems = self.hw_problem_repo.get_by_homework(homework_id)
         problem_ids = [hp.problem_id for hp in hw_problems]
-        
+
         problems = [self.problem_repo.get_by_id(pid) for pid in problem_ids]
         problems = [p for p in problems if p]  # Filter None
-        
+
         if is_teacher:
             # Teachers see full info
             return [ProblemFullResponse.model_validate(p) for p in problems]
         else:
             # Students don't see correct answers
             return [ProblemResponse.model_validate(p) for p in problems]
-    
+
     def update_homework(self, homework_id: int, homework_data: HomeworkUpdate, teacher_user_id: int) -> HomeworkResponse:
         """Update homework (teacher only)"""
         homework = self.homework_repo.get_by_id(homework_id)
@@ -165,27 +170,66 @@ class HomeworkService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Homework not found"
             )
-        
+
         # Verify teacher owns classroom
         lesson = self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
-        
+
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(teacher_user_id)
-        
+
         if not teacher or not classroom or classroom.teacher_id != teacher.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only classroom owner can update homework"
             )
-        
+
         updated = self.homework_repo.update(homework_id, homework_data.model_dump(exclude_unset=True))
         if not updated:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update homework"
             )
-        
+
         return HomeworkResponse.model_validate(updated)
+
+    def get_lesson_homework(
+        self,
+        lesson_id: int,
+        user_id: int,
+        skip: int = 0,
+        limit: int = 100
+    ) -> tp.List[HomeworkResponse]:
+        """
+        Get all homework for a lesson
+        
+        Teachers see all homework (including unpublished), students see only published.
+        
+        Args:
+            lesson_id: Lesson ID
+            user_id: User ID (for permission check)
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            
+        Returns:
+            List of homework for the lesson
+        """
+        # Check if user is teacher of this lesson's classroom
+        lesson = self.lesson_repo.get_by_id(lesson_id)
+        if not lesson:
+            return []
+
+        teacher = self.teacher_repo.get_by_user_id(user_id)
+        classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
+        is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
+
+        if is_teacher:
+            # Teacher sees all homework
+            homeworks = self.homework_repo.get_by_lesson(lesson_id, skip, limit)
+        else:
+            # Students see only published
+            homeworks = self.homework_repo.get_published(lesson_id, skip, limit)
+
+        return [HomeworkResponse.model_validate(hw) for hw in homeworks]
 

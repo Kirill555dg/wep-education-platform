@@ -3,7 +3,8 @@ User Pydantic schemas (DTOs)
 """
 import typing as tp
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # Base schemas
@@ -36,7 +37,7 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -69,7 +70,7 @@ class TeacherResponse(TeacherBase):
     user_id: int
     rating: int
     user: UserResponse  # Nested user data
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -96,7 +97,7 @@ class StudentResponse(StudentBase):
     user_id: int
     enrollment_date: datetime
     user: UserResponse  # Nested user data
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 

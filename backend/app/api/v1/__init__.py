@@ -4,14 +4,14 @@ API v1 endpoints
 from fastapi import APIRouter
 
 from app.api.v1 import (
-    health,
     auth,
     classrooms,
-    lessons,
+    health,
     homework,
+    lessons,
     problems,
-    testing,
     statistics,
+    testing,
 )
 
 api_router = APIRouter()

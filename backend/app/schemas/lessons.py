@@ -3,7 +3,8 @@ Lesson Pydantic schemas (DTOs)
 """
 import typing as tp
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LessonBase(BaseModel):
@@ -36,7 +37,7 @@ class LessonResponse(LessonBase):
     is_published: bool
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -76,6 +77,6 @@ class TheoryMaterialResponse(TheoryMaterialBase):
     is_published: bool
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 

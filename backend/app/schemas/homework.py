@@ -3,7 +3,8 @@ Homework Pydantic schemas (DTOs)
 """
 import typing as tp
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HomeworkBase(BaseModel):
@@ -38,7 +39,7 @@ class HomeworkResponse(HomeworkBase):
     created_at: datetime
     updated_at: datetime
     problems_count: int = 0
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -82,7 +83,7 @@ class ProblemResponse(ProblemBase):
     is_published: bool
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -127,7 +128,7 @@ class StatisticsResponse(StatisticsBase):
     feedback: tp.Optional[str]
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 

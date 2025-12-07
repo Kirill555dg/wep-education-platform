@@ -4,8 +4,8 @@ FastAPI application entry point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
 from app.api.v1 import api_router
+from app.core.config import settings
 
 # Create FastAPI application
 app = FastAPI(
@@ -51,12 +51,12 @@ def on_startup():
     """
     Initialize database on application startup
     """
-    from app.db.session import engine, Base
-    
+    from app.db.session import Base, engine
+
     # Create all tables
     # В продакшене используйте Alembic для миграций
     Base.metadata.create_all(bind=engine)
-    
+
     print(f"✓ {settings.APP_NAME} started successfully")
     print(f"✓ Debug mode: {settings.DEBUG}")
     print(f"✓ Database: {settings.DATABASE_URL}")

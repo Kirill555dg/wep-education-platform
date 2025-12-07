@@ -2,23 +2,24 @@
 Homework management endpoints
 """
 import typing as tp
-from fastapi import APIRouter, Depends, status, Query
+
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import (
-    get_homework_service,
-    get_current_user,
     get_current_teacher,
-)
-from app.services.homework_service import HomeworkService
-from app.schemas.homework import (
-    HomeworkCreate,
-    HomeworkUpdate,
-    HomeworkResponse,
-    HomeworkDetailResponse,
-    ProblemResponse,
-    ProblemFullResponse,
+    get_current_user,
+    get_homework_service,
 )
 from app.models.users import User
+from app.schemas.homework import (
+    HomeworkCreate,
+    HomeworkDetailResponse,
+    HomeworkResponse,
+    HomeworkUpdate,
+    ProblemFullResponse,
+    ProblemResponse,
+)
+from app.services.homework_service import HomeworkService
 
 router = APIRouter()
 
@@ -57,31 +58,7 @@ async def get_lesson_homework(
     - Teachers see all homework (including unpublished)
     - Students see only published homework
     """
-    from app.repositories.homework_repository import HomeworkRepository
-    from app.repositories.user_repository import TeacherRepository
-    from app.repositories.lesson_repository import LessonRepository
-    from app.db.session import get_db
-    
-    db = next(get_db())
-    homework_repo = HomeworkRepository(db)
-    teacher_repo = TeacherRepository(db)
-    lesson_repo = LessonRepository(db)
-    
-    # Check if user is teacher of this lesson's classroom
-    lesson = lesson_repo.get_by_id(lesson_id)
-    if not lesson:
-        return []
-    
-    teacher = teacher_repo.get_by_user_id(current_user.id)
-    
-    if teacher:
-        # Teacher sees all homework
-        homeworks = homework_repo.get_by_lesson(lesson_id, skip, limit)
-    else:
-        # Students see only published
-        homeworks = homework_repo.get_published(lesson_id, skip, limit)
-    
-    return [HomeworkResponse.model_validate(hw) for hw in homeworks]
+    return homework_service.get_lesson_homework(lesson_id, current_user.id, skip, limit)
 
 
 @router.get("/{homework_id}", response_model=HomeworkDetailResponse)

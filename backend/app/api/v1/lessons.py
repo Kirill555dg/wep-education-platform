@@ -2,21 +2,22 @@
 Lesson management endpoints
 """
 import typing as tp
-from fastapi import APIRouter, Depends, status, Query
+
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import (
-    get_lesson_service,
-    get_current_user,
     get_current_teacher,
-)
-from app.services.lesson_service import LessonService
-from app.schemas.lessons import (
-    LessonCreate,
-    LessonUpdate,
-    LessonResponse,
-    LessonDetailResponse,
+    get_current_user,
+    get_lesson_service,
 )
 from app.models.users import User
+from app.schemas.lessons import (
+    LessonCreate,
+    LessonDetailResponse,
+    LessonResponse,
+    LessonUpdate,
+)
+from app.services.lesson_service import LessonService
 
 router = APIRouter()
 
