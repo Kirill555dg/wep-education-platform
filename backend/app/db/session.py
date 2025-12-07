@@ -9,10 +9,19 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.core.config import settings
 
 # Create SQLAlchemy engine
+# For SQLite, we need check_same_thread=False
+# For PostgreSQL, we can add pool settings
+connect_args = {}
+if "sqlite" in settings.DATABASE_URL:
+    connect_args = {"check_same_thread": False}
+
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
+    connect_args=connect_args,
     echo=settings.DEBUG,
+    pool_pre_ping=True,  # Проверять соединения перед использованием
+    pool_size=5,  # Размер пула соединений
+    max_overflow=10,  # Максимальное количество дополнительных соединений
 )
 
 # Create SessionLocal class

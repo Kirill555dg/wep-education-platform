@@ -1,0 +1,11 @@
+# Environment
+.env
+
+# Backups
+backups/*.sql
+backups/*.dump
+
+# Docker volumes
+postgres_data/
+pgadmin_data/
+

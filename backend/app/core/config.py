@@ -17,9 +17,11 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     
     # Database
-    DATABASE_URL: str = "sqlite:///./wep_education.db"
-    # Для PostgreSQL используйте:
-    # DATABASE_URL: str = "postgresql://user:password@localhost:5432/wep_education"
+    # Используем 127.0.0.1 вместо localhost для избежания GSSAPI auth проблем на macOS
+    # gssencmode=disable отключает Kerberos authentication
+    DATABASE_URL: str = "postgresql://wep_user:wep_password@127.0.0.1:5432/wep_education?gssencmode=disable"
+    # Для разработки с SQLite используйте:
+    # DATABASE_URL: str = "sqlite:///./wep_education.db"
     
     # CORS
     BACKEND_CORS_ORIGINS: tp.List[str] = [
