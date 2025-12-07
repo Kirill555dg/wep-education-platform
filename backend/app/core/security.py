@@ -4,23 +4,66 @@ Security utilities for password hashing and JWT
 import typing as tp
 from datetime import datetime, timedelta
 
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Initialize Argon2 password hasher with recommended parameters
+# Argon2id is the recommended variant (hybrid of Argon2i and Argon2d)
+ph = PasswordHasher(
+    time_cost=2,       # Number of iterations
+    memory_cost=65536,  # Memory usage in KiB (64 MB)
+    parallelism=1,     # Number of parallel threads
+    hash_len=32,       # Length of the hash in bytes
+    salt_len=16,       # Length of random salt in bytes
+)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    Verify password against Argon2 hash
+    
+    Args:
+        plain_password: Plain text password
+        hashed_password: Argon2 hashed password from database
+        
+    Returns:
+        True if password matches, False otherwise
+    """
+    try:
+        ph.verify(hashed_password, plain_password)
+        
+        # Check if hash needs rehashing (parameters changed)
+        if ph.check_needs_rehash(hashed_password):
+            print(f"ℹ️  Password hash needs update for better security")
+        
+        return True
+    except VerifyMismatchError:
+        return False
+    except Exception as e:
+        print(f"❌ Password verification error: {e}")
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hash password"""
-    return pwd_context.hash(password)
+    """
+    Hash password using Argon2id
+    
+    Args:
+        password: Plain text password
+        
+    Returns:
+        Argon2 hashed password
+    """
+    if not isinstance(password, str):
+        raise ValueError(f"Password must be a string, got {type(password)}")
+    
+    if not password:
+        raise ValueError("Password cannot be empty")
+    
+    return ph.hash(password)
 
 
 def create_access_token(data: tp.Dict[str, tp.Any], expires_delta: tp.Optional[timedelta] = None) -> str:
