@@ -94,7 +94,7 @@ export default function ProfilePage() {
             fullName={getFullNameAdaptive(user, true)}
             avatarUrl={formData.avatar || user.avatar}
             isEditing={isEditing}
-            activeRole={formData.role}
+            activeRole={user.role}
             onSwitchRole={handleRoleSwitch}
             onAvatarChange={handleAvatarChange}
           />
