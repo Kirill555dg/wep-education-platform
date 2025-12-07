@@ -38,6 +38,15 @@ export function ResponsiveHeader({ title, overrideBack }: Props) {
   if (!user) return null;
 
   const displayName = getFullNameAdaptive(user, user.role === "teacher" && isWide);
+  
+  const getRoleBadge = () => {
+    if (user.role === "teacher") {
+      return { label: "Преподаватель", color: "bg-blue-100 text-blue-800" };
+    }
+    return { label: "Ученик", color: "bg-green-100 text-green-800" };
+  };
+  
+  const roleBadge = getRoleBadge();
 
   const handleLogout = () => {
     logout();
@@ -119,16 +128,27 @@ export function ResponsiveHeader({ title, overrideBack }: Props) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-2 max-w-[260px] text-right overflow-hidden">
+                <div className="flex items-center gap-2 max-w-[260px] text-right overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
                   {isMobileWide && (
                     <div className="flex flex-col overflow-hidden">
-                      {user.role === "teacher" && (
-                        <span className="text-xs text-blue-600 font-medium truncate">Преподаватель</span>
-                      )}
+                      <Badge 
+                        className={`text-[10px] px-2 py-0.5 h-5 w-fit ml-auto mb-0.5 ${roleBadge.color} border-0`}
+                      >
+                        {roleBadge.label}
+                      </Badge>
                       <span className="text-sm text-gray-700 font-medium truncate">{displayName}</span>
                     </div>
                   )}
-                  <UserAvatar size="h-8 w-8" />
+                  <div className="relative">
+                    <UserAvatar size="h-8 w-8" />
+                    {!isMobileWide && (
+                      <Badge 
+                        className={`absolute -bottom-1 -right-1 text-[8px] px-1 py-0 h-3 ${roleBadge.color} border-white border`}
+                      >
+                        {user.role === "teacher" ? "П" : "У"}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

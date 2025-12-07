@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/widgets/layout/MainLayout";
-import { lessonsApi, type LessonDetail, type Homework } from "@/shared/api";
+import { lessonsApi, homeworkApi, type LessonDetail, type Homework } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { ArrowLeft, FileText, CheckCircle, Clock, XCircle } from "lucide-react";
@@ -27,8 +27,8 @@ export default function StudentLessonPage() {
         const lessonData = await lessonsApi.getById(parseInt(lessonId));
         setLesson(lessonData);
 
-        // TODO: Fetch homeworks for this lesson
-        setHomeworks([]);
+        const homeworksData = await homeworkApi.getByLesson(parseInt(lessonId));
+        setHomeworks(homeworksData);
       } catch (error) {
         toast({
           title: "❌ Ошибка",

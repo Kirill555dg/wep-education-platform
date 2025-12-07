@@ -54,21 +54,24 @@ export function ProfileAvatarBlock({
 
       <h2 className="text-xl font-bold mt-4 text-center">{fullName}</h2>
 
-      <div className="mt-6 flex gap-2 w-full">
-        <Button
-          variant={activeRole === "student" ? "default" : "outline"}
-          className="flex-1"
-          onClick={() => onSwitchRole("student")}
-        >
-          Ученик
-        </Button>
-        <Button
-          variant={activeRole === "teacher" ? "default" : "outline"}
-          className="flex-1"
-          onClick={() => onSwitchRole("teacher")}
-        >
-          Преподаватель
-        </Button>
+      <div className="mt-6 space-y-2 w-full">
+        <p className="text-xs text-gray-500 text-center font-medium">Переключить роль:</p>
+        <div className="flex gap-2">
+          <Button
+            variant={activeRole === "student" ? "default" : "outline"}
+            className={`flex-1 ${activeRole === "student" ? "bg-green-600 hover:bg-green-700" : ""}`}
+            onClick={() => onSwitchRole("student")}
+          >
+            {activeRole === "student" && "✓ "}Ученик
+          </Button>
+          <Button
+            variant={activeRole === "teacher" ? "default" : "outline"}
+            className={`flex-1 ${activeRole === "teacher" ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+            onClick={() => onSwitchRole("teacher")}
+          >
+            {activeRole === "teacher" && "✓ "}Преподаватель
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -36,6 +36,22 @@ export const homeworkApi = {
   },
 
   /**
+   * Get all homework for a lesson
+   */
+  getByLesson: async (lessonId: number, params?: { skip?: number; limit?: number }): Promise<Homework[]> => {
+    const response = await axiosInstance.get<Homework[]>(
+      `${HOMEWORK_PREFIX}/lesson/${lessonId}`,
+      {
+        params: {
+          skip: params?.skip ?? 0,
+          limit: params?.limit ?? 100,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
    * Get all problems for homework
    * Teachers see problems with correct answers
    * Students see problems without correct answers

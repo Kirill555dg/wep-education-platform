@@ -24,10 +24,15 @@ export default function TeacherLessonPage() {
   const fetchHomeworks = async () => {
     if (!lessonId) return;
     try {
-      // TODO: Fetch homeworks for this lesson
-      setHomeworks([]);
+      const homeworksData = await homeworkApi.getByLesson(parseInt(lessonId));
+      setHomeworks(homeworksData);
     } catch (error) {
       console.error("Failed to fetch homeworks", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить домашние задания",
+        variant: "destructive",
+      });
     }
   };
 
