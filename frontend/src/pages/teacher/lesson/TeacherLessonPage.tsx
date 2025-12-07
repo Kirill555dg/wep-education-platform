@@ -8,7 +8,7 @@ import { lessonsApi, homeworkApi, type LessonDetail, type Homework } from "@/sha
 import { CreateHomeworkDialog } from "@/features/create-homework/ui/CreateHomeworkDialog";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { ArrowLeft, Plus, BookOpen, FileText, BarChart } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, FileText, Edit } from "lucide-react";
 import { useToast } from "@/shared/hooks/use-toast";
 
 export default function TeacherLessonPage() {
@@ -137,16 +137,19 @@ export default function TeacherLessonPage() {
               {homeworks.map((homework) => (
                 <Card 
                   key={homework.id} 
-                  className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/teacher/homework/${homework.id}`)}
+                  className="hover:shadow-md transition-shadow"
                 >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <span>{homework.title}</span>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <BarChart className="w-4 h-4 mr-1" />
-                          Статистика
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate(`/teacher/homework/${homework.id}`)}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Управление
                         </Button>
                       </div>
                     </CardTitle>
@@ -157,7 +160,7 @@ export default function TeacherLessonPage() {
                   <CardContent>
                     <div className="flex gap-4 text-sm text-muted-foreground">
                       <span>Задач: {homework.problems_count || 0}</span>
-                      <span>Сдано: {homework.completed_count || 0}</span>
+                      <span>Макс. балл: {homework.max_score}</span>
                     </div>
                   </CardContent>
                 </Card>

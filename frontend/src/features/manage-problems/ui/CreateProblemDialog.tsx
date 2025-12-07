@@ -18,49 +18,59 @@ import { Textarea } from "@/shared/ui/textarea";
 import { useToast } from "@/shared/hooks/use-toast";
 
 interface CreateProblemDialogProps {
-  homeworkId: number;
+  onProblemCreated: (problemId: number) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
 }
 
 export function CreateProblemDialog({ 
-  homeworkId, 
+  onProblemCreated,
   open, 
-  onOpenChange, 
-  onSuccess 
+  onOpenChange,
 }: CreateProblemDialogProps) {
   const { createProblem, loading } = useManageProblems();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    problem_type: "short_answer" as const,
+    difficulty: "medium" as const,
     correct_answer: "",
-    max_score: "10",
+    explanation: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      await createProblem({
+      const problem = await createProblem({
         title: formData.title,
         description: formData.description,
-        correct_answer: formData.correct_answer,
-        max_score: parseInt(formData.max_score),
+        problem_type: formData.problem_type,
+        difficulty: formData.difficulty,
+        correct_answer: formData.correct_answer || null,
+        explanation: formData.explanation || null,
       });
       
       toast({
-        title: "✅ Задача добавлена!",
+        title: "✅ Задача создана!",
+        description: "Теперь добавьте её к домашнему заданию",
       });
 
-      setFormData({ title: "", description: "", correct_answer: "", max_score: "10" });
+      setFormData({ 
+        title: "", 
+        description: "", 
+        problem_type: "short_answer",
+        difficulty: "medium",
+        correct_answer: "", 
+        explanation: "" 
+      });
       onOpenChange(false);
-      onSuccess?.();
+      onProblemCreated(problem.id);
     } catch (error) {
       toast({
         title: "❌ Ошибка",
-        description: "Не удалось добавить задачу",
+        description: "Не удалось создать задачу",
         variant: "destructive",
       });
     }
@@ -101,6 +111,37 @@ export function CreateProblemDialog({
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="problem_type">Тип задачи</Label>
+                <select
+                  id="problem_type"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={formData.problem_type}
+                  onChange={(e) => setFormData({ ...formData, problem_type: e.target.value as any })}
+                >
+                  <option value="short_answer">Короткий ответ</option>
+                  <option value="essay">Развёрнутый ответ</option>
+                  <option value="multiple_choice">Выбор варианта</option>
+                  <option value="true_false">Верно/Неверно</option>
+                </select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="difficulty">Сложность</Label>
+                <select
+                  id="difficulty"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={formData.difficulty}
+                  onChange={(e) => setFormData({ ...formData, difficulty: e.target.value as any })}
+                >
+                  <option value="easy">Лёгкая</option>
+                  <option value="medium">Средняя</option>
+                  <option value="hard">Сложная</option>
+                </select>
+              </div>
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="correct_answer">Правильный ответ</Label>
               <Input
@@ -115,13 +156,13 @@ export function CreateProblemDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="max_score">Максимальный балл</Label>
-              <Input
-                id="max_score"
-                type="number"
-                min="1"
-                value={formData.max_score}
-                onChange={(e) => setFormData({ ...formData, max_score: e.target.value })}
+              <Label htmlFor="explanation">Объяснение решения</Label>
+              <Textarea
+                id="explanation"
+                placeholder="Как решать эту задачу..."
+                value={formData.explanation}
+                onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
+                rows={3}
               />
             </div>
           </div>

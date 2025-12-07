@@ -6,24 +6,34 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { Plus } from "lucide-react";
 import { useJoinClass } from "../model/useJoinClass";
+import { useToast } from "@/shared/hooks/use-toast";
 
-export const JoinClassDialog = ({ fullWidth = false }: { fullWidth?: boolean }) => {
-  const [open, setOpen] = useState(false);
+interface JoinClassDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+}
+
+export const JoinClassDialog = ({ open, onOpenChange, onSuccess }: JoinClassDialogProps) => {
   const [code, setCode] = useState("");
   const { joinClass, loading, error, clearError } = useJoinClass();
+  const { toast } = useToast();
 
   const handleJoin = async () => {
     const success = await joinClass(code);
     if (success) {
-      setOpen(false);
+      toast({
+        title: "✅ Вы присоединились к классу!",
+        description: "Теперь вы можете просматривать уроки и выполнять задания",
+      });
       setCode("");
+      onOpenChange(false);
+      onSuccess?.();
     }
   };
 
@@ -36,31 +46,36 @@ export const JoinClassDialog = ({ fullWidth = false }: { fullWidth?: boolean }) 
   }, [open, clearError]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className={fullWidth ? "w-full" : "w-auto"}>
-          <Plus className="h-4 w-4 mr-2" />
-          Вступить в класс
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Вступить в класс</DialogTitle>
-          <DialogDescription>Введите код класса, который вам предоставил учитель.</DialogDescription>
+          <DialogTitle>Присоединиться к классу</DialogTitle>
+          <DialogDescription>
+            Введите код приглашения, который предоставил вам преподаватель
+          </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <Label htmlFor="class-code">Код класса</Label>
+          <Label htmlFor="class-code">Код класса *</Label>
           <Input
             id="class-code"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Например: XYZ123"
-            className="mt-2"
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Например: ABC123"
+            className="mt-2 font-mono"
+            required
           />
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
-        <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-0">
-          <Button onClick={handleJoin} className="w-full sm:w-auto" disabled={loading}>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Отмена
+          </Button>
+          <Button onClick={handleJoin} disabled={loading || !code.trim()}>
             {loading ? "Присоединение..." : "Присоединиться"}
           </Button>
         </DialogFooter>

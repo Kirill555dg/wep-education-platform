@@ -9,6 +9,7 @@ import NotificationsPage from "@/pages/notifications/NotificationsPage";
 import TeacherManagePage from "@/pages/teacher/manage/TeacherManagePage";
 import TeacherClassroomPage from "@/pages/teacher/classroom/TeacherClassroomPage";
 import TeacherLessonPage from "@/pages/teacher/lesson/TeacherLessonPage";
+import TeacherHomeworkPage from "@/pages/teacher/homework/TeacherHomeworkPage";
 import StudentClassroomPage from "@/pages/student/classroom/StudentClassroomPage";
 import StudentLessonPage from "@/pages/student/lesson/StudentLessonPage";
 import StudentHomeworkPage from "@/pages/student/homework/StudentHomeworkPage";
@@ -46,6 +47,7 @@ function App() {
             <Route path="/teacher" element={<TeacherPage />} />
             <Route path="/teacher/classroom/:classroomId" element={<TeacherClassroomPage />} />
             <Route path="/teacher/lesson/:lessonId" element={<TeacherLessonPage />} />
+            <Route path="/teacher/homework/:homeworkId" element={<TeacherHomeworkPage />} />
             <Route path="/teacher/manage" element={<TeacherManagePage />} />
           </Route>
 
