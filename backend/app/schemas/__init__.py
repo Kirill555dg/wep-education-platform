@@ -1,6 +1,7 @@
 """
 Pydantic schemas (DTOs - Data Transfer Objects)
 """
+
 from app.schemas.classrooms import (
     ClassroomBase,
     ClassroomCreate,
@@ -41,6 +42,7 @@ from app.schemas.lessons import (
 )
 from app.schemas.users import (
     LoginRequest,
+    UserLogin,
     StudentBase,
     StudentCreate,
     StudentResponse,
@@ -53,6 +55,7 @@ from app.schemas.users import (
     UserBase,
     UserCreate,
     UserInDB,
+    UserRole,
     UserResponse,
     UserUpdate,
 )
@@ -73,8 +76,9 @@ __all__ = [
     "StudentUpdate",
     "StudentResponse",
     "LoginRequest",
+    "UserLogin",
     "TokenResponse",
-
+    "UserRole",
     # Classrooms
     "ClassroomBase",
     "ClassroomCreate",
@@ -84,7 +88,6 @@ __all__ = [
     "InviteCreate",
     "InviteResponse",
     "JoinClassroomRequest",
-
     # Lessons
     "LessonBase",
     "LessonCreate",
@@ -95,7 +98,6 @@ __all__ = [
     "TheoryMaterialCreate",
     "TheoryMaterialUpdate",
     "TheoryMaterialResponse",
-
     # Homework
     "HomeworkBase",
     "HomeworkCreate",

@@ -1,6 +1,9 @@
 """
 FastAPI application entry point
 """
+
+import typing as tp
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,19 +31,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Custom validation error handler for better debugging
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
     """
     Custom handler for validation errors to provide detailed error messages
     """
     errors = exc.errors()
-    body = exc.body if hasattr(exc, 'body') else None
-    
+    body = exc.body if hasattr(exc, "body") else None
+
     print(f"❌ Validation error for {request.url.path}:")
     print(f"   Body: {body}")
     print(f"   Errors: {errors}")
-    
+
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
@@ -49,15 +56,16 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         },
     )
 
+
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/")
-def root():
+def root() -> dict[str, tp.Any]:
     """
     Root endpoint
-    
+
     Returns:
         dict: Welcome message
     """
@@ -70,7 +78,7 @@ def root():
 
 # Database initialization (create tables)
 @app.on_event("startup")
-def on_startup():
+def on_startup() -> None:
     """
     Initialize database on application startup
     """
@@ -86,9 +94,8 @@ def on_startup():
 
 
 @app.on_event("shutdown")
-def on_shutdown():
+def on_shutdown() -> None:
     """
     Cleanup on application shutdown
     """
     print(f"✗ {settings.APP_NAME} shutting down...")
-

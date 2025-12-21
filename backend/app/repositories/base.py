@@ -1,9 +1,10 @@
 """
 Base repository pattern implementation
 """
+
 import typing as tp
 
-from sqlalchemy.orm import Session
+import sqlalchemy.orm as orm
 
 from app.db.session import Base
 
@@ -13,18 +14,18 @@ T = tp.TypeVar("T", bound=Base)
 class BaseRepository(tp.Generic[T]):
     """
     Base repository with CRUD operations
-    
+
     Generic repository that provides common database operations
     for any SQLAlchemy model.
     """
 
-    def __init__(self, model: tp.Type[T], db: Session):
+    def __init__(self, model: tp.Type[T], db: orm.Session):
         self.model = model
         self.db = db
 
     def get_by_id(self, id: int) -> tp.Optional[T]:
         """Get entity by ID"""
-        return self.db.query(self.model).filter(self.model.id == id).first()
+        return self.db.query(self.model).filter(self.model.id == id).first()  # type: ignore[attr-defined]
 
     def get_all(self, skip: int = 0, limit: int = 100) -> tp.List[T]:
         """Get all entities with pagination"""
@@ -65,4 +66,3 @@ class BaseRepository(tp.Generic[T]):
     def count(self) -> int:
         """Count all entities"""
         return self.db.query(self.model).count()
-
