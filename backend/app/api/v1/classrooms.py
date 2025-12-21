@@ -1,37 +1,35 @@
 """
 Classroom management endpoints
 """
+
 import typing as tp
 
-from fastapi import APIRouter, Depends, Query, status
+import fastapi
+from fastapi import status as http_status
 
-from app.api.dependencies import (
-    get_classroom_service,
-    get_current_student,
-    get_current_teacher,
-    get_current_user,
+from app.api import dependencies as deps
+from app.models import users as user_models
+from app.schemas import classrooms as classroom_schemas
+from app.services import classroom_service as classroom_service_module
+
+router = fastapi.APIRouter()
+
+
+@router.post(
+    "",
+    response_model=classroom_schemas.ClassroomResponse,
+    status_code=http_status.HTTP_201_CREATED,
 )
-from app.models.users import User
-from app.schemas.classrooms import (
-    ClassroomCreate,
-    ClassroomResponse,
-    ClassroomUpdate,
-    JoinClassroomRequest,
-)
-from app.services.classroom_service import ClassroomService
-
-router = APIRouter()
-
-
-@router.post("", response_model=ClassroomResponse, status_code=status.HTTP_201_CREATED)
 async def create_classroom(
-    classroom_data: ClassroomCreate,
-    current_user: User = Depends(get_current_teacher),
-    classroom_service: ClassroomService = Depends(get_classroom_service),
+    classroom_data: classroom_schemas.ClassroomCreate,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
+    classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
+        deps.get_classroom_service
+    ),
 ):
     """
     Create new classroom (teachers only)
-    
+
     - **name**: Classroom name
     - **subject**: Subject (e.g., Mathematics, Physics)
     - **grade_level**: Grade level (1-12)
@@ -40,16 +38,18 @@ async def create_classroom(
     return classroom_service.create_classroom(classroom_data, current_user.id)
 
 
-@router.get("", response_model=tp.List[ClassroomResponse])
+@router.get("", response_model=tp.List[classroom_schemas.ClassroomResponse])
 async def get_my_classrooms(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
-    classroom_service: ClassroomService = Depends(get_classroom_service),
+    skip: int = fastapi.Query(0, ge=0),
+    limit: int = fastapi.Query(100, ge=1, le=100),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+    classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
+        deps.get_classroom_service
+    ),
 ):
     """
     Get classrooms for current user
-    
+
     - Teachers: classrooms they created
     - Students: classrooms they joined
     """
@@ -62,11 +62,13 @@ async def get_my_classrooms(
     return classroom_service.get_student_classrooms(current_user.id, skip, limit)
 
 
-@router.get("/{classroom_id}", response_model=ClassroomResponse)
+@router.get("/{classroom_id}", response_model=classroom_schemas.ClassroomResponse)
 async def get_classroom(
     classroom_id: int,
-    current_user: User = Depends(get_current_user),
-    classroom_service: ClassroomService = Depends(get_classroom_service),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+    classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
+        deps.get_classroom_service
+    ),
 ):
     """
     Get classroom details by ID
@@ -74,12 +76,14 @@ async def get_classroom(
     return classroom_service.get_classroom(classroom_id)
 
 
-@router.patch("/{classroom_id}", response_model=ClassroomResponse)
+@router.patch("/{classroom_id}", response_model=classroom_schemas.ClassroomResponse)
 async def update_classroom(
     classroom_id: int,
-    classroom_data: ClassroomUpdate,
-    current_user: User = Depends(get_current_teacher),
-    classroom_service: ClassroomService = Depends(get_classroom_service),
+    classroom_data: classroom_schemas.ClassroomUpdate,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
+    classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
+        deps.get_classroom_service
+    ),
 ):
     """
     Update classroom (teachers only, owner only)
@@ -87,15 +91,17 @@ async def update_classroom(
     return classroom_service.update_classroom(classroom_id, classroom_data, current_user.id)
 
 
-@router.post("/join", response_model=ClassroomResponse)
+@router.post("/join", response_model=classroom_schemas.ClassroomResponse)
 async def join_classroom(
-    join_data: JoinClassroomRequest,
-    current_user: User = Depends(get_current_student),
-    classroom_service: ClassroomService = Depends(get_classroom_service),
+    join_data: classroom_schemas.JoinClassroomRequest,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
+    classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
+        deps.get_classroom_service
+    ),
 ):
     """
     Join classroom via invite code (students only)
-    
+
     - **invite_code**: Unique invite code from teacher
     """
     return classroom_service.join_classroom(join_data, current_user.id)
@@ -104,15 +110,16 @@ async def join_classroom(
 @router.get("/{classroom_id}/students")
 async def get_classroom_students(
     classroom_id: int,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    current_user: User = Depends(get_current_teacher),
-    classroom_service: ClassroomService = Depends(get_classroom_service),
+    skip: int = fastapi.Query(0, ge=0),
+    limit: int = fastapi.Query(100, ge=1, le=100),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
+    classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
+        deps.get_classroom_service
+    ),
 ):
     """
     Get list of students in classroom (teachers only)
-    
+
     Returns student information with enrollment dates
     """
     return classroom_service.get_classroom_students(classroom_id, current_user.id, skip, limit)
-

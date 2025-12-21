@@ -1,32 +1,29 @@
 """
 Statistics and results endpoints
 """
+
 import typing as tp
 
-from fastapi import APIRouter, Depends, Query
+import fastapi
 
-from app.api.dependencies import (
-    get_current_student,
-    get_current_teacher,
-    get_result_service,
-)
-from app.models.users import User
-from app.schemas.homework import StatisticsResponse
-from app.services.result_service import ResultService
+from app.api import dependencies as deps
+from app.models import users as user_models
+from app.schemas import homework as homework_schemas
+from app.services import result_service as result_service_module
 
-router = APIRouter()
+router = fastapi.APIRouter()
 
 
-@router.get("/me", response_model=tp.List[StatisticsResponse])
+@router.get("/me", response_model=tp.List[homework_schemas.StatisticsResponse])
 async def get_my_statistics(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    current_user: User = Depends(get_current_student),
-    result_service: ResultService = Depends(get_result_service),
+    skip: int = fastapi.Query(0, ge=0),
+    limit: int = fastapi.Query(100, ge=1, le=100),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
+    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
     """
     Get all statistics for current student
-    
+
     Returns all homework attempts with scores and status
     """
     return result_service.get_student_statistics(current_user.id, skip, limit)
@@ -34,12 +31,12 @@ async def get_my_statistics(
 
 @router.get("/me/progress")
 async def get_my_progress(
-    current_user: User = Depends(get_current_student),
-    result_service: ResultService = Depends(get_result_service),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
+    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
     """
     Get overall progress for current student
-    
+
     Returns:
     - total_homeworks: Total number of assigned homeworks
     - completed: Number of completed homeworks
@@ -52,17 +49,20 @@ async def get_my_progress(
     return result_service.get_student_progress(current_user.id)
 
 
-@router.get("/homework/{homework_id}", response_model=tp.List[StatisticsResponse])
+@router.get(
+    "/homework/{homework_id}",
+    response_model=tp.List[homework_schemas.StatisticsResponse],
+)
 async def get_homework_statistics(
     homework_id: int,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    current_user: User = Depends(get_current_teacher),
-    result_service: ResultService = Depends(get_result_service),
+    skip: int = fastapi.Query(0, ge=0),
+    limit: int = fastapi.Query(100, ge=1, le=100),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
+    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
     """
     Get statistics for all students for a specific homework (teachers only)
-    
+
     Returns all student attempts for the homework
     """
     return result_service.get_homework_statistics(homework_id, current_user.id, skip, limit)
@@ -71,12 +71,12 @@ async def get_homework_statistics(
 @router.get("/classroom/{classroom_id}/progress")
 async def get_classroom_progress(
     classroom_id: int,
-    current_user: User = Depends(get_current_teacher),
-    result_service: ResultService = Depends(get_result_service),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
+    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
     """
     Get overall progress for a classroom (teachers only)
-    
+
     Returns:
     - total_students: Number of students in classroom
     - total_homeworks_assigned: Total homeworks assigned
@@ -86,18 +86,20 @@ async def get_classroom_progress(
     return result_service.get_classroom_progress(classroom_id, current_user.id)
 
 
-@router.get("/student/{student_user_id}", response_model=tp.List[StatisticsResponse])
+@router.get(
+    "/student/{student_user_id}",
+    response_model=tp.List[homework_schemas.StatisticsResponse],
+)
 async def get_student_statistics_by_teacher(
     student_user_id: int,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
-    current_user: User = Depends(get_current_teacher),
-    result_service: ResultService = Depends(get_result_service),
+    skip: int = fastapi.Query(0, ge=0),
+    limit: int = fastapi.Query(100, ge=1, le=100),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
+    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
     """
     Get statistics for a specific student (teachers only)
-    
+
     Teachers can view any student's statistics
     """
     return result_service.get_student_statistics(student_user_id, skip, limit)
-

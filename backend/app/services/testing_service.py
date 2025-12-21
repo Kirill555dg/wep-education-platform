@@ -1,88 +1,89 @@
 """
 Testing service for answer checking and grading
 """
+
 import typing as tp
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+import fastapi
+from fastapi import status as http_status
+from sqlalchemy import orm as orm
 
-from app.repositories.homework_repository import (
-    HomeworkProblemRepository,
-    HomeworkRepository,
-    ProblemRepository,
-    StatisticsRepository,
-)
-from app.repositories.user_repository import StudentRepository
-from app.schemas.homework import AnswerSubmit, StatisticsResponse
+from app.repositories import homework_repository as homework_repository
+from app.repositories import user_repository as user_repository
+from app.schemas import homework as homework_schemas
 
 
 class TestingService:
     """
     Service for testing and grading
-    
+
     Handles answer submission, automatic checking, and statistics updates
     """
 
-    def __init__(self, db: Session):
+    def __init__(self, db: orm.Session):
         self.db = db
-        self.homework_repo = HomeworkRepository(db)
-        self.problem_repo = ProblemRepository(db)
-        self.stats_repo = StatisticsRepository(db)
-        self.hw_problem_repo = HomeworkProblemRepository(db)
-        self.student_repo = StudentRepository(db)
+        self.homework_repo = homework_repository.HomeworkRepository(db)
+        self.problem_repo = homework_repository.ProblemRepository(db)
+        self.stats_repo = homework_repository.StatisticsRepository(db)
+        self.hw_problem_repo = homework_repository.HomeworkProblemRepository(db)
+        self.student_repo = user_repository.StudentRepository(db)
 
-    def submit_answer(self, answer_data: AnswerSubmit, student_user_id: int) -> StatisticsResponse:
+    def submit_answer(
+        self,
+        answer_data: homework_schemas.AnswerSubmit,
+        student_user_id: int,
+    ) -> homework_schemas.StatisticsResponse:
         """
         Submit answer for a problem
-        
+
         Args:
             answer_data: Submitted answer data
             student_user_id: User ID of student
-            
+
         Returns:
             Updated statistics
-            
+
         Raises:
             HTTPException: If not authorized or validation fails
         """
         # Verify student
         student = self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only students can submit answers"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="Only students can submit answers",
             )
 
         # Verify homework and problem exist
         homework = self.homework_repo.get_by_id(answer_data.homework_id)
         if not homework:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Homework not found"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Homework not found",
             )
 
         problem = self.problem_repo.get_by_id(answer_data.problem_id)
         if not problem:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Problem not found"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Problem not found",
             )
 
         # Check if problem is in homework
         hw_problems = self.hw_problem_repo.get_by_homework(answer_data.homework_id)
-        hw_problem = next((hp for hp in hw_problems if hp.problem_id == answer_data.problem_id), None)
+        hw_problem = next(
+            (hp for hp in hw_problems if hp.problem_id == answer_data.problem_id), None
+        )
 
         if not hw_problem:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Problem not in this homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="Problem not in this homework",
             )
 
         # Get or create statistics
         stats = self.stats_repo.get_or_create_stats(
-            student.id,
-            answer_data.homework_id,
-            homework.max_score
+            student.id, answer_data.homework_id, homework.max_score
         )
 
         # Check answer and calculate score
@@ -96,61 +97,68 @@ class TestingService:
             new_score = stats.score
 
         # Update statistics
-        updated_stats = self.stats_repo.update(stats.id, {
-            "score": new_score,
-            "status": "in_progress",
-            "attempts_count": stats.attempts_count + 1,
-            "time_spent_minutes": stats.time_spent_minutes + answer_data.time_spent_minutes
-        })
+        updated_stats = self.stats_repo.update(
+            stats.id,
+            {
+                "score": new_score,
+                "status": "in_progress",
+                "attempts_count": stats.attempts_count + 1,
+                "time_spent_minutes": stats.time_spent_minutes + answer_data.time_spent_minutes,
+            },
+        )
 
         if not updated_stats:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update statistics"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update statistics",
             )
 
-        return StatisticsResponse.model_validate(updated_stats)
+        return homework_schemas.StatisticsResponse.model_validate(updated_stats)
 
-    def submit_homework(self, homework_id: int, student_user_id: int) -> StatisticsResponse:
+    def submit_homework(
+        self,
+        homework_id: int,
+        student_user_id: int,
+    ) -> homework_schemas.StatisticsResponse:
         """
         Submit homework for grading
-        
+
         Args:
             homework_id: Homework ID
             student_user_id: User ID of student
-            
+
         Returns:
             Final statistics
         """
         student = self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only students can submit homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="Only students can submit homework",
             )
 
         # Get statistics
         stats = self.stats_repo.get_student_homework_stats(student.id, homework_id)
         if not stats:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No attempts found for this homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="No attempts found for this homework",
             )
 
         # Mark as submitted
         updated_stats = self.stats_repo.submit_homework(stats.id)
         if not updated_stats:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to submit homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to submit homework",
             )
 
-        return StatisticsResponse.model_validate(updated_stats)
+        return homework_schemas.StatisticsResponse.model_validate(updated_stats)
 
     def _check_answer(self, student_answer: str, correct_answer: tp.Optional[str]) -> bool:
         """
         Check if answer is correct
-        
+
         Simple string comparison for now.
         Can be extended for different problem types.
         """
@@ -160,33 +168,36 @@ class TestingService:
         # Simple case-insensitive comparison
         return student_answer.strip().lower() == correct_answer.strip().lower()
 
-    def get_homework_status(self, homework_id: int, student_user_id: int) -> StatisticsResponse:
+    def get_homework_status(
+        self,
+        homework_id: int,
+        student_user_id: int,
+    ) -> homework_schemas.StatisticsResponse:
         """
         Get current status/progress for homework
-        
+
         Args:
             homework_id: Homework ID
             student_user_id: User ID of student
-            
+
         Returns:
             Statistics including score, attempts, time spent
-            
+
         Raises:
             HTTPException: If student not found or no attempts found
         """
         student = self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Student not found"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Student not found",
             )
 
         stats = self.stats_repo.get_student_homework_stats(student.id, homework_id)
         if not stats:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No attempts found for this homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="No attempts found for this homework",
             )
 
-        return StatisticsResponse.model_validate(stats)
-
+        return homework_schemas.StatisticsResponse.model_validate(stats)

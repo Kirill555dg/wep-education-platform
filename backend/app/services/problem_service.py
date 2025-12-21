@@ -5,19 +5,20 @@ Manages problem creation, retrieval, and management
 
 import typing as tp
 
-from fastapi import HTTPException, status
+import fastapi
+from fastapi import status as http_status
 
-from app.repositories.homework_repository import ProblemRepository
-from app.schemas.homework import ProblemCreate, ProblemUpdate
+from app.repositories import homework_repository as homework_repository
+from app.schemas import homework as homework_schemas
 
 
 class ProblemService:
     """Service for managing problems"""
 
-    def __init__(self, problem_repo: ProblemRepository):
+    def __init__(self, problem_repo: homework_repository.ProblemRepository):
         self.problem_repo = problem_repo
 
-    def create_problem(self, problem_data: ProblemCreate, teacher_id: int) -> tp.Any:
+    def create_problem(self, problem_data: homework_schemas.ProblemCreate, teacher_id: int) -> tp.Any:
         """
         Create a new problem
 
@@ -66,11 +67,14 @@ class ProblemService:
         """
         problem = self.problem_repo.get_by_id(problem_id)
         if not problem:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Problem not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Problem not found",
+            )
         return problem
 
     def update_problem(
-        self, problem_id: int, problem_data: ProblemUpdate, teacher_id: int
+        self, problem_id: int, problem_data: homework_schemas.ProblemUpdate, teacher_id: int
     ) -> tp.Any:
         """
         Update a problem
@@ -99,7 +103,10 @@ class ProblemService:
         # Update problem
         problem = self.problem_repo.update(problem_id, data)
         if not problem:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Problem not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Problem not found",
+            )
         return problem
 
     def delete_problem(self, problem_id: int, teacher_id: int) -> bool:
@@ -118,5 +125,8 @@ class ProblemService:
         """
         success = self.problem_repo.delete(problem_id)
         if not success:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Problem not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Problem not found",
+            )
         return True

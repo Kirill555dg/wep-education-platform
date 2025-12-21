@@ -4,11 +4,11 @@ Base repository pattern implementation
 
 import typing as tp
 
-import sqlalchemy.orm as orm
+from sqlalchemy import orm as orm
 
-from app.db.session import Base
+from app.db import session as db_session
 
-T = tp.TypeVar("T", bound=Base)
+T = tp.TypeVar("T", bound=db_session.Base)
 
 
 class BaseRepository(tp.Generic[T]):

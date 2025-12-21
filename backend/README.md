@@ -220,11 +220,14 @@ class UserResponse(UserBase):
 
 - **FastAPI** — современный веб-фреймворк для Python
 - **SQLAlchemy** — ORM для работы с базами данных
-- **Pydantic** — валидация данных и настройки
+- **Pydantic v2 + pydantic-settings** — валидация данных и конфигурация через `.env`
 - **Uvicorn** — ASGI-сервер
 - **Alembic** — миграции базы данных
 - **Python-JOSE** — JWT токены
-- **Passlib** — хеширование паролей
+- **Argon2 (argon2-cffi)** — хеширование паролей
+- **Ruff** — линтинг и форматирование
+- **mypy** — статическая проверка типов
+- **uv** — быстрый менеджер окружений и зависимостей
 
 ---
 
@@ -259,14 +262,11 @@ docker-compose down
 
 ### 💻 Локальная разработка
 
-#### 1. Установка зависимостей
+#### 1. Установка зависимостей (Python 3.13, uv)
 
 ```bash
-# Используя pip
-pip install -e .
-
-# Или с dev-зависимостями
-pip install -e ".[dev]"
+# Из директории backend/
+make install
 ```
 
 #### 2. Настройка окружения
@@ -288,19 +288,29 @@ make up
 #### 3. Запуск миграций
 
 ```bash
-# Создать все таблицы
-alembic upgrade head
+# Из директории backend/
+uv run alembic upgrade head
 
 # Создать новую миграцию (при изменении моделей)
-alembic revision --autogenerate -m "описание изменений"
+uv run alembic revision --autogenerate -m "описание изменений"
 ```
 
 #### 4. Запуск сервера
 
 ```bash
 # Из директории backend/
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+make dev
 ```
+
+#### Полезные команды
+
+- `make lint` — Ruff (линтер)
+- `make format` — Ruff (форматирование)
+- `make type` — mypy (проверка типов)
+- `make test` — pytest
+- `make check` — линт + типы + тесты
+- `make run` — uvicorn без `--reload`
+- `make sync` — синхронизация зависимостей из `requirements.txt`
 
 **Приложение будет доступно:**
 - API: http://localhost:8000
@@ -351,13 +361,7 @@ DATABASE_URL="sqlite:///./wep_education.db"
 DATABASE_URL="postgresql://user:password@localhost:5432/wep_education"
 ```
 
-Раскомментируйте зависимость в `pyproject.toml`:
-```toml
-dependencies = [
-    ...
-    "psycopg2-binary>=2.9.0",
-]
-```
+Драйвер `psycopg[binary]` уже прописан в `requirements.txt`.
 
 ---
 
@@ -365,34 +369,17 @@ dependencies = [
 
 ```bash
 # Запуск тестов
-pytest
+make test
 
-# С покрытием
-pytest --cov=app
+# Полный прогон качества
+make check
 ```
 
 ---
 
 ## 🔧 Инструменты разработки
 
-### Линтер и форматтер (Ruff)
-
-```bash
-# Проверка кода
-ruff check .
-
-# Автоматическое исправление
-ruff check . --fix
-
-# Форматирование
-ruff format .
-```
-
-### Типизация (MyPy)
-
-```bash
-mypy app/
-```
+Используем единый набор команд через `make` (см. раздел "Локальная разработка"). Линтинг выполняет только Ruff, типы проверяет mypy с конфигом `backend/mypy.ini`.
 
 ---
 

@@ -4,9 +4,9 @@ User Pydantic schemas (DTOs)
 
 import enum
 import typing as tp
-from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+import datetime as dt
+import pydantic
 
 
 class UserRole(str, enum.Enum):
@@ -17,43 +17,43 @@ class UserRole(str, enum.Enum):
 
 
 # Base schemas
-class UserBase(BaseModel):
+class UserBase(pydantic.BaseModel):
     """Base user fields"""
 
-    email: EmailStr
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    middle_name: tp.Optional[str] = Field(default=None, max_length=100)
+    email: pydantic.EmailStr
+    first_name: str = pydantic.Field(..., min_length=1, max_length=100)
+    last_name: str = pydantic.Field(..., min_length=1, max_length=100)
+    middle_name: tp.Optional[str] = pydantic.Field(default=None, max_length=100)
     role: UserRole = UserRole.STUDENT
     avatar_url: tp.Optional[str] = None
-    username: tp.Optional[str] = Field(default=None, min_length=3, max_length=100)
-    full_name: tp.Optional[str] = Field(default=None, max_length=255)
+    username: tp.Optional[str] = pydantic.Field(default=None, min_length=3, max_length=100)
+    full_name: tp.Optional[str] = pydantic.Field(default=None, max_length=255)
 
 
 class UserCreate(UserBase):
     """Schema for creating a user"""
 
-    password: str = Field(..., min_length=8, max_length=128)
+    password: str = pydantic.Field(..., min_length=8, max_length=128)
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(pydantic.BaseModel):
     """Schema for updating a user"""
 
-    username: tp.Optional[str] = Field(default=None, min_length=3, max_length=100)
-    email: tp.Optional[EmailStr] = None
-    first_name: tp.Optional[str] = Field(default=None, min_length=1, max_length=100)
-    last_name: tp.Optional[str] = Field(default=None, min_length=1, max_length=100)
-    middle_name: tp.Optional[str] = Field(default=None, max_length=100)
-    full_name: tp.Optional[str] = Field(default=None, max_length=255)
+    username: tp.Optional[str] = pydantic.Field(default=None, min_length=3, max_length=100)
+    email: tp.Optional[pydantic.EmailStr] = None
+    first_name: tp.Optional[str] = pydantic.Field(default=None, min_length=1, max_length=100)
+    last_name: tp.Optional[str] = pydantic.Field(default=None, min_length=1, max_length=100)
+    middle_name: tp.Optional[str] = pydantic.Field(default=None, max_length=100)
+    full_name: tp.Optional[str] = pydantic.Field(default=None, max_length=255)
     avatar_url: tp.Optional[str] = None
     is_active: tp.Optional[bool] = None
 
 
-class UserResponse(BaseModel):
+class UserResponse(pydantic.BaseModel):
     """Schema for user response"""
 
     id: int
-    email: EmailStr
+    email: pydantic.EmailStr
     first_name: str
     last_name: str
     middle_name: tp.Optional[str] = None
@@ -61,11 +61,11 @@ class UserResponse(BaseModel):
     username: tp.Optional[str] = None
     full_name: tp.Optional[str] = None
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
-    hashed_password: str
+    created_at: dt.datetime
+    updated_at: dt.datetime
+    hashed_password: str = ""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
 class UserInDB(UserResponse):
@@ -75,12 +75,12 @@ class UserInDB(UserResponse):
 
 
 # Teacher schemas
-class TeacherBase(BaseModel):
+class TeacherBase(pydantic.BaseModel):
     """Base teacher fields"""
 
     bio: tp.Optional[str] = None
     subject_specialization: tp.Optional[str] = None
-    years_of_experience: int = Field(default=0, ge=0)
+    years_of_experience: int = pydantic.Field(default=0, ge=0)
 
 
 class TeacherCreate(TeacherBase):
@@ -103,14 +103,14 @@ class TeacherResponse(TeacherBase):
     rating: int
     user: UserResponse  # Nested user data
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
 # Student schemas
-class StudentBase(BaseModel):
+class StudentBase(pydantic.BaseModel):
     """Base student fields"""
 
-    grade_level: tp.Optional[int] = Field(None, ge=1, le=12)
+    grade_level: tp.Optional[int] = pydantic.Field(None, ge=1, le=12)
     student_id_number: tp.Optional[str] = None
 
 
@@ -131,14 +131,14 @@ class StudentResponse(StudentBase):
 
     id: int
     user_id: int
-    enrollment_date: datetime
+    enrollment_date: dt.datetime
     user: UserResponse  # Nested user data
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
 # Authentication schemas
-class LoginRequest(BaseModel):
+class LoginRequest(pydantic.BaseModel):
     """Login request schema"""
 
     username_or_email: str
@@ -149,7 +149,7 @@ class UserLogin(LoginRequest):
     """Alias for backward compatibility"""
 
 
-class TokenResponse(BaseModel):
+class TokenResponse(pydantic.BaseModel):
     """Token response schema"""
 
     access_token: str

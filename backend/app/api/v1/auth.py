@@ -1,24 +1,32 @@
 """
 Authentication endpoints
 """
-from fastapi import APIRouter, Depends, status
 
-from app.api.dependencies import get_auth_service, get_current_user
-from app.models.users import User
-from app.schemas.users import LoginRequest, TokenResponse, UserCreate, UserResponse
-from app.services.auth_service import AuthService
+import typing as tp
 
-router = APIRouter()
+import fastapi
+from fastapi import status as http_status
+
+from app.api import dependencies as deps
+from app.models import users as user_models
+from app.schemas import users as user_schemas
+from app.services import auth_service as auth_service_module
+
+router = fastapi.APIRouter()
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=user_schemas.UserResponse,
+    status_code=http_status.HTTP_201_CREATED,
+)
 async def register(
-    user_data: UserCreate,
-    auth_service: AuthService = Depends(get_auth_service),
-):
+    user_data: user_schemas.UserCreate,
+    auth_service: auth_service_module.AuthService = fastapi.Depends(deps.get_auth_service),
+) -> user_schemas.UserResponse:
     """
     Register new user (student or teacher)
-    
+
     - **username**: Unique username (3-100 characters)
     - **email**: Valid email address
     - **password**: Password (min 8 characters)
@@ -28,44 +36,43 @@ async def register(
     return auth_service.register_user(user_data)
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=user_schemas.TokenResponse)
 async def login(
-    credentials: LoginRequest,
-    auth_service: AuthService = Depends(get_auth_service),
-):
+    credentials: user_schemas.LoginRequest,
+    auth_service: auth_service_module.AuthService = fastapi.Depends(deps.get_auth_service),
+) -> user_schemas.TokenResponse:
     """
     Authenticate user and get JWT token
-    
+
     - **username_or_email**: Username or email
     - **password**: User password
-    
+
     Returns JWT access token and user data
     """
     return auth_service.authenticate(credentials)
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=user_schemas.UserResponse)
 async def get_current_user_profile(
-    current_user: User = Depends(get_current_user),
-):
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+) -> user_schemas.UserResponse:
     """
     Get current authenticated user profile
-    
+
     Requires valid JWT token in Authorization header
     """
-    return UserResponse.model_validate(current_user)
+    return user_schemas.UserResponse.model_validate(current_user)
 
 
 @router.get("/me/role")
 async def get_current_user_role(
-    current_user: User = Depends(get_current_user),
-    auth_service: AuthService = Depends(get_auth_service),
-):
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+    auth_service: auth_service_module.AuthService = fastapi.Depends(deps.get_auth_service),
+) -> tp.Dict[str, tp.Optional[str]]:
     """
     Get current user's role (teacher or student)
-    
+
     Returns: {"role": "teacher"} or {"role": "student"}
     """
     role = auth_service.get_user_role(current_user.id)
     return {"role": role}
-

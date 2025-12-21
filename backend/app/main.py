@@ -4,19 +4,21 @@ FastAPI application entry point
 
 import typing as tp
 
-from fastapi import FastAPI, Request, status
-from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+import fastapi
+from fastapi import exceptions as fastapi_exceptions
+from fastapi import responses as fastapi_responses
+from fastapi import status as http_status
+from fastapi.middleware import cors as fastapi_cors
 
-from app.api.v1 import api_router
-from app.core.config import settings
+from app.api import v1 as api_v1
+from app.core import config as core_config
+from app.db import session as db_session
 
 # Create FastAPI application
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.APP_VERSION,
-    debug=settings.DEBUG,
+app = fastapi.FastAPI(
+    title=core_config.settings.APP_NAME,
+    version=core_config.settings.APP_VERSION,
+    debug=core_config.settings.DEBUG,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
@@ -24,8 +26,8 @@ app = FastAPI(
 
 # Configure CORS
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    fastapi_cors.CORSMiddleware,
+    allow_origins=core_config.settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,23 +35,23 @@ app.add_middleware(
 
 
 # Custom validation error handler for better debugging
-@app.exception_handler(RequestValidationError)
+@app.exception_handler(fastapi_exceptions.RequestValidationError)
 async def validation_exception_handler(
-    request: Request,
-    exc: RequestValidationError,
-) -> JSONResponse:
+    request: fastapi.Request,
+    exc: fastapi_exceptions.RequestValidationError,
+) -> fastapi_responses.JSONResponse:
     """
     Custom handler for validation errors to provide detailed error messages
     """
     errors = exc.errors()
     body = exc.body if hasattr(exc, "body") else None
 
-    print(f"❌ Validation error for {request.url.path}:")
+    print(f"   Validation error for {request.url.path}:")
     print(f"   Body: {body}")
     print(f"   Errors: {errors}")
 
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    return fastapi_responses.JSONResponse(
+        status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "detail": errors,
             "body": body,
@@ -58,7 +60,7 @@ async def validation_exception_handler(
 
 
 # Include API router
-app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+app.include_router(api_v1.api_router, prefix=core_config.settings.API_V1_PREFIX)
 
 
 @app.get("/")
@@ -71,7 +73,7 @@ def root() -> dict[str, tp.Any]:
     """
     return {
         "message": "Web Education Platform API",
-        "version": settings.APP_VERSION,
+        "version": core_config.settings.APP_VERSION,
         "docs": "/api/docs",
     }
 
@@ -82,15 +84,11 @@ def on_startup() -> None:
     """
     Initialize database on application startup
     """
-    from app.db.session import Base, engine
+    db_session.Base.metadata.create_all(bind=db_session.engine)
 
-    # Create all tables
-    # В продакшене используйте Alembic для миграций
-    Base.metadata.create_all(bind=engine)
-
-    print(f"✓ {settings.APP_NAME} started successfully")
-    print(f"✓ Debug mode: {settings.DEBUG}")
-    print(f"✓ Database: {settings.DATABASE_URL}")
+    print(f"  {core_config.settings.APP_NAME} started successfully")
+    print(f"  Debug mode: {core_config.settings.DEBUG}")
+    print(f"  Database: {core_config.settings.DATABASE_URL}")
 
 
 @app.on_event("shutdown")
@@ -98,4 +96,4 @@ def on_shutdown() -> None:
     """
     Cleanup on application shutdown
     """
-    print(f"✗ {settings.APP_NAME} shutting down...")
+    print(f"  {core_config.settings.APP_NAME} shutting down...")

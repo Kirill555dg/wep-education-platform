@@ -4,71 +4,84 @@ Homework, Problem, and Statistics repositories
 
 import typing as tp
 
-import sqlalchemy.orm as orm
+from sqlalchemy import orm as orm
 
-from app.models.homework import Homework, HomeworkProblem, Statistics
-from app.models.problems import Problem
-from app.repositories.base import BaseRepository
+import sqlalchemy as sa
+
+from app.models import homework as homework_models
+from app.models import problems as problem_models
+from app.repositories import base as base_repository
 
 
-class HomeworkRepository(BaseRepository[Homework]):
+class HomeworkRepository(base_repository.BaseRepository[homework_models.Homework]):
     """Repository for Homework operations"""
 
     def __init__(self, db: orm.Session):
-        super().__init__(Homework, db)
+        super().__init__(homework_models.Homework, db)
 
-    def get_by_lesson(self, lesson_id: int, skip: int = 0, limit: int = 100) -> tp.List[Homework]:
+    def get_by_lesson(
+        self, lesson_id: int, skip: int = 0, limit: int = 100
+    ) -> tp.List[homework_models.Homework]:
         """Get homeworks for lesson"""
         return (
-            self.db.query(Homework)
-            .filter(Homework.lesson_id == lesson_id)
+            self.db.query(homework_models.Homework)
+            .filter(homework_models.Homework.lesson_id == lesson_id)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_published(self, lesson_id: int, skip: int = 0, limit: int = 100) -> tp.List[Homework]:
+    def get_published(
+        self, lesson_id: int, skip: int = 0, limit: int = 100
+    ) -> tp.List[homework_models.Homework]:
         """Get published homeworks for lesson"""
         return (
-            self.db.query(Homework)
-            .filter(Homework.lesson_id == lesson_id, Homework.is_published)
+            self.db.query(homework_models.Homework)
+            .filter(
+                homework_models.Homework.lesson_id == lesson_id,
+                homework_models.Homework.is_published,
+            )
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_with_problems(self, homework_id: int) -> tp.Optional[Homework]:
+    def get_with_problems(self, homework_id: int) -> tp.Optional[homework_models.Homework]:
         """Get homework with problems"""
         return (
-            self.db.query(Homework)
-            .options(orm.joinedload(Homework.homework_problems))
-            .filter(Homework.id == homework_id)
+            self.db.query(homework_models.Homework)
+            .options(orm.joinedload(homework_models.Homework.homework_problems))
+            .filter(homework_models.Homework.id == homework_id)
             .first()
         )
 
     def count_by_lesson(self, lesson_id: int) -> int:
         """Count homeworks in lesson"""
-        return self.db.query(Homework).filter(Homework.lesson_id == lesson_id).count()
+        return (
+            self.db.query(homework_models.Homework)
+            .filter(homework_models.Homework.lesson_id == lesson_id)
+            .count()
+        )
 
 
-class HomeworkProblemRepository(BaseRepository[HomeworkProblem]):
+class HomeworkProblemRepository(base_repository.BaseRepository[homework_models.HomeworkProblem]):
     """Repository for HomeworkProblem operations"""
 
     def __init__(self, db: orm.Session):
-        super().__init__(HomeworkProblem, db)
+        super().__init__(homework_models.HomeworkProblem, db)
 
-    def get_by_homework(self, homework_id: int) -> tp.List[HomeworkProblem]:
+    def get_by_homework(self, homework_id: int) -> tp.List[homework_models.HomeworkProblem]:
         """Get problems for homework"""
         return (
-            self.db.query(HomeworkProblem)
-            .filter(HomeworkProblem.homework_id == homework_id)
-            .order_by(HomeworkProblem.order_number)
+            self.db.query(homework_models.HomeworkProblem)
+            .filter(homework_models.HomeworkProblem.homework_id == homework_id)
+            .order_by(homework_models.HomeworkProblem.order_number)
             .all()
         )
 
     def add_problem_to_homework(
         self, homework_id: int, problem_id: int, points: float = 10.0, order_number: int = 0
-    ) -> HomeworkProblem:
+    ) -> homework_models.HomeworkProblem:
         """Add problem to homework"""
         return self.create(
             {
@@ -82,9 +95,10 @@ class HomeworkProblemRepository(BaseRepository[HomeworkProblem]):
     def remove_problem_from_homework(self, homework_id: int, problem_id: int) -> bool:
         """Remove problem from homework"""
         hw_problem = (
-            self.db.query(HomeworkProblem)
+            self.db.query(homework_models.HomeworkProblem)
             .filter(
-                HomeworkProblem.homework_id == homework_id, HomeworkProblem.problem_id == problem_id
+                homework_models.HomeworkProblem.homework_id == homework_id,
+                homework_models.HomeworkProblem.problem_id == problem_id,
             )
             .first()
         )
@@ -97,17 +111,19 @@ class HomeworkProblemRepository(BaseRepository[HomeworkProblem]):
         return True
 
 
-class ProblemRepository(BaseRepository[Problem]):
+class ProblemRepository(base_repository.BaseRepository[problem_models.Problem]):
     """Repository for Problem operations"""
 
     def __init__(self, db: orm.Session):
-        super().__init__(Problem, db)
+        super().__init__(problem_models.Problem, db)
 
-    def get_by_type(self, problem_type: str, skip: int = 0, limit: int = 100) -> tp.List[Problem]:
+    def get_by_type(
+        self, problem_type: str, skip: int = 0, limit: int = 100
+    ) -> tp.List[problem_models.Problem]:
         """Get problems by type"""
         return (
-            self.db.query(Problem)
-            .filter(Problem.problem_type == problem_type)
+            self.db.query(problem_models.Problem)
+            .filter(problem_models.Problem.problem_type == problem_type)
             .offset(skip)
             .limit(limit)
             .all()
@@ -115,41 +131,41 @@ class ProblemRepository(BaseRepository[Problem]):
 
     def get_by_difficulty(
         self, difficulty: str, skip: int = 0, limit: int = 100
-    ) -> tp.List[Problem]:
+    ) -> tp.List[problem_models.Problem]:
         """Get problems by difficulty"""
         return (
-            self.db.query(Problem)
-            .filter(Problem.difficulty == difficulty)
+            self.db.query(problem_models.Problem)
+            .filter(problem_models.Problem.difficulty == difficulty)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_published(self, skip: int = 0, limit: int = 100) -> tp.List[Problem]:
+    def get_published(self, skip: int = 0, limit: int = 100) -> tp.List[problem_models.Problem]:
         """Get published problems"""
         return (
-            self.db.query(Problem)
-            .filter(Problem.is_published)
+            self.db.query(problem_models.Problem)
+            .filter(problem_models.Problem.is_published)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
 
-class StatisticsRepository(BaseRepository[Statistics]):
+class StatisticsRepository(base_repository.BaseRepository[homework_models.Statistics]):
     """Repository for Statistics operations"""
 
     def __init__(self, db: orm.Session):
-        super().__init__(Statistics, db)
+        super().__init__(homework_models.Statistics, db)
 
     def get_by_student(
         self, student_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[Statistics]:
+    ) -> tp.List[homework_models.Statistics]:
         """Get statistics for student"""
         return (
-            self.db.query(Statistics)
-            .filter(Statistics.student_id == student_id)
-            .order_by(Statistics.created_at.desc())
+            self.db.query(homework_models.Statistics)
+            .filter(homework_models.Statistics.student_id == student_id)
+            .order_by(homework_models.Statistics.created_at.desc())
             .offset(skip)
             .limit(limit)
             .all()
@@ -157,11 +173,11 @@ class StatisticsRepository(BaseRepository[Statistics]):
 
     def get_by_homework(
         self, homework_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[Statistics]:
+    ) -> tp.List[homework_models.Statistics]:
         """Get statistics for homework"""
         return (
-            self.db.query(Statistics)
-            .filter(Statistics.homework_id == homework_id)
+            self.db.query(homework_models.Statistics)
+            .filter(homework_models.Statistics.homework_id == homework_id)
             .offset(skip)
             .limit(limit)
             .all()
@@ -169,17 +185,20 @@ class StatisticsRepository(BaseRepository[Statistics]):
 
     def get_student_homework_stats(
         self, student_id: int, homework_id: int
-    ) -> tp.Optional[Statistics]:
+    ) -> tp.Optional[homework_models.Statistics]:
         """Get specific student homework statistics"""
         return (
-            self.db.query(Statistics)
-            .filter(Statistics.student_id == student_id, Statistics.homework_id == homework_id)
+            self.db.query(homework_models.Statistics)
+            .filter(
+                homework_models.Statistics.student_id == student_id,
+                homework_models.Statistics.homework_id == homework_id,
+            )
             .first()
         )
 
     def get_or_create_stats(
         self, student_id: int, homework_id: int, max_score: float
-    ) -> Statistics:
+    ) -> homework_models.Statistics:
         """Get existing or create new statistics"""
         stats = self.get_student_homework_stats(student_id, homework_id)
         if stats:
@@ -196,12 +215,15 @@ class StatisticsRepository(BaseRepository[Statistics]):
         )
 
     def update_score(
-        self, stats_id: int, score: float, status: str = "in_progress"
-    ) -> tp.Optional[Statistics]:
+        self,
+        stats_id: int,
+        score: float,
+        status: str = "in_progress",
+    ) -> tp.Optional[homework_models.Statistics]:
         """Update statistics score"""
         return self.update(stats_id, {"score": score, "status": status})
 
-    def submit_homework(self, stats_id: int) -> tp.Optional[Statistics]:
+    def submit_homework(self, stats_id: int) -> tp.Optional[homework_models.Statistics]:
         """Mark homework as submitted"""
         return self.update(
             stats_id,
@@ -213,13 +235,11 @@ class StatisticsRepository(BaseRepository[Statistics]):
 
     def get_average_score_by_homework(self, homework_id: int) -> float:
         """Calculate average score for homework"""
-        from sqlalchemy import func
-
         result = (
-            self.db.query(func.avg(Statistics.score))
+            self.db.query(sa.func.avg(homework_models.Statistics.score))
             .filter(
-                Statistics.homework_id == homework_id,
-                Statistics.status.in_(["submitted", "graded"]),
+                homework_models.Statistics.homework_id == homework_id,
+                homework_models.Statistics.status.in_(["submitted", "graded"]),
             )
             .scalar()
         )

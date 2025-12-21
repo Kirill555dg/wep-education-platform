@@ -2,58 +2,70 @@
 Problem models: Problem, ProblemImage
 """
 
-from datetime import datetime
+import datetime as dt
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import relationship
+import sqlalchemy as sa
+from sqlalchemy import orm as orm
 
-from app.db.session import Base
+from app.db import session as db_session
 
 
-class Problem(Base):
+class Problem(db_session.Base):
     """Problem/Task/Question"""
 
     __tablename__ = "problems"
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), nullable=False)
-    description = Column(Text, nullable=False)  # текст задачи
-    problem_type = Column(String(50), nullable=False)
-    difficulty = Column(Integer, default=1, nullable=False)
-    correct_answer = Column(Text, nullable=True)  # правильный ответ (может быть JSON для вариантов)
-    explanation = Column(Text, nullable=True)  # объяснение решения
-    hints = Column(Text, nullable=True)  # подсказки (может быть JSON массив)
-    is_published = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id = sa.Column(sa.Integer, primary_key=True, index=True)
+    title = sa.Column(sa.String(255), nullable=False)
+    description = sa.Column(sa.Text, nullable=False)  # текст задачи
+    problem_type = sa.Column(sa.String(50), nullable=False)
+    difficulty = sa.Column(sa.Integer, default=1, nullable=False)
+    correct_answer = sa.Column(sa.Text, nullable=True)  # правильный ответ (может быть JSON для вариантов)
+    explanation = sa.Column(sa.Text, nullable=True)  # объяснение решения
+    hints = sa.Column(sa.Text, nullable=True)  # подсказки (может быть JSON массив)
+    is_published = sa.Column(sa.Boolean, default=False, nullable=False)
+    created_at = sa.Column(sa.DateTime, default=dt.datetime.utcnow, nullable=False)
+    updated_at = sa.Column(
+        sa.DateTime,
+        default=dt.datetime.utcnow,
+        onupdate=dt.datetime.utcnow,
+        nullable=False,
+    )
 
     # Relationships
-    homework_problems = relationship(
+    homework_problems = orm.relationship(
         "HomeworkProblem", back_populates="problem", cascade="all, delete-orphan"
     )
-    images = relationship("ProblemImage", back_populates="problem", cascade="all, delete-orphan")
+    images = orm.relationship("ProblemImage", back_populates="problem", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Problem(id={self.id}, title='{self.title}', type='{self.problem_type}')>"
 
 
-class ProblemImage(Base):
+class ProblemImage(db_session.Base):
     """Images attached to problems"""
 
     __tablename__ = "problem_images"
 
-    id = Column(Integer, primary_key=True, index=True)
-    problem_id = Column(
-        Integer, ForeignKey("problems.id", ondelete="CASCADE"), nullable=False, index=True
+    id = sa.Column(sa.Integer, primary_key=True, index=True)
+    problem_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("problems.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
-    file_id = Column(Integer, ForeignKey("files.id", ondelete="SET NULL"), nullable=True)
-    caption = Column(String(255), nullable=True)
-    order_number = Column(Integer, default=0, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    file_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("files.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    caption = sa.Column(sa.String(255), nullable=True)
+    order_number = sa.Column(sa.Integer, default=0, nullable=False)
+    created_at = sa.Column(sa.DateTime, default=dt.datetime.utcnow, nullable=False)
 
     # Relationships
-    problem = relationship("Problem", back_populates="images")
-    file = relationship("File")
+    problem = orm.relationship("Problem", back_populates="images")
+    file = orm.relationship("File")
 
     def __repr__(self) -> str:
         return f"<ProblemImage(id={self.id}, problem_id={self.problem_id})>"

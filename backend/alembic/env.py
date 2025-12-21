@@ -1,20 +1,21 @@
 """
 Alembic environment configuration
 """
-import typing as tp
-from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
+from logging import config as logging_config
+
+from sqlalchemy import engine as sa_engine
+from sqlalchemy import pool as sa_pool
 
 from alembic import context
 
 # Import our application configuration and Base
-from app.core.config import settings
-from app.db.session import Base
+from app.core import config as core_config
+from app.db import session as db_session
 
 # Import all models here to ensure they are registered with Base.metadata
 # This is crucial for autogenerate to work correctly
-from app.models import *  # noqa: F403, F401
+from app import models as app_models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,14 +24,14 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    logging_config.fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = Base.metadata
+target_metadata = db_session.Base.metadata
 
 # Override sqlalchemy.url from alembic.ini with our config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", core_config.settings.DATABASE_URL)
 
 
 def run_migrations_offline() -> None:
@@ -64,10 +65,10 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
-    connectable = engine_from_config(
+    connectable = sa_engine.engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
+        poolclass=sa_pool.NullPool,
     )
 
     with connectable.connect() as connection:

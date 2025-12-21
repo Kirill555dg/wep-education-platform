@@ -1,66 +1,61 @@
 """
 Homework service
 """
+
 import typing as tp
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+import fastapi
+from fastapi import status as http_status
+from sqlalchemy import orm as orm
 
-from app.repositories.classroom_repository import ClassroomRepository
-from app.repositories.homework_repository import (
-    HomeworkProblemRepository,
-    HomeworkRepository,
-    ProblemRepository,
-)
-from app.repositories.lesson_repository import LessonRepository
-from app.repositories.user_repository import StudentRepository, TeacherRepository
-from app.schemas.homework import (
-    HomeworkCreate,
-    HomeworkDetailResponse,
-    HomeworkResponse,
-    HomeworkUpdate,
-    ProblemFullResponse,
-    ProblemResponse,
-)
+from app.repositories import classroom_repository as classroom_repository
+from app.repositories import homework_repository as homework_repository
+from app.repositories import lesson_repository as lesson_repository
+from app.repositories import user_repository as user_repository
+from app.schemas import homework as homework_schemas
 
 
 class HomeworkService:
     """
     Service for homework management
-    
+
     Handles homework creation, problem assignment, viewing
     """
 
-    def __init__(self, db: Session):
+    def __init__(self, db: orm.Session):
         self.db = db
-        self.homework_repo = HomeworkRepository(db)
-        self.hw_problem_repo = HomeworkProblemRepository(db)
-        self.problem_repo = ProblemRepository(db)
-        self.lesson_repo = LessonRepository(db)
-        self.classroom_repo = ClassroomRepository(db)
-        self.teacher_repo = TeacherRepository(db)
-        self.student_repo = StudentRepository(db)
+        self.homework_repo = homework_repository.HomeworkRepository(db)
+        self.hw_problem_repo = homework_repository.HomeworkProblemRepository(db)
+        self.problem_repo = homework_repository.ProblemRepository(db)
+        self.lesson_repo = lesson_repository.LessonRepository(db)
+        self.classroom_repo = classroom_repository.ClassroomRepository(db)
+        self.teacher_repo = user_repository.TeacherRepository(db)
+        self.student_repo = user_repository.StudentRepository(db)
 
-    def create_homework(self, homework_data: HomeworkCreate, teacher_user_id: int) -> HomeworkResponse:
+    def create_homework(
+        self,
+        homework_data: homework_schemas.HomeworkCreate,
+        teacher_user_id: int,
+    ) -> homework_schemas.HomeworkResponse:
         """
         Create new homework
-        
+
         Args:
             homework_data: Homework creation data
             teacher_user_id: User ID of teacher
-            
+
         Returns:
             Created homework
-            
+
         Raises:
             HTTPException: If not authorized
         """
         # Verify lesson exists
         lesson = self.lesson_repo.get_by_id(homework_data.lesson_id)
         if not lesson:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
             )
 
         # Verify teacher owns classroom
@@ -68,9 +63,9 @@ class HomeworkService:
         teacher = self.teacher_repo.get_by_user_id(teacher_user_id)
 
         if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can create homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="Only classroom owner can create homework",
             )
 
         # Create homework
@@ -85,32 +80,37 @@ class HomeworkService:
                 homework.id, problem_id, points=points, order_number=idx
             )
 
-        response = HomeworkResponse.model_validate(homework)
+        response = homework_schemas.HomeworkResponse.model_validate(homework)
         response.problems_count = len(homework_data.problem_ids)
         return response
 
-    def get_homework(self, homework_id: int, user_id: int) -> HomeworkDetailResponse:
+    def get_homework(
+        self, homework_id: int, user_id: int
+    ) -> homework_schemas.HomeworkDetailResponse:
         """
         Get homework by ID
-        
+
         Args:
             homework_id: Homework ID
             user_id: User ID (for permission check)
-            
+
         Returns:
             Homework data
         """
         homework = self.homework_repo.get_by_id(homework_id)
         if not homework:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Homework not found"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Homework not found",
             )
 
         # Check if published for students
         lesson = self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
 
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(user_id)
@@ -118,31 +118,36 @@ class HomeworkService:
         # If not teacher of this classroom and homework not published, deny access
         is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
         if not is_teacher and not homework.is_published:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Homework not published yet"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="Homework not published yet",
             )
 
-        response = HomeworkDetailResponse.model_validate(homework)
+        response = homework_schemas.HomeworkDetailResponse.model_validate(homework)
         response.problems_count = len(self.hw_problem_repo.get_by_homework(homework_id))
         return response
 
-    def get_homework_problems(self, homework_id: int, user_id: int) -> tp.List[tp.Union[ProblemResponse, ProblemFullResponse]]:
+    def get_homework_problems(
+        self, homework_id: int, user_id: int
+    ) -> tp.List[tp.Union[homework_schemas.ProblemResponse, homework_schemas.ProblemFullResponse]]:
         """
         Get problems for homework
-        
+
         Teachers get full info (with answers), students get limited info
         """
         homework = self.homework_repo.get_by_id(homework_id)
         if not homework:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Homework not found"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Homework not found",
             )
 
         lesson = self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
 
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(user_id)
@@ -157,61 +162,67 @@ class HomeworkService:
 
         if is_teacher:
             # Teachers see full info
-            return [ProblemFullResponse.model_validate(p) for p in problems]
+            return [homework_schemas.ProblemFullResponse.model_validate(p) for p in problems]
         else:
             # Students don't see correct answers
-            return [ProblemResponse.model_validate(p) for p in problems]
+            return [homework_schemas.ProblemResponse.model_validate(p) for p in problems]
 
-    def update_homework(self, homework_id: int, homework_data: HomeworkUpdate, teacher_user_id: int) -> HomeworkResponse:
+    def update_homework(
+        self,
+        homework_id: int,
+        homework_data: homework_schemas.HomeworkUpdate,
+        teacher_user_id: int,
+    ) -> homework_schemas.HomeworkResponse:
         """Update homework (teacher only)"""
         homework = self.homework_repo.get_by_id(homework_id)
         if not homework:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Homework not found"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Homework not found",
             )
 
         # Verify teacher owns classroom
         lesson = self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
 
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(teacher_user_id)
 
         if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can update homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="Only classroom owner can update homework",
             )
 
-        updated = self.homework_repo.update(homework_id, homework_data.model_dump(exclude_unset=True))
+        updated = self.homework_repo.update(
+            homework_id, homework_data.model_dump(exclude_unset=True)
+        )
         if not updated:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update homework"
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update homework",
             )
 
-        return HomeworkResponse.model_validate(updated)
+        return homework_schemas.HomeworkResponse.model_validate(updated)
 
     def get_lesson_homework(
-        self,
-        lesson_id: int,
-        user_id: int,
-        skip: int = 0,
-        limit: int = 100
-    ) -> tp.List[HomeworkResponse]:
+        self, lesson_id: int, user_id: int, skip: int = 0, limit: int = 100
+    ) -> tp.List[homework_schemas.HomeworkResponse]:
         """
         Get all homework for a lesson
-        
+
         Teachers see all homework (including unpublished), students see only published.
-        
+
         Args:
             lesson_id: Lesson ID
             user_id: User ID (for permission check)
             skip: Number of records to skip
             limit: Maximum number of records to return
-            
+
         Returns:
             List of homework for the lesson
         """
@@ -231,5 +242,4 @@ class HomeworkService:
             # Students see only published
             homeworks = self.homework_repo.get_published(lesson_id, skip, limit)
 
-        return [HomeworkResponse.model_validate(hw) for hw in homeworks]
-
+        return [homework_schemas.HomeworkResponse.model_validate(hw) for hw in homeworks]

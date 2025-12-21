@@ -4,10 +4,10 @@ Application configuration settings
 
 import typing as tp
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import pydantic_settings
 
 
-class Settings(BaseSettings):
+class Settings(pydantic_settings.BaseSettings):
     """Application settings"""
 
     # Application
@@ -36,7 +36,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
+    model_config = pydantic_settings.SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
 
 settings = Settings()

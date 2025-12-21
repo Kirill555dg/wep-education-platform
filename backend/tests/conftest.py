@@ -1,27 +1,39 @@
-"""
-Pytest configuration and fixtures
-"""
+"""Pytest configuration and fixtures."""
+
+import typing as tp
+
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.db.session import Base
+import sqlalchemy as sa
+from sqlalchemy import orm as orm
+
+from app.db import session as db_session_module
 
 
 @pytest.fixture(scope="function")
-def db_session():
-    """
-    Create a fresh database session for each test
-    """
-    # Use in-memory SQLite for tests
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(bind=engine)
-    
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    session = SessionLocal()
-    
+def db_session() -> tp.Iterator[orm.Session]:
+    """Create a fresh in-memory SQLite session for each test."""
+    engine = sa.create_engine("sqlite:///:memory:")
+    db_session_module.Base.metadata.create_all(bind=engine)
+
+    session_local: orm.sessionmaker[orm.Session] = orm.sessionmaker(
+        autocommit=False,
+        autoflush=False,
+        bind=engine,
+    )
+    session = session_local()
+
     try:
         yield session
     finally:
         session.close()
-        Base.metadata.drop_all(bind=engine)
+        db_session_module.Base.metadata.drop_all(bind=engine)
 
+
+def mypy_config_resource() -> tuple[str, str]:
+    """Provide mypy config location for plugins."""
+    return "backend", "backend/mypy.ini"
+
+
+def mypy_check_root() -> str:
+    """Root directory to type-check."""
+    return "backend"
