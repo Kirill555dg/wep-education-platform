@@ -1,5 +1,7 @@
 PYTHON ?= python3.13
 UV ?= uv
+VENV ?= .venv
+PYTHON_BIN ?= $(VENV)/bin/python
 APP_MODULE ?= app.main:app
 HOST ?= 0.0.0.0
 PORT ?= 8000
@@ -8,30 +10,30 @@ PORT ?= 8000
 
 install:
 	$(UV) venv --python $(PYTHON)
-	$(UV) pip sync requirements.txt
+	$(UV) pip install -r requirements.txt
 
 sync:
-	$(UV) pip sync requirements.txt
+	$(UV) pip install -r requirements.txt
 
 lint:
-	$(UV) run ruff check app tests
+	$(PYTHON_BIN) -m ruff check app tests
 
 format:
-	$(UV) run ruff format app tests
+	$(PYTHON_BIN) -m ruff format app tests
 
 type:
-	$(UV) run mypy --config-file mypy.ini app
+	$(PYTHON_BIN) -m mypy --config-file mypy.ini app
 
 test:
-	$(UV) run pytest
+	$(PYTHON_BIN) -m pytest
 
 check: lint type test
 
 run:
-	$(UV) run uvicorn $(APP_MODULE) --host $(HOST) --port $(PORT)
+	$(PYTHON_BIN) -m uvicorn $(APP_MODULE) --host $(HOST) --port $(PORT)
 
 dev:
-	$(UV) run uvicorn $(APP_MODULE) --reload --host $(HOST) --port $(PORT)
+	$(PYTHON_BIN) -m uvicorn $(APP_MODULE) --reload --host $(HOST) --port $(PORT)
 
 clean:
-	rm -rf .venv
+	rm -rf $(VENV)
