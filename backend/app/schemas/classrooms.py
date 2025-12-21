@@ -3,19 +3,19 @@ Classroom Pydantic schemas (DTOs)
 """
 
 import typing as tp
-import datetime as dt
+from datetime import datetime
 
-import pydantic
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class ClassroomBase(pydantic.BaseModel):
+class ClassroomBase(BaseModel):
     """Base classroom fields"""
 
-    name: str = pydantic.Field(..., min_length=1, max_length=255)
+    name: str = Field(..., min_length=1, max_length=255)
     description: tp.Optional[str] = None
-    subject: str = pydantic.Field(..., min_length=1, max_length=100)
-    grade_level: tp.Optional[int] = pydantic.Field(None, ge=1, le=12)
-    max_students: int = pydantic.Field(default=30, ge=1, le=100)
+    subject: str = Field(..., min_length=1, max_length=100)
+    grade_level: tp.Optional[int] = Field(None, ge=1, le=12)
+    max_students: int = Field(default=30, ge=1, le=100)
 
 
 class ClassroomCreate(ClassroomBase):
@@ -24,14 +24,14 @@ class ClassroomCreate(ClassroomBase):
     pass  # teacher_id will be taken from authenticated user
 
 
-class ClassroomUpdate(pydantic.BaseModel):
+class ClassroomUpdate(BaseModel):
     """Schema for updating a classroom"""
 
-    name: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=255)
+    name: tp.Optional[str] = Field(None, min_length=1, max_length=255)
     description: tp.Optional[str] = None
-    subject: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=100)
-    grade_level: tp.Optional[int] = pydantic.Field(None, ge=1, le=12)
-    max_students: tp.Optional[int] = pydantic.Field(None, ge=1, le=100)
+    subject: tp.Optional[str] = Field(None, min_length=1, max_length=100)
+    grade_level: tp.Optional[int] = Field(None, ge=1, le=12)
+    max_students: tp.Optional[int] = Field(None, ge=1, le=100)
     is_active: tp.Optional[bool] = None
 
 
@@ -42,11 +42,11 @@ class ClassroomResponse(ClassroomBase):
     teacher_id: int
     is_active: bool
     invite_code: tp.Optional[str]
-    created_at: dt.datetime
-    updated_at: dt.datetime
+    created_at: datetime
+    updated_at: datetime
     students_count: int = 0  # Calculated field
 
-    model_config = pydantic.ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ClassroomDetailResponse(ClassroomResponse):
@@ -57,15 +57,15 @@ class ClassroomDetailResponse(ClassroomResponse):
 
 
 # Invite schemas
-class InviteCreate(pydantic.BaseModel):
+class InviteCreate(BaseModel):
     """Schema for creating an invite"""
 
     classroom_id: int
-    max_uses: tp.Optional[int] = pydantic.Field(default=1, ge=1)
-    expires_at: tp.Optional[dt.datetime] = None
+    max_uses: tp.Optional[int] = Field(default=1, ge=1)
+    expires_at: tp.Optional[datetime] = None
 
 
-class InviteResponse(pydantic.BaseModel):
+class InviteResponse(BaseModel):
     """Schema for invite response"""
 
     id: int
@@ -74,13 +74,13 @@ class InviteResponse(pydantic.BaseModel):
     max_uses: tp.Optional[int]
     uses_count: int
     status: str
-    expires_at: tp.Optional[dt.datetime]
-    created_at: dt.datetime
+    expires_at: tp.Optional[datetime]
+    created_at: datetime
 
-    model_config = pydantic.ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
-class JoinClassroomRequest(pydantic.BaseModel):
+class JoinClassroomRequest(BaseModel):
     """Schema for joining classroom via invite code"""
 
     invite_code: str

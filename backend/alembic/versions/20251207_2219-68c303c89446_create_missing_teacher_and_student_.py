@@ -6,15 +6,15 @@ Create Date: 2025-12-07 22:19:02.185915
 
 """
 
-import typing as tp
+from typing import Sequence, Union
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "68c303c89446"
-down_revision: tp.Union[str, tp.Sequence[str], None] = "765d7038a0e6"
-branch_labels: tp.Union[str, tp.Sequence[str], None] = None
-depends_on: tp.Union[str, tp.Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = "765d7038a0e6"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:

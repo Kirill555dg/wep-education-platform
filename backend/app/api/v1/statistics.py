@@ -4,22 +4,26 @@ Statistics and results endpoints
 
 import typing as tp
 
-import fastapi
+from fastapi import APIRouter, Depends, Query
 
-from app.api import dependencies as deps
-from app.models import users as user_models
-from app.schemas import homework as homework_schemas
-from app.services import result_service as result_service_module
+from app.api.dependencies import (
+    get_current_student,
+    get_current_teacher,
+    get_result_service,
+)
+from app.models.users import User
+from app.schemas.homework import StatisticsResponse
+from app.services.result_service import ResultService
 
-router = fastapi.APIRouter()
+router = APIRouter()
 
 
-@router.get("/me", response_model=tp.List[homework_schemas.StatisticsResponse])
+@router.get("/me", response_model=tp.List[StatisticsResponse])
 async def get_my_statistics(
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
-    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
-    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    current_user: User = Depends(get_current_student),
+    result_service: ResultService = Depends(get_result_service),
 ):
     """
     Get all statistics for current student
@@ -31,8 +35,8 @@ async def get_my_statistics(
 
 @router.get("/me/progress")
 async def get_my_progress(
-    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
-    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
+    current_user: User = Depends(get_current_student),
+    result_service: ResultService = Depends(get_result_service),
 ):
     """
     Get overall progress for current student
@@ -49,16 +53,13 @@ async def get_my_progress(
     return result_service.get_student_progress(current_user.id)
 
 
-@router.get(
-    "/homework/{homework_id}",
-    response_model=tp.List[homework_schemas.StatisticsResponse],
-)
+@router.get("/homework/{homework_id}", response_model=tp.List[StatisticsResponse])
 async def get_homework_statistics(
     homework_id: int,
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    current_user: User = Depends(get_current_teacher),
+    result_service: ResultService = Depends(get_result_service),
 ):
     """
     Get statistics for all students for a specific homework (teachers only)
@@ -71,8 +72,8 @@ async def get_homework_statistics(
 @router.get("/classroom/{classroom_id}/progress")
 async def get_classroom_progress(
     classroom_id: int,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
+    current_user: User = Depends(get_current_teacher),
+    result_service: ResultService = Depends(get_result_service),
 ):
     """
     Get overall progress for a classroom (teachers only)
@@ -86,16 +87,13 @@ async def get_classroom_progress(
     return result_service.get_classroom_progress(classroom_id, current_user.id)
 
 
-@router.get(
-    "/student/{student_user_id}",
-    response_model=tp.List[homework_schemas.StatisticsResponse],
-)
+@router.get("/student/{student_user_id}", response_model=tp.List[StatisticsResponse])
 async def get_student_statistics_by_teacher(
     student_user_id: int,
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    current_user: User = Depends(get_current_teacher),
+    result_service: ResultService = Depends(get_result_service),
 ):
     """
     Get statistics for a specific student (teachers only)

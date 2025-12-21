@@ -4,26 +4,30 @@ Lesson management endpoints
 
 import typing as tp
 
-import fastapi
-from fastapi import status as http_status
+from fastapi import APIRouter, Depends, Query, status
 
-from app.api import dependencies as deps
-from app.models import users as user_models
-from app.schemas import lessons as lesson_schemas
-from app.services import lesson_service as lesson_service_module
-
-router = fastapi.APIRouter()
-
-
-@router.post(
-    "",
-    response_model=lesson_schemas.LessonResponse,
-    status_code=http_status.HTTP_201_CREATED,
+from app.api.dependencies import (
+    get_current_teacher,
+    get_current_user,
+    get_lesson_service,
 )
+from app.models.users import User
+from app.schemas.lessons import (
+    LessonCreate,
+    LessonDetailResponse,
+    LessonResponse,
+    LessonUpdate,
+)
+from app.services.lesson_service import LessonService
+
+router = APIRouter()
+
+
+@router.post("", response_model=LessonResponse, status_code=status.HTTP_201_CREATED)
 async def create_lesson(
-    lesson_data: lesson_schemas.LessonCreate,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    lesson_service: lesson_service_module.LessonService = fastapi.Depends(deps.get_lesson_service),
+    lesson_data: LessonCreate,
+    current_user: User = Depends(get_current_teacher),
+    lesson_service: LessonService = Depends(get_lesson_service),
 ):
     """
     Create new lesson (teachers only)
@@ -37,16 +41,13 @@ async def create_lesson(
     return lesson_service.create_lesson(lesson_data, current_user.id)
 
 
-@router.get(
-    "/classroom/{classroom_id}",
-    response_model=tp.List[lesson_schemas.LessonResponse],
-)
+@router.get("/classroom/{classroom_id}", response_model=tp.List[LessonResponse])
 async def get_classroom_lessons(
     classroom_id: int,
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
-    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
-    lesson_service: lesson_service_module.LessonService = fastapi.Depends(deps.get_lesson_service),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    lesson_service: LessonService = Depends(get_lesson_service),
 ):
     """
     Get all lessons for a classroom
@@ -57,11 +58,11 @@ async def get_classroom_lessons(
     return lesson_service.get_classroom_lessons(classroom_id, current_user.id, skip, limit)
 
 
-@router.get("/{lesson_id}", response_model=lesson_schemas.LessonDetailResponse)
+@router.get("/{lesson_id}", response_model=LessonDetailResponse)
 async def get_lesson(
     lesson_id: int,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
-    lesson_service: lesson_service_module.LessonService = fastapi.Depends(deps.get_lesson_service),
+    current_user: User = Depends(get_current_user),
+    lesson_service: LessonService = Depends(get_lesson_service),
 ):
     """
     Get lesson details by ID
@@ -69,12 +70,12 @@ async def get_lesson(
     return lesson_service.get_lesson(lesson_id)
 
 
-@router.patch("/{lesson_id}", response_model=lesson_schemas.LessonResponse)
+@router.patch("/{lesson_id}", response_model=LessonResponse)
 async def update_lesson(
     lesson_id: int,
-    lesson_data: lesson_schemas.LessonUpdate,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    lesson_service: lesson_service_module.LessonService = fastapi.Depends(deps.get_lesson_service),
+    lesson_data: LessonUpdate,
+    current_user: User = Depends(get_current_teacher),
+    lesson_service: LessonService = Depends(get_lesson_service),
 ):
     """
     Update lesson (teachers only, owner only)
@@ -82,11 +83,11 @@ async def update_lesson(
     return lesson_service.update_lesson(lesson_id, lesson_data, current_user.id)
 
 
-@router.delete("/{lesson_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@router.delete("/{lesson_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_lesson(
     lesson_id: int,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    lesson_service: lesson_service_module.LessonService = fastapi.Depends(deps.get_lesson_service),
+    current_user: User = Depends(get_current_teacher),
+    lesson_service: LessonService = Depends(get_lesson_service),
 ):
     """
     Delete lesson (teachers only, owner only)

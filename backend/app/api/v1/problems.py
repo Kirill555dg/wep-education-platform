@@ -4,26 +4,25 @@ Problem management endpoints
 
 import typing as tp
 
-import fastapi
-from fastapi import status as http_status
+from fastapi import APIRouter, Depends, Query, status
 
-from app.api import dependencies as deps
-from app.models import users as user_models
-from app.schemas import homework as homework_schemas
-from app.services import problem_service as problem_service_module
-
-router = fastapi.APIRouter()
-
-
-@router.post(
-    "",
-    response_model=homework_schemas.ProblemFullResponse,
-    status_code=http_status.HTTP_201_CREATED,
+from app.api.dependencies import get_current_teacher, get_problem_service
+from app.models.users import User
+from app.schemas.homework import (
+    ProblemCreate,
+    ProblemFullResponse,
+    ProblemUpdate,
 )
+from app.services.problem_service import ProblemService
+
+router = APIRouter()
+
+
+@router.post("", response_model=ProblemFullResponse, status_code=status.HTTP_201_CREATED)
 async def create_problem(
-    problem_data: homework_schemas.ProblemCreate,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    problem_service: problem_service_module.ProblemService = fastapi.Depends(deps.get_problem_service),
+    problem_data: ProblemCreate,
+    current_user: User = Depends(get_current_teacher),
+    problem_service: ProblemService = Depends(get_problem_service),
 ):
     """
     Create new problem (teachers only)
@@ -37,15 +36,15 @@ async def create_problem(
     - **hints**: Hints (optional)
     """
     problem = problem_service.create_problem(problem_data, current_user.id)
-    return homework_schemas.ProblemFullResponse.model_validate(problem)
+    return ProblemFullResponse.model_validate(problem)
 
 
-@router.get("", response_model=tp.List[homework_schemas.ProblemFullResponse])
+@router.get("", response_model=tp.List[ProblemFullResponse])
 async def get_problems(
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    problem_service: problem_service_module.ProblemService = fastapi.Depends(deps.get_problem_service),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    current_user: User = Depends(get_current_teacher),
+    problem_service: ProblemService = Depends(get_problem_service),
 ):
     """
     Get all problems (teachers only)
@@ -53,41 +52,41 @@ async def get_problems(
     Teachers can see all problems with correct answers
     """
     problems = problem_service.get_all_problems(skip, limit)
-    return [homework_schemas.ProblemFullResponse.model_validate(problem_item) for problem_item in problems]
+    return [ProblemFullResponse.model_validate(p) for p in problems]
 
 
-@router.get("/{problem_id}", response_model=homework_schemas.ProblemFullResponse)
+@router.get("/{problem_id}", response_model=ProblemFullResponse)
 async def get_problem(
     problem_id: int,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    problem_service: problem_service_module.ProblemService = fastapi.Depends(deps.get_problem_service),
+    current_user: User = Depends(get_current_teacher),
+    problem_service: ProblemService = Depends(get_problem_service),
 ):
     """
     Get problem by ID (teachers only)
     """
     problem = problem_service.get_problem_by_id(problem_id)
-    return homework_schemas.ProblemFullResponse.model_validate(problem)
+    return ProblemFullResponse.model_validate(problem)
 
 
-@router.patch("/{problem_id}", response_model=homework_schemas.ProblemFullResponse)
+@router.patch("/{problem_id}", response_model=ProblemFullResponse)
 async def update_problem(
     problem_id: int,
-    problem_data: homework_schemas.ProblemUpdate,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    problem_service: problem_service_module.ProblemService = fastapi.Depends(deps.get_problem_service),
+    problem_data: ProblemUpdate,
+    current_user: User = Depends(get_current_teacher),
+    problem_service: ProblemService = Depends(get_problem_service),
 ):
     """
     Update problem (teachers only)
     """
     problem = problem_service.update_problem(problem_id, problem_data, current_user.id)
-    return homework_schemas.ProblemFullResponse.model_validate(problem)
+    return ProblemFullResponse.model_validate(problem)
 
 
-@router.delete("/{problem_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@router.delete("/{problem_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_problem(
     problem_id: int,
-    current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
-    problem_service: problem_service_module.ProblemService = fastapi.Depends(deps.get_problem_service),
+    current_user: User = Depends(get_current_teacher),
+    problem_service: ProblemService = Depends(get_problem_service),
 ):
     """
     Delete problem (teachers only)

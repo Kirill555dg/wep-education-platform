@@ -4,11 +4,11 @@ Base repository pattern implementation
 
 import typing as tp
 
-from sqlalchemy import orm as orm
+from sqlalchemy.orm import Session
 
-from app.db import session as db_session
+from app.db.session import Base
 
-T = tp.TypeVar("T", bound=db_session.Base)
+T = tp.TypeVar("T", bound=Base)
 
 
 class BaseRepository(tp.Generic[T]):
@@ -19,13 +19,13 @@ class BaseRepository(tp.Generic[T]):
     for any SQLAlchemy model.
     """
 
-    def __init__(self, model: tp.Type[T], db: orm.Session):
+    def __init__(self, model: tp.Type[T], db: Session):
         self.model = model
         self.db = db
 
     def get_by_id(self, id: int) -> tp.Optional[T]:
         """Get entity by ID"""
-        return self.db.query(self.model).filter(self.model.id == id).first()  # type: ignore[attr-defined]
+        return self.db.query(self.model).filter(self.model.id == id).first()
 
     def get_all(self, skip: int = 0, limit: int = 100) -> tp.List[T]:
         """Get all entities with pagination"""

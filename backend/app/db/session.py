@@ -4,35 +4,36 @@ Database session management
 
 import typing as tp
 
-import sqlalchemy as sa
-from sqlalchemy import orm as orm
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session, sessionmaker
 
-from app.core import config as core_config
+from app.core.config import settings
 
 # Create SQLAlchemy engine
 # For SQLite, we need check_same_thread=False
 # For PostgreSQL, we can add pool settings
 connect_args = {}
-if "sqlite" in core_config.settings.DATABASE_URL:
+if "sqlite" in settings.DATABASE_URL:
     connect_args = {"check_same_thread": False}
 
-engine = sa.create_engine(
-    core_config.settings.DATABASE_URL,
+engine = create_engine(
+    settings.DATABASE_URL,
     connect_args=connect_args,
-    echo=core_config.settings.DEBUG,
+    echo=settings.DEBUG,
     pool_pre_ping=True,  # Проверять соединения перед использованием
     pool_size=5,  # Размер пула соединений
     max_overflow=10,  # Максимальное количество дополнительных соединений
 )
 
 # Create SessionLocal class
-SessionLocal = orm.sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create Base class for declarative models
-Base = orm.declarative_base()
+Base = declarative_base()
 
 
-def get_db() -> tp.Generator[orm.Session, None, None]:
+def get_db() -> tp.Generator[Session, None, None]:
     """
     Dependency for getting database session
 

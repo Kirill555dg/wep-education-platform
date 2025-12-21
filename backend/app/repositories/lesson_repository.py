@@ -4,81 +4,68 @@ Lesson and Theory Material repositories
 
 import typing as tp
 
-from sqlalchemy import orm as orm
+from sqlalchemy.orm import Session, joinedload
 
-from app.models import lessons as lesson_models
-from app.models import theory as theory_models
-from app.repositories import base as base_repository
+from app.models.lessons import Lesson, LessonMaterial
+from app.models.theory import Subject, TheoryMaterial
+from app.repositories.base import BaseRepository
 
 
-class LessonRepository(base_repository.BaseRepository[lesson_models.Lesson]):
+class LessonRepository(BaseRepository[Lesson]):
     """Repository for Lesson operations"""
 
-    def __init__(self, db: orm.Session):
-        super().__init__(lesson_models.Lesson, db)
+    def __init__(self, db: Session):
+        super().__init__(Lesson, db)
 
-    def get_by_classroom(
-        self, classroom_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[lesson_models.Lesson]:
+    def get_by_classroom(self, classroom_id: int, skip: int = 0, limit: int = 100) -> tp.List[Lesson]:
         """Get lessons for classroom"""
         return (
-            self.db.query(lesson_models.Lesson)
-            .filter(lesson_models.Lesson.classroom_id == classroom_id)
-            .order_by(lesson_models.Lesson.order_number)
+            self.db.query(Lesson)
+            .filter(Lesson.classroom_id == classroom_id)
+            .order_by(Lesson.order_number)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_published(
-        self, classroom_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[lesson_models.Lesson]:
+    def get_published(self, classroom_id: int, skip: int = 0, limit: int = 100) -> tp.List[Lesson]:
         """Get published lessons for classroom"""
         return (
-            self.db.query(lesson_models.Lesson)
-            .filter(lesson_models.Lesson.classroom_id == classroom_id, lesson_models.Lesson.is_published)
-            .order_by(lesson_models.Lesson.order_number)
+            self.db.query(Lesson)
+            .filter(Lesson.classroom_id == classroom_id, Lesson.is_published)
+            .order_by(Lesson.order_number)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_with_materials(self, lesson_id: int) -> tp.Optional[lesson_models.Lesson]:
+    def get_with_materials(self, lesson_id: int) -> tp.Optional[Lesson]:
         """Get lesson with materials"""
-        return (
-            self.db.query(lesson_models.Lesson)
-            .options(orm.joinedload(lesson_models.Lesson.lesson_materials))
-            .filter(lesson_models.Lesson.id == lesson_id)
-            .first()
-        )
+        return self.db.query(Lesson).options(joinedload(Lesson.lesson_materials)).filter(Lesson.id == lesson_id).first()
 
     def count_by_classroom(self, classroom_id: int) -> int:
         """Count lessons in classroom"""
-        return (
-            self.db.query(lesson_models.Lesson)
-            .filter(lesson_models.Lesson.classroom_id == classroom_id)
-            .count()
-        )
+        return self.db.query(Lesson).filter(Lesson.classroom_id == classroom_id).count()
 
 
-class LessonMaterialRepository(base_repository.BaseRepository[lesson_models.LessonMaterial]):
+class LessonMaterialRepository(BaseRepository[LessonMaterial]):
     """Repository for LessonMaterial operations"""
 
-    def __init__(self, db: orm.Session):
-        super().__init__(lesson_models.LessonMaterial, db)
+    def __init__(self, db: Session):
+        super().__init__(LessonMaterial, db)
 
-    def get_by_lesson(self, lesson_id: int) -> tp.List[lesson_models.LessonMaterial]:
+    def get_by_lesson(self, lesson_id: int) -> tp.List[LessonMaterial]:
         """Get materials for lesson"""
         return (
-            self.db.query(lesson_models.LessonMaterial)
-            .filter(lesson_models.LessonMaterial.lesson_id == lesson_id)
-            .order_by(lesson_models.LessonMaterial.order_number)
+            self.db.query(LessonMaterial)
+            .filter(LessonMaterial.lesson_id == lesson_id)
+            .order_by(LessonMaterial.order_number)
             .all()
         )
 
     def add_material_to_lesson(
         self, lesson_id: int, material_id: int, order_number: int = 0, is_required: bool = True
-    ) -> lesson_models.LessonMaterial:
+    ) -> LessonMaterial:
         """Add material to lesson"""
         return self.create(
             {
@@ -90,58 +77,51 @@ class LessonMaterialRepository(base_repository.BaseRepository[lesson_models.Less
         )
 
 
-class TheoryMaterialRepository(base_repository.BaseRepository[theory_models.TheoryMaterial]):
+class TheoryMaterialRepository(BaseRepository[TheoryMaterial]):
     """Repository for TheoryMaterial operations"""
 
-    def __init__(self, db: orm.Session):
-        super().__init__(theory_models.TheoryMaterial, db)
+    def __init__(self, db: Session):
+        super().__init__(TheoryMaterial, db)
 
-    def get_by_subsection(
-        self, subsection_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[theory_models.TheoryMaterial]:
+    def get_by_subsection(self, subsection_id: int, skip: int = 0, limit: int = 100) -> tp.List[TheoryMaterial]:
         """Get materials for subsection"""
         return (
-            self.db.query(theory_models.TheoryMaterial)
-            .filter(theory_models.TheoryMaterial.subsection_id == subsection_id)
-            .order_by(theory_models.TheoryMaterial.order_number)
+            self.db.query(TheoryMaterial)
+            .filter(TheoryMaterial.subsection_id == subsection_id)
+            .order_by(TheoryMaterial.order_number)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
-    def get_published(
-        self, subsection_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[theory_models.TheoryMaterial]:
+    def get_published(self, subsection_id: int, skip: int = 0, limit: int = 100) -> tp.List[TheoryMaterial]:
         """Get published materials for subsection"""
         return (
-            self.db.query(theory_models.TheoryMaterial)
-            .filter(
-                theory_models.TheoryMaterial.subsection_id == subsection_id,
-                theory_models.TheoryMaterial.is_published,
-            )
-            .order_by(theory_models.TheoryMaterial.order_number)
+            self.db.query(TheoryMaterial)
+            .filter(TheoryMaterial.subsection_id == subsection_id, TheoryMaterial.is_published)
+            .order_by(TheoryMaterial.order_number)
             .offset(skip)
             .limit(limit)
             .all()
         )
 
 
-class SubjectRepository(base_repository.BaseRepository[theory_models.Subject]):
+class SubjectRepository(BaseRepository[Subject]):
     """Repository for Subject operations"""
 
-    def __init__(self, db: orm.Session):
-        super().__init__(theory_models.Subject, db)
+    def __init__(self, db: Session):
+        super().__init__(Subject, db)
 
-    def get_by_name(self, name: str) -> tp.Optional[theory_models.Subject]:
+    def get_by_name(self, name: str) -> tp.Optional[Subject]:
         """Get subject by name"""
-        return self.db.query(theory_models.Subject).filter(theory_models.Subject.name == name).first()
+        return self.db.query(Subject).filter(Subject.name == name).first()
 
-    def get_active(self, skip: int = 0, limit: int = 100) -> tp.List[theory_models.Subject]:
+    def get_active(self, skip: int = 0, limit: int = 100) -> tp.List[Subject]:
         """Get active subjects"""
         return (
-            self.db.query(theory_models.Subject)
-            .filter(theory_models.Subject.is_active)
-            .order_by(theory_models.Subject.order_number)
+            self.db.query(Subject)
+            .filter(Subject.is_active)
+            .order_by(Subject.order_number)
             .offset(skip)
             .limit(limit)
             .all()
