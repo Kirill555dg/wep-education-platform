@@ -26,7 +26,7 @@ async def get_my_statistics(
 
     Returns all homework attempts with scores and status
     """
-    return result_service.get_student_statistics(current_user.id, skip, limit)
+    return await result_service.get_student_statistics(current_user.id, skip, limit)
 
 
 @router.get("/me/progress")
@@ -46,7 +46,7 @@ async def get_my_progress(
     - total_attempts: Total number of attempts
     - total_time_spent_minutes: Total time spent
     """
-    return result_service.get_student_progress(current_user.id)
+    return await result_service.get_student_progress(current_user.id)
 
 
 @router.get(
@@ -65,7 +65,7 @@ async def get_homework_statistics(
 
     Returns all student attempts for the homework
     """
-    return result_service.get_homework_statistics(homework_id, current_user.id, skip, limit)
+    return await result_service.get_homework_statistics(homework_id, current_user.id, skip, limit)
 
 
 @router.get("/classroom/{classroom_id}/progress")
@@ -83,7 +83,7 @@ async def get_classroom_progress(
     - completed_homeworks: Number of completed homeworks
     - average_completion_rate: Average completion rate (%)
     """
-    return result_service.get_classroom_progress(classroom_id, current_user.id)
+    return await result_service.get_classroom_progress(classroom_id, current_user.id)
 
 
 @router.get(
@@ -102,4 +102,4 @@ async def get_student_statistics_by_teacher(
 
     Teachers can view any student's statistics
     """
-    return result_service.get_student_statistics(student_user_id, skip, limit)
+    return await result_service.get_student_statistics(student_user_id, skip, limit)

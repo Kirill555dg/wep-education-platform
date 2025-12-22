@@ -6,7 +6,7 @@ import typing as tp
 
 import fastapi
 from fastapi import status as http_status
-from sqlalchemy import orm as orm
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.repositories import homework_repository as homework_repository
 from app.repositories import user_repository as user_repository
@@ -20,7 +20,7 @@ class TestingService:
     Handles answer submission, automatic checking, and statistics updates
     """
 
-    def __init__(self, db: orm.Session):
+    def __init__(self, db: sa_asyncio.AsyncSession):
         self.db = db
         self.homework_repo = homework_repository.HomeworkRepository(db)
         self.problem_repo = homework_repository.ProblemRepository(db)
@@ -28,7 +28,7 @@ class TestingService:
         self.hw_problem_repo = homework_repository.HomeworkProblemRepository(db)
         self.student_repo = user_repository.StudentRepository(db)
 
-    def submit_answer(
+    async def submit_answer(
         self,
         answer_data: homework_schemas.AnswerSubmit,
         student_user_id: int,
@@ -47,7 +47,7 @@ class TestingService:
             HTTPException: If not authorized or validation fails
         """
         # Verify student
-        student = self.student_repo.get_by_user_id(student_user_id)
+        student = await self.student_repo.get_by_user_id(student_user_id)
         if not student:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_403_FORBIDDEN,
@@ -55,14 +55,14 @@ class TestingService:
             )
 
         # Verify homework and problem exist
-        homework = self.homework_repo.get_by_id(answer_data.homework_id)
+        homework = await self.homework_repo.get_by_id(answer_data.homework_id)
         if not homework:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="Homework not found",
             )
 
-        problem = self.problem_repo.get_by_id(answer_data.problem_id)
+        problem = await self.problem_repo.get_by_id(answer_data.problem_id)
         if not problem:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
@@ -70,7 +70,7 @@ class TestingService:
             )
 
         # Check if problem is in homework
-        hw_problems = self.hw_problem_repo.get_by_homework(answer_data.homework_id)
+        hw_problems = await self.hw_problem_repo.get_by_homework(answer_data.homework_id)
         hw_problem = next(
             (hp for hp in hw_problems if hp.problem_id == answer_data.problem_id), None
         )
@@ -82,7 +82,7 @@ class TestingService:
             )
 
         # Get or create statistics
-        stats = self.stats_repo.get_or_create_stats(
+        stats = await self.stats_repo.get_or_create_stats(
             student.id, answer_data.homework_id, homework.max_score
         )
 
@@ -97,7 +97,7 @@ class TestingService:
             new_score = stats.score
 
         # Update statistics
-        updated_stats = self.stats_repo.update(
+        updated_stats = await self.stats_repo.update(
             stats.id,
             {
                 "score": new_score,
@@ -115,7 +115,7 @@ class TestingService:
 
         return homework_schemas.StatisticsResponse.model_validate(updated_stats)
 
-    def submit_homework(
+    async def submit_homework(
         self,
         homework_id: int,
         student_user_id: int,
@@ -130,7 +130,7 @@ class TestingService:
         Returns:
             Final statistics
         """
-        student = self.student_repo.get_by_user_id(student_user_id)
+        student = await self.student_repo.get_by_user_id(student_user_id)
         if not student:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_403_FORBIDDEN,
@@ -138,7 +138,7 @@ class TestingService:
             )
 
         # Get statistics
-        stats = self.stats_repo.get_student_homework_stats(student.id, homework_id)
+        stats = await self.stats_repo.get_student_homework_stats(student.id, homework_id)
         if not stats:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
@@ -146,7 +146,7 @@ class TestingService:
             )
 
         # Mark as submitted
-        updated_stats = self.stats_repo.submit_homework(stats.id)
+        updated_stats = await self.stats_repo.submit_homework(stats.id)
         if not updated_stats:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -168,7 +168,7 @@ class TestingService:
         # Simple case-insensitive comparison
         return student_answer.strip().lower() == correct_answer.strip().lower()
 
-    def get_homework_status(
+    async def get_homework_status(
         self,
         homework_id: int,
         student_user_id: int,
@@ -186,14 +186,14 @@ class TestingService:
         Raises:
             HTTPException: If student not found or no attempts found
         """
-        student = self.student_repo.get_by_user_id(student_user_id)
+        student = await self.student_repo.get_by_user_id(student_user_id)
         if not student:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="Student not found",
             )
 
-        stats = self.stats_repo.get_student_homework_stats(student.id, homework_id)
+        stats = await self.stats_repo.get_student_homework_stats(student.id, homework_id)
         if not stats:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,

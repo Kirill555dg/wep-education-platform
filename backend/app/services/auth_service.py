@@ -8,7 +8,7 @@ import datetime as dt
 
 import fastapi
 from fastapi import status as http_status
-from sqlalchemy import orm as orm
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.core import security as core_security
 from app.repositories import user_repository as user_repository
@@ -22,14 +22,14 @@ class AuthService:
     Handles user registration, login, and role-based operations
     """
 
-    def __init__(self, db: orm.Session):
+    def __init__(self, db: sa_asyncio.AsyncSession):
         self.db = db
         self.user_repo = user_repository.UserRepository(db)
         self.login_repo = user_repository.LoginDataRepository(db)
         self.teacher_repo = user_repository.TeacherRepository(db)
         self.student_repo = user_repository.StudentRepository(db)
 
-    def register_user(self, user_data: user_schemas.UserCreate) -> user_schemas.UserResponse:
+    async def register_user(self, user_data: user_schemas.UserCreate) -> user_schemas.UserResponse:
         """
         Register new user
 
@@ -45,7 +45,7 @@ class AuthService:
         generated_username = user_data.username or user_data.email.split("@")[0]
 
         # Check if email exists
-        existing_email = self.user_repo.get_by_email(user_data.email)
+        existing_email = await self.user_repo.get_by_email(user_data.email)
         if existing_email:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
@@ -53,7 +53,7 @@ class AuthService:
             )
 
         # Create user
-        user = self.user_repo.create(
+        user = await self.user_repo.create(
             {
                 "username": generated_username,
                 "email": user_data.email,
@@ -72,12 +72,12 @@ class AuthService:
 
         # Create login data
         hashed_password = core_security.get_password_hash(user_data.password)
-        self.login_repo.create_for_user(user.id, hashed_password)
+        await self.login_repo.create_for_user(user.id, hashed_password)
 
         # Create BOTH teacher and student profiles
         # This allows users to switch between roles
-        self.teacher_repo.create({"user_id": user.id})
-        self.student_repo.create({"user_id": user.id})
+        await self.teacher_repo.create({"user_id": user.id})
+        await self.student_repo.create({"user_id": user.id})
 
         return user_schemas.UserResponse(
             id=user.id,
@@ -94,10 +94,10 @@ class AuthService:
             hashed_password=hashed_password,
         )
 
-    def authenticate(
+    async def authenticate(
         self,
         login_data: user_schemas.LoginRequest,
-    ) -> user_schemas.TokenResponse:
+    ) -> tp.Optional[user_schemas.TokenResponse]:
         """
         Authenticate user and return JWT token
 
@@ -111,7 +111,7 @@ class AuthService:
             HTTPException: If credentials are invalid
         """
         # Find user by username or email
-        user = self.user_repo.get_by_username_or_email(login_data.username_or_email)
+        user = await self.user_repo.get_by_username_or_email(login_data.username_or_email)
         if not user:
             return None
 
@@ -123,7 +123,7 @@ class AuthService:
             )
 
         # Get login data
-        login_info = self.login_repo.get_by_user_id(user.id)
+        login_info = await self.login_repo.get_by_user_id(user.id)
         if not login_info:
             return None
 
@@ -132,7 +132,7 @@ class AuthService:
             return None
 
         # Update last login
-        self.login_repo.update(login_info.id, {"last_login": dt.datetime.utcnow()})
+        await self.login_repo.update(login_info.id, {"last_login": dt.datetime.utcnow()})
 
         # Create access token
         access_token = core_security.create_access_token(data={"sub": str(user.id)})
@@ -155,7 +155,7 @@ class AuthService:
             ),
         )
 
-    def get_user_role(self, user_id: int) -> tp.Optional[str]:
+    async def get_user_role(self, user_id: int) -> tp.Optional[str]:
         """
         Get user role (teacher or student)
 
@@ -165,17 +165,17 @@ class AuthService:
         Returns:
             "teacher" or "student" or None
         """
-        teacher = self.teacher_repo.get_by_user_id(user_id)
+        teacher = await self.teacher_repo.get_by_user_id(user_id)
         if teacher:
             return "teacher"
 
-        student = self.student_repo.get_by_user_id(user_id)
+        student = await self.student_repo.get_by_user_id(user_id)
         if student:
             return "student"
 
         return None
 
-    def get_current_user(self, user_id: int) -> user_schemas.UserResponse:
+    async def get_current_user(self, user_id: int) -> user_schemas.UserResponse:
         """
         Get current authenticated user
 
@@ -188,7 +188,7 @@ class AuthService:
         Raises:
             HTTPException: If user not found
         """
-        user = self.user_repo.get_by_id(user_id)
+        user = await self.user_repo.get_by_id(user_id)
         if not user:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,

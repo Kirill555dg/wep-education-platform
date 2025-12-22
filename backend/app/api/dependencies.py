@@ -7,7 +7,7 @@ import typing as tp
 import fastapi
 from fastapi import security as fastapi_security
 from fastapi import status as http_status
-from sqlalchemy import orm as orm
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.core import security as core_security
 from app.db import session as db_session
@@ -63,9 +63,9 @@ def get_current_user_id(
         )
 
 
-def get_current_user(
+async def get_current_user(
     user_id: int = fastapi.Depends(get_current_user_id),
-    db: orm.Session = fastapi.Depends(db_session.get_db),
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> user_models.User:
     """
     Get current authenticated user from database
@@ -74,7 +74,7 @@ def get_current_user(
         HTTPException: If user not found or inactive
     """
     user_repo = user_repository.UserRepository(db)
-    user = user_repo.get_by_id(user_id)
+    user = await user_repo.get_by_id(user_id)
 
     if not user:
         raise fastapi.HTTPException(
@@ -91,9 +91,9 @@ def get_current_user(
     return user
 
 
-def get_current_teacher(
+async def get_current_teacher(
     current_user: user_models.User = fastapi.Depends(get_current_user),
-    db: orm.Session = fastapi.Depends(db_session.get_db),
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> user_models.User:
     """
     Verify current user is a teacher
@@ -102,7 +102,7 @@ def get_current_teacher(
         HTTPException: If user is not a teacher
     """
     teacher_repo = user_repository.TeacherRepository(db)
-    teacher = teacher_repo.get_by_user_id(current_user.id)
+    teacher = await teacher_repo.get_by_user_id(current_user.id)
 
     if not teacher:
         raise fastapi.HTTPException(
@@ -113,9 +113,9 @@ def get_current_teacher(
     return current_user
 
 
-def get_current_student(
+async def get_current_student(
     current_user: user_models.User = fastapi.Depends(get_current_user),
-    db: orm.Session = fastapi.Depends(db_session.get_db),
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> user_models.User:
     """
     Verify current user is a student
@@ -124,7 +124,7 @@ def get_current_student(
         HTTPException: If user is not a student
     """
     student_repo = user_repository.StudentRepository(db)
-    student = student_repo.get_by_user_id(current_user.id)
+    student = await student_repo.get_by_user_id(current_user.id)
 
     if not student:
         raise fastapi.HTTPException(
@@ -136,44 +136,50 @@ def get_current_student(
 
 
 # Service dependencies
-def get_auth_service(db: orm.Session = fastapi.Depends(db_session.get_db)) -> auth_service.AuthService:
+def get_auth_service(
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
+) -> auth_service.AuthService:
     """Get AuthService instance"""
     return auth_service.AuthService(db)
 
 
 def get_classroom_service(
-    db: orm.Session = fastapi.Depends(db_session.get_db),
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> classroom_service.ClassroomService:
     """Get ClassroomService instance"""
     return classroom_service.ClassroomService(db)
 
 
-def get_lesson_service(db: orm.Session = fastapi.Depends(db_session.get_db)) -> lesson_service.LessonService:
+def get_lesson_service(
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
+) -> lesson_service.LessonService:
     """Get LessonService instance"""
     return lesson_service.LessonService(db)
 
 
 def get_homework_service(
-    db: orm.Session = fastapi.Depends(db_session.get_db),
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> homework_service.HomeworkService:
     """Get HomeworkService instance"""
     return homework_service.HomeworkService(db)
 
 
 def get_testing_service(
-    db: orm.Session = fastapi.Depends(db_session.get_db),
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> testing_service.TestingService:
     """Get TestingService instance"""
     return testing_service.TestingService(db)
 
 
-def get_result_service(db: orm.Session = fastapi.Depends(db_session.get_db)) -> result_service.ResultService:
+def get_result_service(
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
+) -> result_service.ResultService:
     """Get ResultService instance"""
     return result_service.ResultService(db)
 
 
 def get_problem_service(
-    db: orm.Session = fastapi.Depends(db_session.get_db),
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> problem_service.ProblemService:
     """Get ProblemService instance"""
     return problem_service.ProblemService(homework_repository.ProblemRepository(db))

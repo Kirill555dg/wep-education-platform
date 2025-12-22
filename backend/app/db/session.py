@@ -4,22 +4,18 @@ Database session management
 
 import typing as tp
 
-import sqlalchemy as sa
 from sqlalchemy import orm as orm
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.core import config as core_config
+from app.db import url as db_url
 
-# Create SQLAlchemy engine
-database_url = core_config.settings.DATABASE_URL
-if database_url.startswith("postgresql+psycopg2://"):
-    # Prefer psycopg (psycopg3). Avoid implicit psycopg2 dependency.
-    database_url = database_url.replace("postgresql+psycopg2://", "postgresql+psycopg://", 1)
-elif database_url.startswith("postgresql://"):
-    # Prefer psycopg (psycopg3). Avoid implicit psycopg2 dependency.
-    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+# Derive async/sync URLs from settings (no string replacements).
+SYNC_DATABASE_URL = db_url.to_psycopg_url(core_config.settings.DATABASE_URL)
+ASYNC_DATABASE_URL = db_url.to_asyncpg_url(core_config.settings.DATABASE_URL)
 
-engine = sa.create_engine(
-    database_url,
+async_engine = sa_asyncio.create_async_engine(
+    ASYNC_DATABASE_URL,
     echo=core_config.settings.DEBUG,
     pool_pre_ping=True,  # Проверять соединения перед использованием
     pool_size=5,  # Размер пула соединений
@@ -27,13 +23,18 @@ engine = sa.create_engine(
 )
 
 # Create SessionLocal class
-SessionLocal = orm.sessionmaker(autocommit=False, autoflush=False, bind=engine)
+AsyncSessionLocal = sa_asyncio.async_sessionmaker(
+    bind=async_engine,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
+)
 
 # Create Base class for declarative models
 Base = orm.declarative_base()
 
 
-def get_db() -> tp.Generator[orm.Session, None, None]:
+async def get_db() -> tp.AsyncGenerator[sa_asyncio.AsyncSession, None]:
     """
     Dependency for getting database session
 
@@ -42,8 +43,8 @@ def get_db() -> tp.Generator[orm.Session, None, None]:
         def get_items(db: Session = Depends(get_db)):
             ...
     """
-    db = SessionLocal()
+    db = AsyncSessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        await db.close()

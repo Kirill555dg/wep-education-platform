@@ -36,7 +36,7 @@ async def create_problem(
     - **explanation**: Explanation of solution
     - **hints**: Hints (optional)
     """
-    problem = problem_service.create_problem(problem_data, current_user.id)
+    problem = await problem_service.create_problem(problem_data, current_user.id)
     return homework_schemas.ProblemFullResponse.model_validate(problem)
 
 
@@ -52,7 +52,7 @@ async def get_problems(
 
     Teachers can see all problems with correct answers
     """
-    problems = problem_service.get_all_problems(skip, limit)
+    problems = await problem_service.get_all_problems(skip, limit)
     return [homework_schemas.ProblemFullResponse.model_validate(problem_item) for problem_item in problems]
 
 
@@ -65,7 +65,7 @@ async def get_problem(
     """
     Get problem by ID (teachers only)
     """
-    problem = problem_service.get_problem_by_id(problem_id)
+    problem = await problem_service.get_problem_by_id(problem_id)
     return homework_schemas.ProblemFullResponse.model_validate(problem)
 
 
@@ -79,7 +79,7 @@ async def update_problem(
     """
     Update problem (teachers only)
     """
-    problem = problem_service.update_problem(problem_id, problem_data, current_user.id)
+    problem = await problem_service.update_problem(problem_id, problem_data, current_user.id)
     return homework_schemas.ProblemFullResponse.model_validate(problem)
 
 
@@ -92,5 +92,5 @@ async def delete_problem(
     """
     Delete problem (teachers only)
     """
-    problem_service.delete_problem(problem_id, current_user.id)
+    await problem_service.delete_problem(problem_id, current_user.id)
     return None

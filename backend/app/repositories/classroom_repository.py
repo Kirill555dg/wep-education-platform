@@ -4,7 +4,9 @@ Classroom repository
 
 import typing as tp
 
+import sqlalchemy as sa
 from sqlalchemy import orm as orm
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.models import classes as classes_models
 from app.repositories import base as base_repository
@@ -13,161 +15,165 @@ from app.repositories import base as base_repository
 class ClassroomRepository(base_repository.BaseRepository[classes_models.Classroom]):
     """Repository for Classroom operations"""
 
-    def __init__(self, db: orm.Session):
+    def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(classes_models.Classroom, db)
 
-    def get_by_teacher(
+    async def get_by_teacher(
         self, teacher_id: int, skip: int = 0, limit: int = 100
     ) -> tp.List[classes_models.Classroom]:
         """Get classrooms by teacher"""
-        return (
-            self.db.query(classes_models.Classroom)
-            .filter(classes_models.Classroom.teacher_id == teacher_id)
+        stmt = (
+            sa.select(classes_models.Classroom)
+            .where(classes_models.Classroom.teacher_id == teacher_id)
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    def get_by_invite_code(self, invite_code: str) -> tp.Optional[classes_models.Classroom]:
+    async def get_by_invite_code(self, invite_code: str) -> tp.Optional[classes_models.Classroom]:
         """Get classroom by invite code"""
-        return (
-            self.db.query(classes_models.Classroom)
-            .filter(classes_models.Classroom.invite_code == invite_code)
-            .first()
-        )
+        stmt = sa.select(classes_models.Classroom).where(classes_models.Classroom.invite_code == invite_code)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_with_students(self, classroom_id: int) -> tp.Optional[classes_models.Classroom]:
+    async def get_with_students(self, classroom_id: int) -> tp.Optional[classes_models.Classroom]:
         """Get classroom with students"""
-        return (
-            self.db.query(classes_models.Classroom)
+        stmt = (
+            sa.select(classes_models.Classroom)
             .options(orm.joinedload(classes_models.Classroom.student_memberships))
-            .filter(classes_models.Classroom.id == classroom_id)
-            .first()
+            .where(classes_models.Classroom.id == classroom_id)
         )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_active_classrooms(
+    async def get_active_classrooms(
         self, skip: int = 0, limit: int = 100
     ) -> tp.List[classes_models.Classroom]:
         """Get active classrooms"""
-        return (
-            self.db.query(classes_models.Classroom)
-            .filter(classes_models.Classroom.is_active)
+        stmt = (
+            sa.select(classes_models.Classroom)
+            .where(classes_models.Classroom.is_active)
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    def get_by_subject(
+    async def get_by_subject(
         self, subject: str, skip: int = 0, limit: int = 100
     ) -> tp.List[classes_models.Classroom]:
         """Get classrooms by subject"""
-        return (
-            self.db.query(classes_models.Classroom)
-            .filter(classes_models.Classroom.subject == subject)
+        stmt = (
+            sa.select(classes_models.Classroom)
+            .where(classes_models.Classroom.subject == subject)
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
 
 class StudentClassroomRepository(base_repository.BaseRepository[classes_models.StudentClassroom]):
     """Repository for StudentClassroom operations"""
 
-    def __init__(self, db: orm.Session):
+    def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(classes_models.StudentClassroom, db)
 
-    def get_by_student(
+    async def get_by_student(
         self, student_id: int, skip: int = 0, limit: int = 100
     ) -> tp.List[classes_models.StudentClassroom]:
         """Get classrooms for student"""
-        return (
-            self.db.query(classes_models.StudentClassroom)
-            .filter(
+        stmt = (
+            sa.select(classes_models.StudentClassroom)
+            .where(
                 classes_models.StudentClassroom.student_id == student_id,
                 classes_models.StudentClassroom.is_active,
             )
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    def get_by_classroom(
+    async def get_by_classroom(
         self, classroom_id: int, skip: int = 0, limit: int = 100
     ) -> tp.List[classes_models.StudentClassroom]:
         """Get students in classroom"""
-        return (
-            self.db.query(classes_models.StudentClassroom)
-            .filter(
+        stmt = (
+            sa.select(classes_models.StudentClassroom)
+            .where(
                 classes_models.StudentClassroom.classroom_id == classroom_id,
                 classes_models.StudentClassroom.is_active,
             )
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    def get_membership(
+    async def get_membership(
         self, student_id: int, classroom_id: int
     ) -> tp.Optional[classes_models.StudentClassroom]:
         """Get specific student-classroom membership"""
-        return (
-            self.db.query(classes_models.StudentClassroom)
-            .filter(
-                classes_models.StudentClassroom.student_id == student_id,
-                classes_models.StudentClassroom.classroom_id == classroom_id,
-            )
-            .first()
+        stmt = sa.select(classes_models.StudentClassroom).where(
+            classes_models.StudentClassroom.student_id == student_id,
+            classes_models.StudentClassroom.classroom_id == classroom_id,
         )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def is_student_in_classroom(self, student_id: int, classroom_id: int) -> bool:
+    async def is_student_in_classroom(self, student_id: int, classroom_id: int) -> bool:
         """Check if student is in classroom"""
-        membership = self.get_membership(student_id, classroom_id)
+        membership = await self.get_membership(student_id, classroom_id)
         return membership is not None and membership.is_active
 
-    def count_students_in_classroom(self, classroom_id: int) -> int:
+    async def count_students_in_classroom(self, classroom_id: int) -> int:
         """Count active students in classroom"""
-        return (
-            self.db.query(classes_models.StudentClassroom)
-            .filter(
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(classes_models.StudentClassroom)
+            .where(
                 classes_models.StudentClassroom.classroom_id == classroom_id,
                 classes_models.StudentClassroom.is_active,
             )
-            .count()
         )
+        result = await self.db.execute(stmt)
+        count_value = result.scalar_one()
+        return tp.cast(int, count_value)
 
 
 class InviteRepository(base_repository.BaseRepository[classes_models.Invite]):
     """Repository for Invite operations"""
 
-    def __init__(self, db: orm.Session):
+    def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(classes_models.Invite, db)
 
-    def get_by_code(self, invite_code: str) -> tp.Optional[classes_models.Invite]:
+    async def get_by_code(self, invite_code: str) -> tp.Optional[classes_models.Invite]:
         """Get invite by code"""
-        return (
-            self.db.query(classes_models.Invite)
-            .filter(classes_models.Invite.invite_code == invite_code)
-            .first()
-        )
+        stmt = sa.select(classes_models.Invite).where(classes_models.Invite.invite_code == invite_code)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_by_classroom(
+    async def get_by_classroom(
         self, classroom_id: int, skip: int = 0, limit: int = 100
     ) -> tp.List[classes_models.Invite]:
         """Get invites for classroom"""
-        return (
-            self.db.query(classes_models.Invite)
-            .filter(classes_models.Invite.classroom_id == classroom_id)
+        stmt = (
+            sa.select(classes_models.Invite)
+            .where(classes_models.Invite.classroom_id == classroom_id)
             .offset(skip)
             .limit(limit)
-            .all()
         )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    def increment_uses(self, invite_id: int) -> tp.Optional[classes_models.Invite]:
+    async def increment_uses(self, invite_id: int) -> tp.Optional[classes_models.Invite]:
         """Increment invite uses count"""
-        invite = self.get_by_id(invite_id)
+        invite = await self.get_by_id(invite_id)
         if not invite:
             return None
         invite.uses_count += 1
-        self.db.commit()
-        self.db.refresh(invite)
+        await self.db.commit()
+        await self.db.refresh(invite)
         return invite

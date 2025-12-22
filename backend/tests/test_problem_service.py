@@ -11,7 +11,10 @@ from app.schemas import homework as homework_schemas
 from app.services import problem_service as problem_service_module
 
 
-def test_create_problem(db_session):
+pytestmark = pytest.mark.anyio
+
+
+async def test_create_problem(db_session):
     """Test creating a new problem"""
     problem_repo = homework_repository.ProblemRepository(db_session)
     problem_service = problem_service_module.ProblemService(problem_repo)
@@ -26,7 +29,7 @@ def test_create_problem(db_session):
         hints="Think about option A",
     )
 
-    problem = problem_service.create_problem(problem_data, teacher_id=1)
+    problem = await problem_service.create_problem(problem_data, teacher_id=1)
 
     assert problem.title == "Test Problem"
     assert problem.description == "This is a test problem"
@@ -34,7 +37,7 @@ def test_create_problem(db_session):
     assert problem.difficulty == 3
 
 
-def test_get_all_problems(db_session):
+async def test_get_all_problems(db_session):
     """Test getting all problems"""
     problem_repo = homework_repository.ProblemRepository(db_session)
     problem_service = problem_service_module.ProblemService(problem_repo)
@@ -47,14 +50,14 @@ def test_get_all_problems(db_session):
             problem_type="text",
             correct_answer=f"Answer {i + 1}",
         )
-        problem_service.create_problem(problem_data, teacher_id=1)
+        await problem_service.create_problem(problem_data, teacher_id=1)
 
-    problems = problem_service.get_all_problems()
+    problems = await problem_service.get_all_problems()
 
     assert len(problems) == 3
 
 
-def test_get_problem_by_id(db_session):
+async def test_get_problem_by_id(db_session):
     """Test getting a problem by ID"""
     problem_repo = homework_repository.ProblemRepository(db_session)
     problem_service = problem_service_module.ProblemService(problem_repo)
@@ -66,27 +69,27 @@ def test_get_problem_by_id(db_session):
         problem_type="text",
         correct_answer="42",
     )
-    created_problem = problem_service.create_problem(problem_data, teacher_id=1)
+    created_problem = await problem_service.create_problem(problem_data, teacher_id=1)
 
     # Retrieve the problem
-    problem = problem_service.get_problem_by_id(created_problem.id)
+    problem = await problem_service.get_problem_by_id(created_problem.id)
 
     assert problem.title == "Find Me"
     assert problem.description == "Test problem for retrieval"
 
 
-def test_get_nonexistent_problem(db_session):
+async def test_get_nonexistent_problem(db_session):
     """Test getting a problem that doesn't exist"""
     problem_repo = homework_repository.ProblemRepository(db_session)
     problem_service = problem_service_module.ProblemService(problem_repo)
 
     with pytest.raises(fastapi.HTTPException) as exc_info:
-        problem_service.get_problem_by_id(99999)
+        await problem_service.get_problem_by_id(99999)
 
     assert exc_info.value.status_code == 404
 
 
-def test_update_problem(db_session):
+async def test_update_problem(db_session):
     """Test updating a problem"""
     problem_repo = homework_repository.ProblemRepository(db_session)
     problem_service = problem_service_module.ProblemService(problem_repo)
@@ -98,11 +101,11 @@ def test_update_problem(db_session):
         problem_type="text",
         correct_answer="Old answer",
     )
-    created_problem = problem_service.create_problem(problem_data, teacher_id=1)
+    created_problem = await problem_service.create_problem(problem_data, teacher_id=1)
 
     # Update the problem
     update_data = homework_schemas.ProblemUpdate(title="Updated Title", description="Updated description")
-    updated_problem = problem_service.update_problem(created_problem.id, update_data, teacher_id=1)
+    updated_problem = await problem_service.update_problem(created_problem.id, update_data, teacher_id=1)
 
     assert updated_problem.title == "Updated Title"
     assert updated_problem.description == "Updated description"
@@ -110,7 +113,7 @@ def test_update_problem(db_session):
     assert updated_problem.correct_answer == "Old answer"
 
 
-def test_delete_problem(db_session):
+async def test_delete_problem(db_session):
     """Test deleting a problem"""
     problem_repo = homework_repository.ProblemRepository(db_session)
     problem_service = problem_service_module.ProblemService(problem_repo)
@@ -122,13 +125,13 @@ def test_delete_problem(db_session):
         problem_type="text",
         correct_answer="Delete me",
     )
-    created_problem = problem_service.create_problem(problem_data, teacher_id=1)
+    created_problem = await problem_service.create_problem(problem_data, teacher_id=1)
 
     # Delete the problem
-    result = problem_service.delete_problem(created_problem.id, teacher_id=1)
+    result = await problem_service.delete_problem(created_problem.id, teacher_id=1)
 
     assert result is True
 
     # Verify problem is deleted
     with pytest.raises(fastapi.HTTPException):
-        problem_service.get_problem_by_id(created_problem.id)
+        await problem_service.get_problem_by_id(created_problem.id)

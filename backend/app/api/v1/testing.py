@@ -28,7 +28,7 @@ async def submit_answer(
 
     Returns updated statistics with score
     """
-    return testing_service.submit_answer(answer_data, current_user.id)
+    return await testing_service.submit_answer(answer_data, current_user.id)
 
 
 @router.post(
@@ -45,7 +45,7 @@ async def submit_homework(
 
     Marks homework as submitted. No more answers can be submitted after this.
     """
-    return testing_service.submit_homework(homework_id, current_user.id)
+    return await testing_service.submit_homework(homework_id, current_user.id)
 
 
 @router.get(
@@ -62,4 +62,4 @@ async def get_homework_status(
 
     Returns statistics including score, attempts, time spent
     """
-    return testing_service.get_homework_status(homework_id, current_user.id)
+    return await testing_service.get_homework_status(homework_id, current_user.id)

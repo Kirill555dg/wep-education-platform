@@ -4,7 +4,9 @@ Base repository pattern implementation
 
 import typing as tp
 
+import sqlalchemy as sa
 from sqlalchemy import orm as orm
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.db import session as db_session
 
@@ -19,29 +21,33 @@ class BaseRepository(tp.Generic[T]):
     for any SQLAlchemy model.
     """
 
-    def __init__(self, model: tp.Type[T], db: orm.Session):
+    def __init__(self, model: tp.Type[T], db: sa_asyncio.AsyncSession):
         self.model = model
         self.db = db
 
-    def get_by_id(self, id: int) -> tp.Optional[T]:
+    async def get_by_id(self, id: int) -> tp.Optional[T]:
         """Get entity by ID"""
-        return self.db.query(self.model).filter(self.model.id == id).first()  # type: ignore[attr-defined]
+        stmt = sa.select(self.model).where(self.model.id == id)  # type: ignore[attr-defined]
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> tp.List[T]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> tp.List[T]:
         """Get all entities with pagination"""
-        return self.db.query(self.model).offset(skip).limit(limit).all()
+        stmt = sa.select(self.model).offset(skip).limit(limit)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    def create(self, obj_in: tp.Dict[str, tp.Any]) -> T:
+    async def create(self, obj_in: tp.Dict[str, tp.Any]) -> T:
         """Create new entity"""
         db_obj = self.model(**obj_in)
         self.db.add(db_obj)
-        self.db.commit()
-        self.db.refresh(db_obj)
+        await self.db.commit()
+        await self.db.refresh(db_obj)
         return db_obj
 
-    def update(self, id: int, obj_in: tp.Dict[str, tp.Any]) -> tp.Optional[T]:
+    async def update(self, id: int, obj_in: tp.Dict[str, tp.Any]) -> tp.Optional[T]:
         """Update entity by ID"""
-        db_obj = self.get_by_id(id)
+        db_obj = await self.get_by_id(id)
         if not db_obj:
             return None
 
@@ -49,20 +55,23 @@ class BaseRepository(tp.Generic[T]):
             if hasattr(db_obj, field):
                 setattr(db_obj, field, value)
 
-        self.db.commit()
-        self.db.refresh(db_obj)
+        await self.db.commit()
+        await self.db.refresh(db_obj)
         return db_obj
 
-    def delete(self, id: int) -> bool:
+    async def delete(self, id: int) -> bool:
         """Delete entity by ID"""
-        db_obj = self.get_by_id(id)
+        db_obj = await self.get_by_id(id)
         if not db_obj:
             return False
 
-        self.db.delete(db_obj)
-        self.db.commit()
+        await self.db.delete(db_obj)
+        await self.db.commit()
         return True
 
-    def count(self) -> int:
+    async def count(self) -> int:
         """Count all entities"""
-        return self.db.query(self.model).count()
+        stmt = sa.select(sa.func.count()).select_from(self.model)
+        result = await self.db.execute(stmt)
+        count_value = result.scalar_one()
+        return tp.cast(int, count_value)

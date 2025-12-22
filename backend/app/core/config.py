@@ -20,8 +20,7 @@ class Settings(pydantic_settings.BaseSettings):
 
     # Database
     # Используем 127.0.0.1 вместо localhost для избежания GSSAPI auth проблем на macOS
-    # gssencmode=disable отключает Kerberos authentication
-    DATABASE_URL: str = "postgresql+psycopg://wep_user:wep_password@127.0.0.1:5433/wep_education?gssencmode=disable"
+    DATABASE_URL: str = "postgresql://wep_user:wep_password@127.0.0.1:5433/wep_education"
 
     # CORS
     BACKEND_CORS_ORIGINS: tp.List[str] = [

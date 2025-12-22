@@ -18,7 +18,11 @@ class ProblemService:
     def __init__(self, problem_repo: homework_repository.ProblemRepository):
         self.problem_repo = problem_repo
 
-    def create_problem(self, problem_data: homework_schemas.ProblemCreate, teacher_id: int) -> tp.Any:
+    async def create_problem(
+        self,
+        problem_data: homework_schemas.ProblemCreate,
+        teacher_id: int,
+    ) -> tp.Any:
         """
         Create a new problem
 
@@ -39,10 +43,10 @@ class ProblemService:
         data["problem_type"] = str(data.get("problem_type", "text"))
 
         # Create problem
-        problem = self.problem_repo.create(data)
+        problem = await self.problem_repo.create(data)
         return problem
 
-    def get_all_problems(self, skip: int = 0, limit: int = 100) -> tp.List[tp.Any]:
+    async def get_all_problems(self, skip: int = 0, limit: int = 100) -> tp.List[tp.Any]:
         """
         Get all problems
 
@@ -53,9 +57,9 @@ class ProblemService:
         Returns:
             List of problems
         """
-        return self.problem_repo.get_all(skip, limit)
+        return await self.problem_repo.get_all(skip, limit)
 
-    def get_problem_by_id(self, problem_id: int) -> tp.Optional[tp.Any]:
+    async def get_problem_by_id(self, problem_id: int) -> tp.Optional[tp.Any]:
         """
         Get problem by ID
 
@@ -65,7 +69,7 @@ class ProblemService:
         Returns:
             Problem if found, None otherwise
         """
-        problem = self.problem_repo.get_by_id(problem_id)
+        problem = await self.problem_repo.get_by_id(problem_id)
         if not problem:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
@@ -73,7 +77,7 @@ class ProblemService:
             )
         return problem
 
-    def update_problem(
+    async def update_problem(
         self, problem_id: int, problem_data: homework_schemas.ProblemUpdate, teacher_id: int
     ) -> tp.Any:
         """
@@ -101,7 +105,7 @@ class ProblemService:
             data["problem_type"] = str(data["problem_type"])
 
         # Update problem
-        problem = self.problem_repo.update(problem_id, data)
+        problem = await self.problem_repo.update(problem_id, data)
         if not problem:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
@@ -109,7 +113,7 @@ class ProblemService:
             )
         return problem
 
-    def delete_problem(self, problem_id: int, teacher_id: int) -> bool:
+    async def delete_problem(self, problem_id: int, teacher_id: int) -> bool:
         """
         Delete a problem
 
@@ -123,7 +127,7 @@ class ProblemService:
         Raises:
             HTTPException: If problem not found
         """
-        success = self.problem_repo.delete(problem_id)
+        success = await self.problem_repo.delete(problem_id)
         if not success:
             raise fastapi.HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,

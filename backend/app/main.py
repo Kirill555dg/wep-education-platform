@@ -80,11 +80,12 @@ def root() -> dict[str, tp.Any]:
 
 # Database initialization (create tables)
 @app.on_event("startup")
-def on_startup() -> None:
+async def on_startup() -> None:
     """
     Initialize database on application startup
     """
-    db_session.Base.metadata.create_all(bind=db_session.engine)
+    async with db_session.async_engine.begin() as connection:
+        await connection.run_sync(db_session.Base.metadata.create_all)
 
     print(f"  {core_config.settings.APP_NAME} started successfully")
     print(f"  Debug mode: {core_config.settings.DEBUG}")

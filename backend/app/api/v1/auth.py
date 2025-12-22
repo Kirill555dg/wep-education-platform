@@ -33,7 +33,7 @@ async def register(
     - **full_name**: User's full name
     - **is_teacher**: False for student, True for teacher
     """
-    return auth_service.register_user(user_data)
+    return await auth_service.register_user(user_data)
 
 
 @router.post("/login", response_model=user_schemas.TokenResponse)
@@ -49,7 +49,13 @@ async def login(
 
     Returns JWT access token and user data
     """
-    return auth_service.authenticate(credentials)
+    token = await auth_service.authenticate(credentials)
+    if not token:
+        raise fastapi.HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username/email or password",
+        )
+    return token
 
 
 @router.get("/me", response_model=user_schemas.UserResponse)
@@ -74,5 +80,5 @@ async def get_current_user_role(
 
     Returns: {"role": "teacher"} or {"role": "student"}
     """
-    role = auth_service.get_user_role(current_user.id)
+    role = await auth_service.get_user_role(current_user.id)
     return {"role": role}

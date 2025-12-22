@@ -7,45 +7,45 @@ import uuid
 import pytest
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app import models as _models  # noqa: F401
+from app.core import config as core_config
 from app.db import session as db_session_module
+from app.db import url as db_url
 
 
 @pytest.fixture(scope="function")
-def db_session() -> tp.Iterator[orm.Session]:
+async def db_session() -> tp.AsyncIterator[sa_asyncio.AsyncSession]:
     """Create a fresh PostgreSQL schema for each test."""
-    default_url = "postgresql+psycopg://wep_user:wep_password@127.0.0.1:5433/wep_education?gssencmode=disable"
-    database_url = os.environ.get("DATABASE_URL", default_url)
-    if database_url.startswith("postgresql+psycopg2://"):
-        database_url = database_url.replace("postgresql+psycopg2://", "postgresql+psycopg://", 1)
-    elif database_url.startswith("postgresql://"):
-        database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    database_url = os.environ.get("DATABASE_URL", core_config.settings.DATABASE_URL)
+    sync_url = db_url.to_psycopg_url(database_url)
+    async_url = db_url.to_asyncpg_url(database_url)
 
     schema = f"test_{uuid.uuid4().hex}"
-    admin_engine = sa.create_engine(database_url, isolation_level="AUTOCOMMIT")
+    admin_engine = sa.create_engine(sync_url, isolation_level="AUTOCOMMIT")
     with admin_engine.connect() as connection:
         connection.execute(sa.text(f'CREATE SCHEMA "{schema}"'))
 
-    engine = sa.create_engine(
-        database_url,
-        connect_args={"options": f"-csearch_path={schema}"},
+    engine = sa_asyncio.create_async_engine(
+        async_url,
+        connect_args={"server_settings": {"search_path": schema}},
         pool_pre_ping=True,
     )
-    db_session_module.Base.metadata.create_all(bind=engine)
-
-    session_local: orm.sessionmaker[orm.Session] = orm.sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=engine,
-    )
-    session = session_local()
+    async with engine.begin() as connection:
+        await connection.run_sync(db_session_module.Base.metadata.create_all)
 
     try:
-        yield session
+        session_local = sa_asyncio.async_sessionmaker(
+            bind=engine,
+            autocommit=False,
+            autoflush=False,
+            expire_on_commit=False,
+        )
+        async with session_local() as session:
+            yield session
     finally:
-        session.close()
-        engine.dispose()
+        await engine.dispose()
         with admin_engine.connect() as connection:
             connection.execute(sa.text(f'DROP SCHEMA "{schema}" CASCADE'))
         admin_engine.dispose()

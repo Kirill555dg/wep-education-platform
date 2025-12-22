@@ -38,7 +38,7 @@ async def create_homework(
     - **problem_ids**: List of problem IDs to include
     - **problem_points**: Optional list of points for each problem
     """
-    return homework_service.create_homework(homework_data, current_user.id)
+    return await homework_service.create_homework(homework_data, current_user.id)
 
 
 @router.get(
@@ -60,7 +60,7 @@ async def get_lesson_homework(
     - Teachers see all homework (including unpublished)
     - Students see only published homework
     """
-    return homework_service.get_lesson_homework(lesson_id, current_user.id, skip, limit)
+    return await homework_service.get_lesson_homework(lesson_id, current_user.id, skip, limit)
 
 
 @router.get("/{homework_id}", response_model=homework_schemas.HomeworkDetailResponse)
@@ -77,7 +77,7 @@ async def get_homework(
     Returns homework information.
     Students can only see published homework.
     """
-    return homework_service.get_homework(homework_id, current_user.id)
+    return await homework_service.get_homework(homework_id, current_user.id)
 
 
 @router.get(
@@ -97,7 +97,7 @@ async def get_homework_problems(
     - Teachers see problems with correct answers
     - Students see problems without correct answers
     """
-    return homework_service.get_homework_problems(homework_id, current_user.id)
+    return await homework_service.get_homework_problems(homework_id, current_user.id)
 
 
 @router.patch("/{homework_id}", response_model=homework_schemas.HomeworkResponse)
@@ -112,7 +112,7 @@ async def update_homework(
     """
     Update homework (teachers only, owner only)
     """
-    return homework_service.update_homework(homework_id, homework_data, current_user.id)
+    return await homework_service.update_homework(homework_id, homework_data, current_user.id)
 
 
 @router.delete("/{homework_id}", status_code=http_status.HTTP_204_NO_CONTENT)

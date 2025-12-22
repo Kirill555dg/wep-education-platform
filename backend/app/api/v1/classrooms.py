@@ -35,7 +35,7 @@ async def create_classroom(
     - **grade_level**: Grade level (1-12)
     - **description**: Optional description
     """
-    return classroom_service.create_classroom(classroom_data, current_user.id)
+    return await classroom_service.create_classroom(classroom_data, current_user.id)
 
 
 @router.get("", response_model=tp.List[classroom_schemas.ClassroomResponse])
@@ -54,12 +54,12 @@ async def get_my_classrooms(
     - Students: classrooms they joined
     """
     # Try to get as teacher first
-    teacher_classrooms = classroom_service.get_teacher_classrooms(current_user.id, skip, limit)
+    teacher_classrooms = await classroom_service.get_teacher_classrooms(current_user.id, skip, limit)
     if teacher_classrooms:
         return teacher_classrooms
 
     # Otherwise get as student
-    return classroom_service.get_student_classrooms(current_user.id, skip, limit)
+    return await classroom_service.get_student_classrooms(current_user.id, skip, limit)
 
 
 @router.get("/{classroom_id}", response_model=classroom_schemas.ClassroomResponse)
@@ -73,7 +73,7 @@ async def get_classroom(
     """
     Get classroom details by ID
     """
-    return classroom_service.get_classroom(classroom_id)
+    return await classroom_service.get_classroom(classroom_id)
 
 
 @router.patch("/{classroom_id}", response_model=classroom_schemas.ClassroomResponse)
@@ -88,7 +88,7 @@ async def update_classroom(
     """
     Update classroom (teachers only, owner only)
     """
-    return classroom_service.update_classroom(classroom_id, classroom_data, current_user.id)
+    return await classroom_service.update_classroom(classroom_id, classroom_data, current_user.id)
 
 
 @router.post("/join", response_model=classroom_schemas.ClassroomResponse)
@@ -104,7 +104,7 @@ async def join_classroom(
 
     - **invite_code**: Unique invite code from teacher
     """
-    return classroom_service.join_classroom(join_data, current_user.id)
+    return await classroom_service.join_classroom(join_data, current_user.id)
 
 
 @router.get("/{classroom_id}/students")
@@ -122,4 +122,4 @@ async def get_classroom_students(
 
     Returns student information with enrollment dates
     """
-    return classroom_service.get_classroom_students(classroom_id, current_user.id, skip, limit)
+    return await classroom_service.get_classroom_students(classroom_id, current_user.id, skip, limit)

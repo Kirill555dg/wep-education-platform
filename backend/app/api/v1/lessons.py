@@ -34,7 +34,7 @@ async def create_lesson(
     - **scheduled_at**: Optional scheduled date/time
     - **theory_material_ids**: List of theory material IDs to attach
     """
-    return lesson_service.create_lesson(lesson_data, current_user.id)
+    return await lesson_service.create_lesson(lesson_data, current_user.id)
 
 
 @router.get(
@@ -54,7 +54,7 @@ async def get_classroom_lessons(
     - Teachers see all lessons (including unpublished)
     - Students see only published lessons
     """
-    return lesson_service.get_classroom_lessons(classroom_id, current_user.id, skip, limit)
+    return await lesson_service.get_classroom_lessons(classroom_id, current_user.id, skip, limit)
 
 
 @router.get("/{lesson_id}", response_model=lesson_schemas.LessonDetailResponse)
@@ -66,7 +66,7 @@ async def get_lesson(
     """
     Get lesson details by ID
     """
-    return lesson_service.get_lesson(lesson_id)
+    return await lesson_service.get_lesson(lesson_id)
 
 
 @router.patch("/{lesson_id}", response_model=lesson_schemas.LessonResponse)
@@ -79,7 +79,7 @@ async def update_lesson(
     """
     Update lesson (teachers only, owner only)
     """
-    return lesson_service.update_lesson(lesson_id, lesson_data, current_user.id)
+    return await lesson_service.update_lesson(lesson_id, lesson_data, current_user.id)
 
 
 @router.delete("/{lesson_id}", status_code=http_status.HTTP_204_NO_CONTENT)
@@ -91,5 +91,5 @@ async def delete_lesson(
     """
     Delete lesson (teachers only, owner only)
     """
-    lesson_service.delete_lesson(lesson_id, current_user.id)
+    await lesson_service.delete_lesson(lesson_id, current_user.id)
     return None
