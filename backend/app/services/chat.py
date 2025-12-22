@@ -82,11 +82,19 @@ class ChatService:
         user: user_models.User,
         skip: int = core_pagination.DEFAULT_SKIP,
         limit: int = core_pagination.DEFAULT_LIMIT,
+        before_id: int | None = None,
+        tail: bool = False,
     ) -> list[communication_schemas.MessageResponse]:
         await self._require_user_can_access_classroom(classroom_id=classroom_id, user=user)
         chat_id = await self._require_chat_for_classroom(classroom_id)
 
-        rows = await self.message_repo.get_by_chat_with_sender(chat_id, skip=skip, limit=limit)
+        rows = await self.message_repo.get_by_chat_with_sender(
+            chat_id,
+            skip=skip,
+            limit=limit,
+            before_id=before_id,
+            tail=tail,
+        )
         result: list[communication_schemas.MessageResponse] = []
         for message, sender in rows:
             result.append(

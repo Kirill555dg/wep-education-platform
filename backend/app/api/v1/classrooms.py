@@ -146,6 +146,8 @@ async def get_classroom_students(
 async def list_chat_messages(
     classroom_id: int,
     pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
+    before_id: int | None = fastapi.Query(default=None, gt=0),
+    tail: bool = fastapi.Query(default=False),
     current_user: user_models.User = fastapi.Depends(deps.get_current_user),
     chat_service: chat_service_module.ChatService = fastapi.Depends(deps.get_chat_service),
 ):
@@ -154,6 +156,8 @@ async def list_chat_messages(
         user=current_user,
         skip=pagination.skip,
         limit=pagination.limit,
+        before_id=before_id,
+        tail=tail,
     )
 
 

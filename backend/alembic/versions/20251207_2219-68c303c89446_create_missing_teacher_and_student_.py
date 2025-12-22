@@ -1,4 +1,4 @@
-"""create missing teacher and student profiles for existing users
+"""create missing teacher/student profiles for existing users
 
 Revision ID: 68c303c89446
 Revises: 765d7038a0e6
@@ -19,27 +19,28 @@ depends_on: tp.Union[str, tp.Sequence[str], None] = None
 
 def upgrade() -> None:
     """
-    Create missing teacher and student profiles for existing users.
-    This ensures all users can switch between teacher and student roles.
+    Create missing profiles for existing users based on their active role.
+
+    Note: users can enable the other role later via the API (role switching).
     """
-    # Create teacher profiles for users who don't have one
+    # Create teacher profiles for users with active role = teacher.
     op.execute("""
         INSERT INTO teachers (user_id, bio, subject_specialization, years_of_experience, rating)
         SELECT u.id, NULL, NULL, 0, 0
         FROM users u
         WHERE NOT EXISTS (
             SELECT 1 FROM teachers t WHERE t.user_id = u.id
-        )
+        ) AND u.role = 'teacher'
     """)
 
-    # Create student profiles for users who don't have one
+    # Create student profiles for users with active role = student.
     op.execute("""
         INSERT INTO students (user_id, grade_level, enrollment_date)
         SELECT u.id, NULL, NOW()
         FROM users u
         WHERE NOT EXISTS (
             SELECT 1 FROM students s WHERE s.user_id = u.id
-        )
+        ) AND u.role = 'student'
     """)
 
 

@@ -49,16 +49,41 @@ class MessageRepository(base_repository.BaseRepository[communication_models.Mess
         *,
         skip: int = 0,
         limit: int = 100,
+        before_id: int | None = None,
+        tail: bool = False,
     ) -> list[tuple[communication_models.Message, user_models.User]]:
-        stmt = (
-            sa.select(communication_models.Message, user_models.User)
-            .join(user_models.User, user_models.User.id == communication_models.Message.sender_id)
-            .where(communication_models.Message.chat_id == chat_id, ~communication_models.Message.is_deleted)
-            .order_by(communication_models.Message.created_at.asc())
-            .offset(skip)
-            .limit(limit)
-        )
+        if before_id is not None or tail:
+            # Cursor mode: fetch latest messages (tail) or older than before_id.
+            conditions: list[tp.Any] = [
+                communication_models.Message.chat_id == chat_id,
+                ~communication_models.Message.is_deleted,
+            ]
+            if before_id is not None:
+                conditions.append(communication_models.Message.id < before_id)
+
+            stmt = (
+                sa.select(communication_models.Message, user_models.User)
+                .join(user_models.User, user_models.User.id == communication_models.Message.sender_id)
+                .where(*conditions)
+                .order_by(communication_models.Message.id.desc())
+                .limit(limit)
+            )
+        else:
+            # Offset pagination (legacy): stable order for skip/limit.
+            stmt = (
+                sa.select(communication_models.Message, user_models.User)
+                .join(user_models.User, user_models.User.id == communication_models.Message.sender_id)
+                .where(
+                    communication_models.Message.chat_id == chat_id,
+                    ~communication_models.Message.is_deleted,
+                )
+                .order_by(communication_models.Message.created_at.asc())
+                .offset(skip)
+                .limit(limit)
+            )
         result = await self.db.execute(stmt)
         rows = list(result.all())
+        if before_id is not None or tail:
+            rows.reverse()  # Return chronological order for UI.
         return tp.cast(list[tuple[communication_models.Message, user_models.User]], rows)
 
