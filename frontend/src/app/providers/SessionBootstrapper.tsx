@@ -1,53 +1,30 @@
 import { useEffect } from "react";
 
 import { useSessionStore } from "@/entities/session/model/store";
-import { routes } from "@/shared/config/routes";
-import { useToast } from "@/shared/hooks/use-toast";
-import { logger } from "@/shared/lib/logger";
-import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "@/shared/hooks/use-toast";
 
 export function SessionBootstrapper() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-
   const bootstrap = useSessionStore((s) => s.bootstrap);
   const status = useSessionStore((s) => s.status);
-  const errorCode = useSessionStore((s) => s.errorCode);
   const error = useSessionStore((s) => s.error);
-  const errorRequestId = useSessionStore((s) => s.errorRequestId);
+  const clearError = useSessionStore((s) => s.clearError);
 
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
 
   useEffect(() => {
-    if (status !== "guest") return;
-    if (!errorCode && !error) return;
-
-    // Avoid spamming when user is already on auth pages.
-    const isAuthPage = location.pathname === routes.login || location.pathname === routes.register;
-    if (isAuthPage) return;
-
-    if (errorCode === "role_changed") {
+    if (!error) return;
+    // Surface bootstrap/session errors once to the user (e.g. token expired / role_changed).
+    if (status === "guest") {
       toast({
-        title: "Сессия устарела",
-        description: "Роль была изменена. Войдите заново.",
+        title: "Сессия завершена",
+        description: error,
         variant: "destructive",
       });
-      logger.info("session_role_changed_redirect", { requestId: errorRequestId ?? undefined });
-      navigate(routes.login, { replace: true });
-      return;
+      clearError();
     }
-
-    // Generic bootstrap failure (expired token, network, etc.)
-    toast({
-      title: "Не удалось восстановить сессию",
-      description: errorRequestId ? `${error} (request_id: ${errorRequestId})` : error,
-      variant: "destructive",
-    });
-    navigate(routes.login, { replace: true });
-  }, [status, errorCode, error, errorRequestId, toast, navigate, location.pathname]);
+  }, [clearError, error, status]);
 
   return null;
 }

@@ -12,7 +12,7 @@
     "test:watch": "bun test --watch",
     "test:e2e": "bunx start-server-and-test \"bun run dev\" http://localhost:5173 \"bunx cypress run\"",
     "cypress": "bunx cypress open",
-    "sync-openapi": "mkdir -p ./src/shared/api && curl -fsSL \"${BACKEND_URL:-http://localhost:8023}/api/openapi.json\" --output ./src/shared/api/openapi.json",
+    "sync-openapi": "cd ../backend && make openapi-export",
     "generate-client": "openapi --input ./src/shared/api/openapi.json --output ./src/shared/api/generated --client axios",
     "api:regen": "bun run sync-openapi && bun run generate-client"
   },

@@ -16,6 +16,14 @@
 - **Client generator**: `openapi-typescript-codegen` → `frontend/src/shared/api/generated/*`
 - **Все вызовы**: только через `frontend/src/shared/api/*` врапперы, внутри — только `generated/services/*`
 
+### Обновление OpenAPI (строго)
+
+- `openapi.json` **нельзя** скачивать вручную/через `curl`.
+- Источник истины: backend schema из приложения.
+- Единственный допустимый способ обновить `frontend/src/shared/api/openapi.json`:
+  - `cd backend && make openapi-export`
+  - (или эквивалентно) `python -m app.scripts.export_openapi --out ../frontend/src/shared/api/openapi.json`
+
 ## Архитектурные правила (FSD)
 
 - **shared/api**: конфиг OpenAPI клиента + тонкие врапперы (только маппинг/ошибки/удобные сигнатуры).
