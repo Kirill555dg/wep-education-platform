@@ -70,6 +70,18 @@ class HomeworkRepository(base_repository.BaseRepository[homework_models.Homework
         count_value = result.scalar_one()
         return tp.cast(int, count_value)
 
+    async def count_published_by_lesson(self, lesson_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(homework_models.Homework)
+            .where(
+                homework_models.Homework.lesson_id == lesson_id,
+                homework_models.Homework.is_published,
+            )
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
 
 class HomeworkProblemRepository(base_repository.BaseRepository[homework_models.HomeworkProblem]):
     """Repository for HomeworkProblem operations"""
@@ -194,6 +206,24 @@ class StatisticsRepository(base_repository.BaseRepository[homework_models.Statis
         )
         items = await self._scalars_all(stmt)
         return tp.cast(list[homework_models.Statistics], items)
+
+    async def count_by_student(self, student_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(homework_models.Statistics)
+            .where(homework_models.Statistics.student_id == student_id)
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
+    async def count_by_homework(self, homework_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(homework_models.Statistics)
+            .where(homework_models.Statistics.homework_id == homework_id)
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
 
     async def get_student_homework_stats(
         self, student_id: int, homework_id: int

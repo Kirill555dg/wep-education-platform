@@ -2,6 +2,8 @@
 FastAPI dependencies for dependency injection
 """
 
+import dataclasses as dc
+
 import fastapi
 from fastapi import security as fastapi_security
 from fastapi import status as http_status
@@ -25,10 +27,15 @@ from app.services import testing as testing_service
 # Security
 security = fastapi_security.HTTPBearer()
 
+@dc.dataclass(frozen=True, slots=True)
+class TokenContext:
+    user_id: int
+    role: str
+
 
 def get_current_user_id(
     credentials: fastapi_security.HTTPAuthorizationCredentials = fastapi.Depends(security),
-) -> int:
+) -> TokenContext:
     """
     Extract and validate JWT token, return user ID
 
@@ -53,8 +60,16 @@ def get_current_user_id(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    role = payload.get("role")
+    if role is None:
+        raise fastapi.HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing role",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
-        return int(user_id)
+        return TokenContext(user_id=int(user_id), role=str(role))
     except ValueError:
         raise fastapi.HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
@@ -64,7 +79,7 @@ def get_current_user_id(
 
 
 async def get_current_user(
-    user_id: int = fastapi.Depends(get_current_user_id),
+    token: TokenContext = fastapi.Depends(get_current_user_id),
     db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> user_models.User:
     """
@@ -74,7 +89,7 @@ async def get_current_user(
         HTTPException: If user not found or inactive
     """
     user_repository = user_repo.UserRepository(db)
-    user = await user_repository.get_by_id(user_id)
+    user = await user_repository.get_by_id(token.user_id)
 
     if not user:
         raise fastapi.HTTPException(
@@ -86,6 +101,13 @@ async def get_current_user(
         raise fastapi.HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN,
             detail="User account is inactive",
+        )
+
+    if token.role != user.role:
+        raise fastapi.HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Role changed, please re-authenticate",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     return user

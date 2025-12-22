@@ -112,6 +112,11 @@ class ChatService:
             )
         return result
 
+    async def count_messages(self, classroom_id: int, *, user: user_models.User) -> int:
+        await self._require_user_can_access_classroom(classroom_id=classroom_id, user=user)
+        chat_id = await self._require_chat_for_classroom(classroom_id)
+        return await self.message_repo.count_by_chat(chat_id)
+
     async def post_message(
         self,
         classroom_id: int,

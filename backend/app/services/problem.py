@@ -62,6 +62,9 @@ class ProblemService:
         """
         return await self.problem_repo.get_all(skip, limit)
 
+    async def count_all_problems(self) -> int:
+        return await self.problem_repo.count()
+
     async def get_problem_by_id(self, problem_id: int) -> tp.Any | None:
         """
         Get problem by ID

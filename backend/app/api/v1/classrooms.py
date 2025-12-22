@@ -21,6 +21,7 @@ from app.realtime import auth as realtime_auth
 from app.realtime import presence as realtime_presence
 from app.schemas import communication as communication_schemas
 from app.schemas import classrooms as classroom_schemas
+from app.schemas import pagination as pagination_schemas
 from app.services import chat as chat_service_module
 from app.services import classroom as classroom_service_module
 
@@ -50,7 +51,7 @@ async def create_classroom(
     return await classroom_service.create_classroom(classroom_data, current_user.id)
 
 
-@router.get("", response_model=list[classroom_schemas.ClassroomResponse])
+@router.get("", response_model=pagination_schemas.Page[classroom_schemas.ClassroomResponse])
 async def get_my_classrooms(
     pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_user),
@@ -64,15 +65,14 @@ async def get_my_classrooms(
     - Teachers: classrooms they created
     - Students: classrooms they joined
     """
-    # Try to get as teacher first
-    teacher_classrooms = await classroom_service.get_teacher_classrooms(
-        current_user.id, pagination.skip, pagination.limit
-    )
-    if teacher_classrooms:
-        return teacher_classrooms
+    if current_user.role == "teacher":
+        items = await classroom_service.get_teacher_classrooms(current_user.id, pagination.skip, pagination.limit)
+        total = await classroom_service.count_teacher_classrooms(current_user.id)
+    else:
+        items = await classroom_service.get_student_classrooms(current_user.id, pagination.skip, pagination.limit)
+        total = await classroom_service.count_student_classrooms(current_user.id)
 
-    # Otherwise get as student
-    return await classroom_service.get_student_classrooms(current_user.id, pagination.skip, pagination.limit)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{classroom_id}", response_model=classroom_schemas.ClassroomResponse)
@@ -141,7 +141,7 @@ async def get_classroom_students(
 
 @router.get(
     "/{classroom_id}/chat/messages",
-    response_model=list[communication_schemas.MessageResponse],
+    response_model=pagination_schemas.Page[communication_schemas.MessageResponse],
 )
 async def list_chat_messages(
     classroom_id: int,
@@ -151,7 +151,7 @@ async def list_chat_messages(
     current_user: user_models.User = fastapi.Depends(deps.get_current_user),
     chat_service: chat_service_module.ChatService = fastapi.Depends(deps.get_chat_service),
 ):
-    return await chat_service.list_messages(
+    items = await chat_service.list_messages(
         classroom_id,
         user=current_user,
         skip=pagination.skip,
@@ -159,6 +159,8 @@ async def list_chat_messages(
         before_id=before_id,
         tail=tail,
     )
+    total = await chat_service.count_messages(classroom_id, user=current_user)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.post(

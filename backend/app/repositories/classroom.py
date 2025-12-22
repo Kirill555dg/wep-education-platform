@@ -73,6 +73,15 @@ class ClassroomRepository(base_repository.BaseRepository[classes_models.Classroo
         items = await self._scalars_all(stmt)
         return tp.cast(list[classes_models.Classroom], items)
 
+    async def count_by_teacher(self, teacher_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(classes_models.Classroom)
+            .where(classes_models.Classroom.teacher_id == teacher_id)
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
 
 class StudentClassroomRepository(base_repository.BaseRepository[classes_models.StudentClassroom]):
     """Repository for StudentClassroom operations"""
@@ -141,6 +150,18 @@ class StudentClassroomRepository(base_repository.BaseRepository[classes_models.S
         result = await self.db.execute(stmt)
         count_value = result.scalar_one()
         return tp.cast(int, count_value)
+
+    async def count_by_student(self, student_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(classes_models.StudentClassroom)
+            .where(
+                classes_models.StudentClassroom.student_id == student_id,
+                classes_models.StudentClassroom.is_active,
+            )
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
 
 
 class InviteRepository(base_repository.BaseRepository[classes_models.Invite]):

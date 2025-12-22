@@ -71,6 +71,18 @@ class LessonRepository(base_repository.BaseRepository[lesson_models.Lesson]):
         count_value = result.scalar_one()
         return tp.cast(int, count_value)
 
+    async def count_published_by_classroom(self, classroom_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(lesson_models.Lesson)
+            .where(
+                lesson_models.Lesson.classroom_id == classroom_id,
+                lesson_models.Lesson.is_published,
+            )
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
 
 class LessonMaterialRepository(base_repository.BaseRepository[lesson_models.LessonMaterial]):
     """Repository for LessonMaterial operations"""
@@ -139,6 +151,27 @@ class TheoryMaterialRepository(base_repository.BaseRepository[theory_models.Theo
         items = await self._scalars_all(stmt)
         return tp.cast(list[theory_models.TheoryMaterial], items)
 
+    async def count_by_subsection(self, subsection_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(theory_models.TheoryMaterial)
+            .where(theory_models.TheoryMaterial.subsection_id == subsection_id)
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
+    async def count_published_by_subsection(self, subsection_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(theory_models.TheoryMaterial)
+            .where(
+                theory_models.TheoryMaterial.subsection_id == subsection_id,
+                theory_models.TheoryMaterial.is_published,
+            )
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
 
 class SubjectRepository(base_repository.BaseRepository[theory_models.Subject]):
     """Repository for Subject operations"""
@@ -164,6 +197,15 @@ class SubjectRepository(base_repository.BaseRepository[theory_models.Subject]):
         items = await self._scalars_all(stmt)
         return tp.cast(list[theory_models.Subject], items)
 
+    async def count_active(self) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(theory_models.Subject)
+            .where(theory_models.Subject.is_active)
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
 
 class SectionRepository(base_repository.BaseRepository[theory_models.Section]):
     """Repository for Section operations"""
@@ -184,6 +226,15 @@ class SectionRepository(base_repository.BaseRepository[theory_models.Section]):
         items = await self._scalars_all(stmt)
         return tp.cast(list[theory_models.Section], items)
 
+    async def count_by_subject(self, subject_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(theory_models.Section)
+            .where(theory_models.Section.subject_id == subject_id)
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+
 
 class SubsectionRepository(base_repository.BaseRepository[theory_models.Subsection]):
     """Repository for Subsection operations"""
@@ -203,3 +254,12 @@ class SubsectionRepository(base_repository.BaseRepository[theory_models.Subsecti
         )
         items = await self._scalars_all(stmt)
         return tp.cast(list[theory_models.Subsection], items)
+
+    async def count_by_section(self, section_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(theory_models.Subsection)
+            .where(theory_models.Subsection.section_id == section_id)
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)

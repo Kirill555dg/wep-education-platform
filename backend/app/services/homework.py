@@ -231,3 +231,15 @@ class HomeworkService:
             homeworks = await self.homework_repo.get_published(lesson_id, skip, limit)
 
         return [homework_schemas.HomeworkResponse.model_validate(hw) for hw in homeworks]
+
+    async def count_lesson_homework(self, lesson_id: int, user: user_models.User) -> int:
+        lesson = await self.lesson_repo.get_by_id(lesson_id)
+        if not lesson:
+            return 0
+
+        teacher = await self.teacher_repo.get_by_user_id(user.id) if user.role == "teacher" else None
+        classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
+        is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
+        if is_teacher:
+            return await self.homework_repo.count_by_lesson(lesson_id)
+        return await self.homework_repo.count_published_by_lesson(lesson_id)

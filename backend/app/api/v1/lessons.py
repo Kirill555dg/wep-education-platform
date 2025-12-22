@@ -8,6 +8,7 @@ from fastapi import status as http_status
 from app.api import dependencies as deps
 from app.api import pagination as api_pagination
 from app.models import users as user_models
+from app.schemas import pagination as pagination_schemas
 from app.schemas import lessons as lesson_schemas
 from app.services import lesson as lesson_service_module
 
@@ -38,7 +39,7 @@ async def create_lesson(
 
 @router.get(
     "/classroom/{classroom_id}",
-    response_model=list[lesson_schemas.LessonResponse],
+    response_model=pagination_schemas.Page[lesson_schemas.LessonResponse],
 )
 async def get_classroom_lessons(
     classroom_id: int,
@@ -52,9 +53,11 @@ async def get_classroom_lessons(
     - Teachers see all lessons (including unpublished)
     - Students see only published lessons
     """
-    return await lesson_service.get_classroom_lessons(
+    items = await lesson_service.get_classroom_lessons(
         classroom_id, current_user, pagination.skip, pagination.limit
     )
+    total = await lesson_service.count_classroom_lessons(classroom_id, current_user)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{lesson_id}", response_model=lesson_schemas.LessonDetailResponse)

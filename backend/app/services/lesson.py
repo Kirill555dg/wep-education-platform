@@ -112,6 +112,13 @@ class LessonService:
 
         return [lesson_schemas.LessonResponse.model_validate(lesson_item) for lesson_item in lessons]
 
+    async def count_classroom_lessons(self, classroom_id: int, user: user_models.User) -> int:
+        teacher = await self.teacher_repo.get_by_user_id(user.id) if user.role == "teacher" else None
+        classroom = await self.classroom_repo.get_by_id(classroom_id)
+        if teacher and classroom and classroom.teacher_id == teacher.id:
+            return await self.lesson_repo.count_by_classroom(classroom_id)
+        return await self.lesson_repo.count_published_by_classroom(classroom_id)
+
     async def update_lesson(
         self,
         lesson_id: int,

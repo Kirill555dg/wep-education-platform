@@ -5,6 +5,7 @@ Tests for AuthService
 import pytest
 
 from app.domain import errors as domain_errors
+from app.core import security as core_security
 from app.repositories import user as user_repository
 from app.schemas import users as user_schemas
 from app.services import auth as auth_service_module
@@ -93,6 +94,32 @@ async def test_switch_role_creates_profile_and_updates_active_role(db_session):
     assert await teacher_repo.get_by_user_id(user.id) is not None
 
 
+async def test_old_token_becomes_invalid_after_role_switch(db_session):
+    auth_service = auth_service_module.AuthService(db_session)
+
+    user = await auth_service.register_user(
+        user_schemas.UserCreate(
+            email="role_token@example.com",
+            password="RoleTokenPass123!",
+            first_name="Role",
+            last_name="Token",
+            role="student",
+        )
+    )
+
+    token_resp = await auth_service.authenticate(
+        user_schemas.UserLogin(username_or_email="role_token@example.com", password="RoleTokenPass123!")
+    )
+    assert token_resp is not None
+
+    # Switch active role to teacher (enables profile)
+    await auth_service.switch_role(user.id, user_schemas.UserRole.TEACHER)
+
+    payload = core_security.decode_access_token(token_resp.access_token)
+    assert payload is not None
+    assert payload.get("role") == "student"
+
+
 async def test_register_duplicate_email(db_session):
     """Test that registering with duplicate email raises error"""
     auth_service = auth_service_module.AuthService(db_session)
@@ -145,6 +172,9 @@ async def test_authenticate_success(db_session):
     assert token is not None
     assert token.access_token is not None
     assert token.token_type == "bearer"
+    payload = core_security.decode_access_token(token.access_token)
+    assert payload is not None
+    assert payload.get("role") == "student"
 
 
 async def test_authenticate_wrong_password(db_session):

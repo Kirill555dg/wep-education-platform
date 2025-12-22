@@ -87,3 +87,15 @@ class MessageRepository(base_repository.BaseRepository[communication_models.Mess
             rows.reverse()  # Return chronological order for UI.
         return tp.cast(list[tuple[communication_models.Message, user_models.User]], rows)
 
+    async def count_by_chat(self, chat_id: int) -> int:
+        stmt = (
+            sa.select(sa.func.count())
+            .select_from(communication_models.Message)
+            .where(
+                communication_models.Message.chat_id == chat_id,
+                ~communication_models.Message.is_deleted,
+            )
+        )
+        value = (await self.db.execute(stmt)).scalar_one()
+        return tp.cast(int, value)
+

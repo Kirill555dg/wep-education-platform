@@ -52,6 +52,12 @@ class ResultService:
         stats = await self.stats_repo.get_by_student(student.id, skip, limit)
         return [homework_schemas.StatisticsResponse.model_validate(s) for s in stats]
 
+    async def count_student_statistics(self, student_user_id: int) -> int:
+        student = await self.student_repo.get_by_user_id(student_user_id)
+        if not student:
+            raise domain_errors.NotFoundError("Student not found")
+        return await self.stats_repo.count_by_student(student.id)
+
     async def get_homework_statistics(
         self,
         homework_id: int,
@@ -79,6 +85,9 @@ class ResultService:
 
         stats = await self.stats_repo.get_by_homework(homework_id, skip, limit)
         return [homework_schemas.StatisticsResponse.model_validate(s) for s in stats]
+
+    async def count_homework_statistics(self, homework_id: int) -> int:
+        return await self.stats_repo.count_by_homework(homework_id)
 
     async def get_student_progress(self, student_user_id: int) -> dict[str, tp.Any]:
         """

@@ -8,6 +8,7 @@ from fastapi import status as http_status
 from app.api import dependencies as deps
 from app.api import pagination as api_pagination
 from app.models import users as user_models
+from app.schemas import pagination as pagination_schemas
 from app.schemas import homework as homework_schemas
 from app.services import homework as homework_service_module
 
@@ -42,7 +43,7 @@ async def create_homework(
 
 @router.get(
     "/lesson/{lesson_id}",
-    response_model=list[homework_schemas.HomeworkResponse],
+    response_model=pagination_schemas.Page[homework_schemas.HomeworkResponse],
 )
 async def get_lesson_homework(
     lesson_id: int,
@@ -58,7 +59,11 @@ async def get_lesson_homework(
     - Teachers see all homework (including unpublished)
     - Students see only published homework
     """
-    return await homework_service.get_lesson_homework(lesson_id, current_user, pagination.skip, pagination.limit)
+    items = await homework_service.get_lesson_homework(
+        lesson_id, current_user, pagination.skip, pagination.limit
+    )
+    total = await homework_service.count_lesson_homework(lesson_id, current_user)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/{homework_id}", response_model=homework_schemas.HomeworkDetailResponse)

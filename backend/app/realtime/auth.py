@@ -62,6 +62,12 @@ async def require_current_user(
     if not user.is_active:
         raise domain_errors.ForbiddenError("User account is inactive")
 
+    token_role = payload.get("role")
+    if token_role is None:
+        raise domain_errors.UnauthorizedError("Token missing role")
+    if str(token_role) != str(user.role):
+        raise domain_errors.UnauthorizedError("Role changed, please re-authenticate")
+
     logger.debug("ws_user_authenticated", extra={"user_id": user.id})
     return user
 

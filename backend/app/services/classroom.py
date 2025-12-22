@@ -92,6 +92,12 @@ class ClassroomService:
         classrooms = await self.classroom_repo.get_by_teacher(teacher.id, skip, limit)
         return [classroom_schemas.ClassroomResponse.model_validate(c) for c in classrooms]
 
+    async def count_teacher_classrooms(self, teacher_user_id: int) -> int:
+        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
+        if not teacher:
+            return 0
+        return await self.classroom_repo.count_by_teacher(teacher.id)
+
     async def get_student_classrooms(
         self,
         student_user_id: int,
@@ -108,6 +114,12 @@ class ClassroomService:
 
         classrooms = await self.classroom_repo.get_by_ids(classroom_ids)
         return [classroom_schemas.ClassroomResponse.model_validate(classroom_item) for classroom_item in classrooms]
+
+    async def count_student_classrooms(self, student_user_id: int) -> int:
+        student = await self.student_repo.get_by_user_id(student_user_id)
+        if not student:
+            return 0
+        return await self.student_classroom_repo.count_by_student(student.id)
 
     async def update_classroom(
         self,

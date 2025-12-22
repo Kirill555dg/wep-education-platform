@@ -7,13 +7,14 @@ import fastapi
 from app.api import dependencies as deps
 from app.api import pagination as api_pagination
 from app.models import users as user_models
+from app.schemas import pagination as pagination_schemas
 from app.schemas import homework as homework_schemas
 from app.services import result as result_service_module
 
 router = fastapi.APIRouter()
 
 
-@router.get("/me", response_model=list[homework_schemas.StatisticsResponse])
+@router.get("/me", response_model=pagination_schemas.Page[homework_schemas.StatisticsResponse])
 async def get_my_statistics(
     pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_student),
@@ -24,7 +25,9 @@ async def get_my_statistics(
 
     Returns all homework attempts with scores and status
     """
-    return await result_service.get_student_statistics(current_user.id, pagination.skip, pagination.limit)
+    items = await result_service.get_student_statistics(current_user.id, pagination.skip, pagination.limit)
+    total = await result_service.count_student_statistics(current_user.id)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/me/progress")
@@ -49,7 +52,7 @@ async def get_my_progress(
 
 @router.get(
     "/homework/{homework_id}",
-    response_model=list[homework_schemas.StatisticsResponse],
+    response_model=pagination_schemas.Page[homework_schemas.StatisticsResponse],
 )
 async def get_homework_statistics(
     homework_id: int,
@@ -62,9 +65,11 @@ async def get_homework_statistics(
 
     Returns all student attempts for the homework
     """
-    return await result_service.get_homework_statistics(
+    items = await result_service.get_homework_statistics(
         homework_id, current_user.id, pagination.skip, pagination.limit
     )
+    total = await result_service.count_homework_statistics(homework_id)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get("/classroom/{classroom_id}/progress")
@@ -87,7 +92,7 @@ async def get_classroom_progress(
 
 @router.get(
     "/student/{student_user_id}",
-    response_model=list[homework_schemas.StatisticsResponse],
+    response_model=pagination_schemas.Page[homework_schemas.StatisticsResponse],
 )
 async def get_student_statistics_by_teacher(
     student_user_id: int,
@@ -100,4 +105,6 @@ async def get_student_statistics_by_teacher(
 
     Teachers can view any student's statistics
     """
-    return await result_service.get_student_statistics(student_user_id, pagination.skip, pagination.limit)
+    items = await result_service.get_student_statistics(student_user_id, pagination.skip, pagination.limit)
+    total = await result_service.count_student_statistics(student_user_id)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)

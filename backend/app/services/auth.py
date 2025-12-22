@@ -126,7 +126,7 @@ class AuthService:
         await self.login_repo.update(login_info.id, {"last_login": dte.utc_now()})
 
         # Create access token
-        access_token = core_security.create_access_token(data={"sub": str(user.id)})
+        access_token = core_security.create_access_token(data={"sub": str(user.id), "role": user.role})
 
         return user_schemas.TokenResponse(
             access_token=access_token,
