@@ -45,8 +45,13 @@ export function TeacherHomeworkCreatePage() {
   const [type, setType] = useState("");
   const [selected, setSelected] = useState<Record<number, Selected>>({});
 
-  const problemsQuery = useProblemsList({ skip: 0, limit: 100, q, type });
+  const [skip, setSkip] = useState(0);
+  const limit = 50;
+  const problemsQuery = useProblemsList({ skip, limit, q, type });
   const filteredProblems = problemsQuery.data?.items ?? [];
+  const totalProblems = problemsQuery.data?.total ?? 0;
+  const canPrev = skip > 0;
+  const canNext = skip + limit < totalProblems;
 
   const selectedEntries = useMemo(() => {
     const entries = Object.entries(selected)
@@ -234,11 +239,39 @@ export function TeacherHomeworkCreatePage() {
             <div className="grid gap-3 md:grid-cols-2">
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Поиск</label>
-                <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="например: дроби, уравнение..." />
+                <Input
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setSkip(0);
+                  }}
+                  placeholder="например: дроби, уравнение..."
+                />
               </div>
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Тип</label>
-                <Input value={type} onChange={(e) => setType(e.target.value)} placeholder="short_answer / ..." />
+                <Input
+                  value={type}
+                  onChange={(e) => {
+                    setType(e.target.value);
+                    setSkip(0);
+                  }}
+                  placeholder="short_answer / ..."
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-muted-foreground">
+                Показаны: {filteredProblems.length} · всего задач: {totalProblems} · page: {Math.floor(skip / limit) + 1}
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={!canPrev} onClick={() => setSkip((s) => Math.max(0, s - limit))}>
+                  Назад
+                </Button>
+                <Button type="button" size="sm" variant="outline" disabled={!canNext} onClick={() => setSkip((s) => s + limit)}>
+                  Вперёд
+                </Button>
               </div>
             </div>
 

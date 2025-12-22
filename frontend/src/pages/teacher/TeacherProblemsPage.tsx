@@ -1,20 +1,73 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
 
 import { useProblemsList } from "@/entities/problem/api/queries";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { DataTable } from "@/shared/ui/data-table";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { ProblemFullResponse } from "@/shared/api/generated";
 
 export function TeacherProblemsPage() {
   const [q, setQ] = useState("");
   const [type, setType] = useState("");
 
-  const params = useMemo(() => ({ skip: 0, limit: 100, q, type }), [q, type]);
+  const [skip, setSkip] = useState(0);
+  const limit = 50;
+  const params = useMemo(() => ({ skip, limit, q, type }), [skip, limit, q, type]);
   const query = useProblemsList(params);
+  const total = query.data?.total ?? 0;
+  const canPrev = skip > 0;
+  const canNext = skip + limit < total;
+
+  const columns = useMemo<Array<ColumnDef<ProblemFullResponse>>>(
+    () => [
+      {
+        header: "Заголовок",
+        accessorKey: "title",
+        cell: ({ row }) => (
+          <Link className="underline underline-offset-4" to={routes.teacher.problem(row.original.id)}>
+            {row.original.title}
+          </Link>
+        ),
+      },
+      { header: "Тип", accessorKey: "problem_type" },
+      {
+        header: "Публикация",
+        accessorKey: "is_published",
+        cell: ({ row }) => (
+          <Badge variant={row.original.is_published ? "success" : "secondary"}>{row.original.is_published ? "published" : "draft"}</Badge>
+        ),
+      },
+      {
+        header: "Обновлено",
+        accessorKey: "updated_at",
+        cell: ({ row }) => {
+          try {
+            return format(new Date(row.original.updated_at), "yyyy-MM-dd HH:mm");
+          } catch {
+            return row.original.updated_at;
+          }
+        },
+      },
+      {
+        header: "",
+        id: "actions",
+        cell: ({ row }) => (
+          <Button asChild size="sm" variant="secondary">
+            <Link to={routes.teacher.problem(row.original.id)}>Открыть</Link>
+          </Button>
+        ),
+      },
+    ],
+    []
+  );
 
   return (
     <div className="grid gap-6">
@@ -36,11 +89,25 @@ export function TeacherProblemsPage() {
         <CardContent className="grid gap-3 md:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-sm font-medium">Поиск</label>
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="например: дроби, уравнение..." />
+            <Input
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setSkip(0);
+              }}
+              placeholder="например: дроби, уравнение..."
+            />
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium">Тип</label>
-            <Input value={type} onChange={(e) => setType(e.target.value)} placeholder="short_answer / essay / ..." />
+            <Input
+              value={type}
+              onChange={(e) => {
+                setType(e.target.value);
+                setSkip(0);
+              }}
+              placeholder="short_answer / essay / ..."
+            />
           </div>
         </CardContent>
       </Card>
@@ -60,22 +127,20 @@ export function TeacherProblemsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Задачи</CardTitle>
-            <CardDescription>Всего: {query.data.total}</CardDescription>
+            <CardDescription>
+              Показано: {query.data.items.length} · всего: {query.data.total} · page: {Math.floor(skip / limit) + 1}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-2">
-            {query.data.items.map((p) => (
-              <div key={p.id} className="flex items-center justify-between border rounded-md px-3 py-2">
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{p.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {p.problem_type} · published: {String(p.is_published)}
-                  </div>
-                </div>
-                <Button asChild size="sm" variant="secondary">
-                  <Link to={`/teacher/problems/${p.id}`}>Открыть</Link>
-                </Button>
-              </div>
-            ))}
+          <CardContent className="grid gap-3">
+            <div className="flex items-center justify-end gap-2">
+              <Button size="sm" variant="outline" disabled={!canPrev} onClick={() => setSkip((s) => Math.max(0, s - limit))}>
+                Назад
+              </Button>
+              <Button size="sm" variant="outline" disabled={!canNext} onClick={() => setSkip((s) => s + limit)}>
+                Вперёд
+              </Button>
+            </div>
+            <DataTable data={query.data.items} columns={columns} sortable />
           </CardContent>
         </Card>
       ) : null}
