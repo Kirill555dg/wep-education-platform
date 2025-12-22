@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { DataTable } from "@/shared/ui/data-table";
 import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
+import { ClassroomHomeworkTrendChart, type ClassroomHomeworkTrendPoint } from "@/widgets/statistics/ClassroomHomeworkTrendChart";
+import { HomeworkStatusDonut } from "@/widgets/statistics/HomeworkStatusDonut";
 import { TeacherStudentRankingChart, type TeacherStudentRankingPoint } from "@/widgets/statistics/TeacherStudentRankingChart";
 import type { StatisticsResponse } from "@/shared/api/generated";
 
@@ -146,6 +148,30 @@ export function TeacherClassroomStatsPage() {
     [aggregatedStudents]
   );
 
+  const trendChart: ClassroomHomeworkTrendPoint[] = useMemo(() => {
+    const rows = studentAggQuery.data ?? [];
+    const byHomework = new Map<number, { score: number; max: number }>();
+    for (const r of rows) {
+      const cur = byHomework.get(r.homework_id) ?? { score: 0, max: 0 };
+      cur.score += r.score ?? 0;
+      cur.max += r.max_score ?? 0;
+      byHomework.set(r.homework_id, cur);
+    }
+
+    const titleById = new Map<number, string>();
+    for (const h of homeworksQuery.data ?? []) titleById.set(h.id, h.title);
+
+    const points = Array.from(byHomework.entries()).map(([id, agg]) => {
+      const pct = agg.max > 0 ? Math.round((agg.score / agg.max) * 100) : 0;
+      const title = titleById.get(id);
+      return { name: title ? title : `#${id}`, value: pct };
+    });
+
+    // Keep stable order: by homework id (close enough for MVP)
+    points.sort((a, b) => a.name.localeCompare(b.name));
+    return points.slice(0, 20);
+  }, [studentAggQuery.data, homeworksQuery.data]);
+
   const studentColumns = useMemo<Array<ColumnDef<StudentAggregateRow>>>(
     () => [
       { header: "Ученик", accessorKey: "student_name" },
@@ -242,6 +268,17 @@ export function TeacherClassroomStatsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Динамика по ДЗ (средний %)</CardTitle>
+          <CardDescription>Средний процент по каждому ДЗ (по всем ученикам)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {studentAggQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+          <ClassroomHomeworkTrendChart data={trendChart} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Топ учеников</CardTitle>
           <CardDescription>По среднему проценту (по всем ДЗ класса)</CardDescription>
         </CardHeader>
@@ -308,7 +345,17 @@ export function TeacherClassroomStatsPage() {
           ) : null}
 
           {homeworkStatsQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
-          {homeworkStatsQuery.data ? <DataTable data={homeworkStatsQuery.data.items} columns={homeworkStatsColumns} /> : null}
+          {homeworkStatsQuery.data ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <div className="text-sm font-medium mb-2">Распределение статусов</div>
+                  <HomeworkStatusDonut stats={homeworkStatsQuery.data.items} />
+                </div>
+              </div>
+              <DataTable data={homeworkStatsQuery.data.items} columns={homeworkStatsColumns} />
+            </>
+          ) : null}
         </CardContent>
       </Card>
     </div>

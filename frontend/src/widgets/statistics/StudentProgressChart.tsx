@@ -11,9 +11,16 @@ export function StudentProgressChart(props: { data: StudentProgressResponse }) {
     { name: "Выполнено", value: data.completed },
     { name: "В процессе", value: data.in_progress },
     { name: "Не начато", value: data.not_started },
-  ].filter((x) => x.value > 0);
+  ];
 
-  if (chartData.length === 0) return null;
+  const total = chartData.reduce((acc, x) => acc + x.value, 0);
+  if (total === 0) {
+    return (
+      <div className="h-56 w-full grid place-items-center rounded-md border bg-muted/10">
+        <div className="text-sm text-muted-foreground">Пока нет данных для графика</div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-56 w-full">
