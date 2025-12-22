@@ -5,7 +5,7 @@ Communication models: Chat, Message
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
 
-from app.core import datetime_extensions as dt_ext
+from app.core import datetime_extensions as dte
 from app.db import session as db_session
 
 
@@ -23,7 +23,7 @@ class Chat(db_session.Base):
     )
     name = sa.Column(sa.String(255), nullable=True)  # опционально, можно автоматически генерировать
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     classroom = orm.relationship("Classroom", back_populates="chat")
@@ -53,11 +53,11 @@ class Message(db_session.Base):
     content = sa.Column(sa.Text, nullable=False)
     is_edited = sa.Column(sa.Boolean, default=False, nullable=False)
     is_deleted = sa.Column(sa.Boolean, default=False, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False, index=True)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False, index=True)
     updated_at = sa.Column(
         sa.DateTime(timezone=True),
-        default=dt_ext.utc_now,
-        onupdate=dt_ext.utc_now,
+        default=dte.utc_now,
+        onupdate=dte.utc_now,
         nullable=False,
     )
 

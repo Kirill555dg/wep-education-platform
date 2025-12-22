@@ -7,7 +7,7 @@ import enum
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
 
-from app.core import datetime_extensions as dt_ext
+from app.core import datetime_extensions as dte
 from app.db import session as db_session
 
 
@@ -37,11 +37,11 @@ class Homework(db_session.Base):
     max_score = sa.Column(sa.Float, default=100.0, nullable=False)
     deadline = sa.Column(sa.DateTime(timezone=True), nullable=True)
     is_published = sa.Column(sa.Boolean, default=False, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
     updated_at = sa.Column(
         sa.DateTime(timezone=True),
-        default=dt_ext.utc_now,
-        onupdate=dt_ext.utc_now,
+        default=dte.utc_now,
+        onupdate=dte.utc_now,
         nullable=False,
     )
 
@@ -109,11 +109,11 @@ class Statistics(db_session.Base):
     submitted_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
     graded_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
     feedback = sa.Column(sa.Text, nullable=True)  # обратная связь от преподавателя
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
     updated_at = sa.Column(
         sa.DateTime(timezone=True),
-        default=dt_ext.utc_now,
-        onupdate=dt_ext.utc_now,
+        default=dte.utc_now,
+        onupdate=dte.utc_now,
         nullable=False,
     )
 

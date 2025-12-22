@@ -5,7 +5,7 @@ Theory materials models: Subject, Section, Subsection, TheoryMaterial, MaterialI
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
 
-from app.core import datetime_extensions as dt_ext
+from app.core import datetime_extensions as dte
 from app.db import session as db_session
 
 
@@ -20,7 +20,7 @@ class Subject(db_session.Base):
     icon_url = sa.Column(sa.String(500), nullable=True)
     order_number = sa.Column(sa.Integer, default=0, nullable=False)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     sections = orm.relationship("Section", back_populates="subject", cascade="all, delete-orphan")
@@ -44,7 +44,7 @@ class Section(db_session.Base):
     name = sa.Column(sa.String(255), nullable=False)
     description = sa.Column(sa.Text, nullable=True)
     order_number = sa.Column(sa.Integer, default=0, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     subject = orm.relationship("Subject", back_populates="sections")
@@ -69,7 +69,7 @@ class Subsection(db_session.Base):
     name = sa.Column(sa.String(255), nullable=False)
     description = sa.Column(sa.Text, nullable=True)
     order_number = sa.Column(sa.Integer, default=0, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     section = orm.relationship("Section", back_populates="subsections")
@@ -98,11 +98,11 @@ class TheoryMaterial(db_session.Base):
     order_number = sa.Column(sa.Integer, default=0, nullable=False)
     estimated_read_time = sa.Column(sa.Integer, nullable=True)  # примерное время чтения в минутах
     is_published = sa.Column(sa.Boolean, default=False, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
     updated_at = sa.Column(
         sa.DateTime(timezone=True),
-        default=dt_ext.utc_now,
-        onupdate=dt_ext.utc_now,
+        default=dte.utc_now,
+        onupdate=dte.utc_now,
         nullable=False,
     )
 
@@ -136,7 +136,7 @@ class MaterialImage(db_session.Base):
     )
     caption = sa.Column(sa.String(255), nullable=True)
     order_number = sa.Column(sa.Integer, default=0, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     material = orm.relationship("TheoryMaterial", back_populates="images")

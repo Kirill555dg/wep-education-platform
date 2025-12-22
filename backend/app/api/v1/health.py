@@ -2,16 +2,18 @@
 Health check endpoints
 """
 
+import typing as tp
+
 import fastapi
 
 from app.core import config as core_config
-from app.core import datetime_extensions as datetime_extensions
+from app.core import datetime_extensions as dte
 
 router = fastapi.APIRouter()
 
 
 @router.get("/health")
-def health_check() -> dict[str, object]:
+def health_check() -> dict[str, tp.Any]:
     """
     Health check endpoint
 
@@ -22,7 +24,7 @@ def health_check() -> dict[str, object]:
         "status": "healthy",
         "app_name": core_config.settings.APP_NAME,
         "version": core_config.settings.APP_VERSION,
-        "timestamp": datetime_extensions.utc_now().isoformat(),
+        "timestamp": dte.utc_now().isoformat(),
     }
 
 

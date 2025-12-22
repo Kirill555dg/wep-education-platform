@@ -4,7 +4,7 @@ File storage model
 
 import sqlalchemy as sa
 
-from app.core import datetime_extensions as dt_ext
+from app.core import datetime_extensions as dte
 from app.db import session as db_session
 
 
@@ -22,7 +22,7 @@ class File(db_session.Base):
     file_hash = sa.Column(sa.String(64), nullable=True, index=True)  # SHA-256 hash для дедупликации
     is_public = sa.Column(sa.Boolean, default=False, nullable=False)
     uploaded_by = sa.Column(sa.Integer, nullable=True)  # user_id who uploaded
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     def __repr__(self) -> str:
         return f"<File(id={self.id}, filename='{self.filename}', size={self.file_size})>"

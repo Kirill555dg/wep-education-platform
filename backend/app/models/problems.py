@@ -5,7 +5,7 @@ Problem models: Problem, ProblemImage
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
 
-from app.core import datetime_extensions as dt_ext
+from app.core import datetime_extensions as dte
 from app.db import session as db_session
 
 
@@ -23,11 +23,11 @@ class Problem(db_session.Base):
     explanation = sa.Column(sa.Text, nullable=True)  # объяснение решения
     hints = sa.Column(sa.Text, nullable=True)  # подсказки (может быть JSON массив)
     is_published = sa.Column(sa.Boolean, default=False, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
     updated_at = sa.Column(
         sa.DateTime(timezone=True),
-        default=dt_ext.utc_now,
-        onupdate=dt_ext.utc_now,
+        default=dte.utc_now,
+        onupdate=dte.utc_now,
         nullable=False,
     )
 
@@ -60,7 +60,7 @@ class ProblemImage(db_session.Base):
     )
     caption = sa.Column(sa.String(255), nullable=True)
     order_number = sa.Column(sa.Integer, default=0, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     problem = orm.relationship("Problem", back_populates="images")

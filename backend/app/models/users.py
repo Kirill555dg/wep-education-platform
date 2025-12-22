@@ -5,7 +5,7 @@ User models: User, LoginData, Teacher, Student
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
 
-from app.core import datetime_extensions as dt_ext
+from app.core import datetime_extensions as dte
 from app.db import session as db_session
 
 
@@ -24,11 +24,11 @@ class User(db_session.Base):
     role = sa.Column(sa.String(20), nullable=False, default="student")
     avatar_url = sa.Column(sa.String(500), nullable=True)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
     updated_at = sa.Column(
         sa.DateTime(timezone=True),
-        default=dt_ext.utc_now,
-        onupdate=dt_ext.utc_now,
+        default=dte.utc_now,
+        onupdate=dte.utc_now,
         nullable=False,
     )
 
@@ -61,7 +61,7 @@ class LoginData(db_session.Base):
     )
     hashed_password = sa.Column(sa.String(255), nullable=False)
     last_login = sa.Column(sa.DateTime(timezone=True), nullable=True)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     user = orm.relationship("User", back_populates="login_data")
@@ -109,7 +109,7 @@ class Student(db_session.Base):
     )
     grade_level = sa.Column(sa.Integer, nullable=True)  # класс обучения (7, 8, 9 и т.д.)
     student_id_number = sa.Column(sa.String(50), unique=True, nullable=True)  # студенческий билет
-    enrollment_date = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    enrollment_date = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     user = orm.relationship("User", back_populates="student")

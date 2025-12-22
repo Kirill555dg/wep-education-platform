@@ -7,7 +7,7 @@ import enum
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
 
-from app.core import datetime_extensions as dt_ext
+from app.core import datetime_extensions as dte
 from app.db import session as db_session
 
 
@@ -38,11 +38,11 @@ class Classroom(db_session.Base):
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
     max_students = sa.Column(sa.Integer, default=30, nullable=True)
     invite_code = sa.Column(sa.String(50), unique=True, nullable=True)  # код для присоединения
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
     updated_at = sa.Column(
         sa.DateTime(timezone=True),
-        default=dt_ext.utc_now,
-        onupdate=dt_ext.utc_now,
+        default=dte.utc_now,
+        onupdate=dte.utc_now,
         nullable=False,
     )
 
@@ -77,7 +77,7 @@ class StudentClassroom(db_session.Base):
         sa.ForeignKey("classrooms.id", ondelete="CASCADE"),
         nullable=False,
     )
-    enrolled_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    enrolled_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
     is_active = sa.Column(sa.Boolean, default=True, nullable=False)
 
     # Relationships
@@ -104,7 +104,7 @@ class Invite(db_session.Base):
     uses_count = sa.Column(sa.Integer, default=0, nullable=False)
     status = sa.Column(sa.Enum(InviteStatus), default=InviteStatus.PENDING, nullable=False)
     expires_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
-    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dte.utc_now, nullable=False)
 
     # Relationships
     classroom = orm.relationship("Classroom", back_populates="invites")
