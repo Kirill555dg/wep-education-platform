@@ -16,11 +16,10 @@ export class AuthenticationService {
      * Register
      * Register new user (student or teacher)
      *
-     * - **username**: Unique username (3-100 characters)
      * - **email**: Valid email address
      * - **password**: Password (min 8 characters)
-     * - **full_name**: User's full name
-     * - **is_teacher**: False for student, True for teacher
+     * - **first_name / last_name / middle_name**: User's name parts
+     * - **role**: Initial active role ("student" | "teacher")
      * @param requestBody
      * @returns UserResponse Successful Response
      * @throws ApiError

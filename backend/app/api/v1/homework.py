@@ -11,6 +11,7 @@ from app.models import users as user_models
 from app.schemas import pagination as pagination_schemas
 from app.schemas import homework as homework_schemas
 from app.services import homework as homework_service_module
+from app.services import testing as testing_service_module
 
 router = fastapi.APIRouter()
 
@@ -101,6 +102,60 @@ async def get_homework_problems(
     - Students see problems without correct answers
     """
     return await homework_service.get_homework_problems(homework_id, current_user)
+
+
+@router.post("/submit-answer", response_model=homework_schemas.StatisticsResponse)
+async def submit_answer(
+    answer_data: homework_schemas.AnswerSubmit,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
+    testing_service: testing_service_module.TestingService = fastapi.Depends(
+        deps.get_testing_service
+    ),
+):
+    """
+    Submit answer for a problem (students only).
+
+    Production alias for `/api/v1/testing/submit-answer`.
+    """
+    return await testing_service.submit_answer(answer_data, current_user.id)
+
+
+@router.post(
+    "/{homework_id}/submit",
+    response_model=homework_schemas.StatisticsResponse,
+)
+async def submit_homework(
+    homework_id: int,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
+    testing_service: testing_service_module.TestingService = fastapi.Depends(
+        deps.get_testing_service
+    ),
+):
+    """
+    Submit homework for final grading (students only).
+
+    Production alias for `/api/v1/testing/homework/{homework_id}/submit`.
+    """
+    return await testing_service.submit_homework(homework_id, current_user.id)
+
+
+@router.get(
+    "/{homework_id}/status",
+    response_model=homework_schemas.StatisticsResponse,
+)
+async def get_homework_status(
+    homework_id: int,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_student),
+    testing_service: testing_service_module.TestingService = fastapi.Depends(
+        deps.get_testing_service
+    ),
+):
+    """
+    Get current status/progress for homework (students only).
+
+    Production alias for `/api/v1/testing/homework/{homework_id}/status`.
+    """
+    return await testing_service.get_homework_status(homework_id, current_user.id)
 
 
 @router.patch("/{homework_id}", response_model=homework_schemas.HomeworkResponse)

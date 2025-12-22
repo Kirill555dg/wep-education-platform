@@ -2,7 +2,6 @@ import "@/shared/api/openapi";
 
 import {
   HomeworkService,
-  TestingService,
   type AnswerSubmit,
   type HomeworkCreate,
   type HomeworkDetailResponse,
@@ -44,15 +43,15 @@ export const homeworkApi = {
   },
 
   async submitAnswer(payload: AnswerSubmit): Promise<StatisticsResponse> {
-    return await TestingService.submitAnswerApiV1TestingSubmitAnswerPost(payload);
+    return await HomeworkService.submitAnswerApiV1HomeworkSubmitAnswerPost(payload);
   },
 
   async submitHomework(homeworkId: number): Promise<StatisticsResponse> {
-    return await TestingService.submitHomeworkApiV1TestingHomeworkHomeworkIdSubmitPost(homeworkId);
+    return await HomeworkService.submitHomeworkApiV1HomeworkHomeworkIdSubmitPost(homeworkId);
   },
 
   async getStatus(homeworkId: number): Promise<StatisticsResponse> {
-    return await TestingService.getHomeworkStatusApiV1TestingHomeworkHomeworkIdStatusGet(homeworkId);
+    return await HomeworkService.getHomeworkStatusApiV1HomeworkHomeworkIdStatusGet(homeworkId);
   },
 } as const;
 
