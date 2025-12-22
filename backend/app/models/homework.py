@@ -3,11 +3,11 @@ Homework models: Homework, HomeworkProblem, Statistics
 """
 
 import enum
-import datetime as dt
 
 import sqlalchemy as sa
 from sqlalchemy import orm as orm
 
+from app.core import datetime_extensions as dt_ext
 from app.db import session as db_session
 
 
@@ -35,13 +35,13 @@ class Homework(db_session.Base):
     title = sa.Column(sa.String(255), nullable=False)
     description = sa.Column(sa.Text, nullable=True)
     max_score = sa.Column(sa.Float, default=100.0, nullable=False)
-    deadline = sa.Column(sa.DateTime, nullable=True)
+    deadline = sa.Column(sa.DateTime(timezone=True), nullable=True)
     is_published = sa.Column(sa.Boolean, default=False, nullable=False)
-    created_at = sa.Column(sa.DateTime, default=dt.datetime.utcnow, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
     updated_at = sa.Column(
-        sa.DateTime,
-        default=dt.datetime.utcnow,
-        onupdate=dt.datetime.utcnow,
+        sa.DateTime(timezone=True),
+        default=dt_ext.utc_now,
+        onupdate=dt_ext.utc_now,
         nullable=False,
     )
 
@@ -106,14 +106,14 @@ class Statistics(db_session.Base):
     max_score = sa.Column(sa.Float, nullable=False)  # максимально возможные баллы
     attempts_count = sa.Column(sa.Integer, default=0, nullable=False)  # количество попыток
     time_spent_minutes = sa.Column(sa.Integer, default=0, nullable=False)  # затраченное время
-    submitted_at = sa.Column(sa.DateTime, nullable=True)
-    graded_at = sa.Column(sa.DateTime, nullable=True)
+    submitted_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
+    graded_at = sa.Column(sa.DateTime(timezone=True), nullable=True)
     feedback = sa.Column(sa.Text, nullable=True)  # обратная связь от преподавателя
-    created_at = sa.Column(sa.DateTime, default=dt.datetime.utcnow, nullable=False)
+    created_at = sa.Column(sa.DateTime(timezone=True), default=dt_ext.utc_now, nullable=False)
     updated_at = sa.Column(
-        sa.DateTime,
-        default=dt.datetime.utcnow,
-        onupdate=dt.datetime.utcnow,
+        sa.DateTime(timezone=True),
+        default=dt_ext.utc_now,
+        onupdate=dt_ext.utc_now,
         nullable=False,
     )
 

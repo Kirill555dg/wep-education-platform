@@ -2,13 +2,12 @@
 Authentication service
 """
 
-import datetime as dt
-
 import fastapi
 from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.core import security as core_security
+from app.core import datetime_extensions as datetime_extensions
 from app.repositories import user_repository as user_repository
 from app.schemas import users as user_schemas
 
@@ -130,7 +129,7 @@ class AuthService:
             return None
 
         # Update last login
-        await self.login_repo.update(login_info.id, {"last_login": dt.datetime.utcnow()})
+        await self.login_repo.update(login_info.id, {"last_login": datetime_extensions.utc_now()})
 
         # Create access token
         access_token = core_security.create_access_token(data={"sub": str(user.id)})

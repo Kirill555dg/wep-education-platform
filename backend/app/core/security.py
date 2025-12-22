@@ -12,6 +12,7 @@ from jose import exceptions as jose_exceptions
 from jose import jwt as jose_jwt
 
 from app.core import config as core_config
+from app.core import datetime_extensions as datetime_extensions
 
 # Initialize Argon2 password hasher with recommended parameters
 # Argon2id is the recommended variant (hybrid of Argon2i and Argon2d)
@@ -85,9 +86,9 @@ def create_access_token(
     """
     to_encode = data.copy()
     if expires_delta:
-        expire = dt.datetime.utcnow() + expires_delta
+        expire = datetime_extensions.utc_now() + expires_delta
     else:
-        expire = dt.datetime.utcnow() + dt.timedelta(
+        expire = datetime_extensions.utc_now() + dt.timedelta(
             minutes=core_config.settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 
