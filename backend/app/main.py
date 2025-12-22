@@ -12,6 +12,7 @@ from fastapi.middleware import cors as fastapi_cors
 import redis.asyncio as redis_asyncio
 
 from app.api import errors as api_errors
+from app.api import openapi as api_openapi
 from app.api.middleware import request_id as request_id_middleware
 from app.api import v1 as api_v1
 from app.core import config as core_config
@@ -47,6 +48,9 @@ app.add_middleware(request_id_middleware.RequestIdMiddleware)
 
 # Domain error -> HTTP mapping
 api_errors.register_exception_handlers(app)
+
+# OpenAPI schema patching (error envelope + standard responses)
+api_openapi.install_openapi_patch(app)
 
 
 # Include API router
