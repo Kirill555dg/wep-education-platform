@@ -9,8 +9,7 @@ from sqlalchemy import pool as sa_pool
 
 from alembic import context
 
-# Import our application configuration and Base
-from app.core import config as core_config
+# Import Base / DB URLs (and models for autogenerate)
 from app.db import session as db_session
 
 # Import all models here to ensure they are registered with Base.metadata

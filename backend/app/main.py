@@ -38,9 +38,10 @@ app = fastapi.FastAPI(
 app.add_middleware(
     fastapi_cors.CORSMiddleware,
     allow_origins=core_config.settings.BACKEND_CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=core_config.settings.BACKEND_CORS_ALLOW_CREDENTIALS,
+    allow_methods=core_config.settings.BACKEND_CORS_ALLOW_METHODS,
+    allow_headers=core_config.settings.BACKEND_CORS_ALLOW_HEADERS,
+    expose_headers=core_config.settings.BACKEND_CORS_EXPOSE_HEADERS,
 )
 
 # Request correlation / access logging

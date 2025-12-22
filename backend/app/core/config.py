@@ -27,8 +27,30 @@ class Settings(pydantic_settings.BaseSettings):
 
     # CORS
     BACKEND_CORS_ORIGINS: list[str] = [
-        "http://localhost:5173",  # Frontend dev server
+        # Docker-compose frontend (nginx) commonly serves on port 80 (Origin without explicit port).
+        "http://localhost",
+        "http://127.0.0.1",
+        # Frontend dev server (Vite). Cypress/Electron may use 127.0.0.1 instead of localhost.
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        # Optional React dev server
         "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        # Vite preview
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+    ]
+
+    # Keep these explicit (prod-friendly) while still allowing overrides via .env.
+    BACKEND_CORS_ALLOW_CREDENTIALS: bool = True
+    BACKEND_CORS_ALLOW_METHODS: list[str] = ["*"]
+    BACKEND_CORS_ALLOW_HEADERS: list[str] = [
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID",
+    ]
+    BACKEND_CORS_EXPOSE_HEADERS: list[str] = [
+        "X-Request-ID",
     ]
 
     # Security
