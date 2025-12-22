@@ -5,6 +5,7 @@ import { AppLayout } from "@/widgets/layout/AppLayout";
 import { HomeRedirect } from "@/pages/common/HomeRedirect";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
+import { ChatPage } from "@/pages/chat/ChatPage";
 import { TeacherClassroomPage } from "@/pages/teacher/TeacherClassroomPage";
 import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
 import { TeacherLessonPage } from "@/pages/teacher/TeacherLessonPage";
@@ -22,6 +23,7 @@ function App() {
 
         <Route element={<RequireAuth />}>
           <Route path="/" element={<HomeRedirect />} />
+          <Route path="/chat" element={<ChatPage />} />
 
           <Route element={<RequireRole role="teacher" />}>
             <Route path="/teacher" element={<TeacherHomePage />} />

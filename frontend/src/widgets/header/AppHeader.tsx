@@ -7,6 +7,7 @@ import { Badge } from "@/shared/ui/badge";
 import { BookOpen, MessageSquare, Users } from "lucide-react";
 import { useMemo } from "react";
 import { cn } from "@/shared/lib/utils";
+import { AppMobileNav } from "@/widgets/navigation/AppMobileNav";
 
 export function AppHeader() {
   const user = useSessionStore((s) => s.user);
@@ -16,13 +17,13 @@ export function AppHeader() {
     if (user?.role === "teacher") {
       return [
         { to: routes.teacher.home, label: "Классы", icon: Users },
-        { to: routes.app, label: "Чат", icon: MessageSquare },
+        { to: routes.chat, label: "Чат", icon: MessageSquare },
       ];
     }
     if (user?.role === "student") {
       return [
         { to: routes.student.home, label: "Мои классы", icon: BookOpen },
-        { to: routes.app, label: "Чат", icon: MessageSquare },
+        { to: routes.chat, label: "Чат", icon: MessageSquare },
       ];
     }
     return [];
@@ -32,9 +33,10 @@ export function AppHeader() {
     <header className="w-full border-b bg-background">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-6">
         <div className="flex items-center gap-3">
+          <AppMobileNav />
           <Link to={routes.app} className="font-semibold tracking-tight">
-            WEP
-          </Link>
+          WEP
+        </Link>
           {quickNav.length > 0 ? (
             <nav className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
               {quickNav.map((link) => (

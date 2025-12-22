@@ -7,6 +7,7 @@ import { logger } from "@/shared/lib/logger";
 import { env } from "@/shared/config/env";
 import { loggingConfig } from "@/shared/config/logging";
 import { ErrorBoundary } from "@/shared/ui/error-boundary";
+import { QueryProvider } from "@/app/providers/QueryProvider";
 
 logger.info("frontend_start", { apiBaseUrl: env.apiBaseUrl, logLevel: loggingConfig.level });
 
@@ -27,9 +28,11 @@ window.addEventListener("unhandledrejection", (event) => {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+      <QueryProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
