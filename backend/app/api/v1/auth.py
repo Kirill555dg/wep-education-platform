@@ -8,7 +8,7 @@ from fastapi import status as http_status
 from app.api import dependencies as deps
 from app.models import users as user_models
 from app.schemas import users as user_schemas
-from app.services import auth_service as auth_service_module
+from app.services import auth as auth_service_module
 
 router = fastapi.APIRouter()
 

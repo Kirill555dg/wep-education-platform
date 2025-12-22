@@ -8,7 +8,7 @@ import typing as tp
 import fastapi
 from fastapi import status as http_status
 
-from app.repositories import homework_repository as homework_repository
+from app.repositories import homework as homework_repository
 from app.schemas import homework as homework_schemas
 
 

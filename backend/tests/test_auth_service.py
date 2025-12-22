@@ -7,7 +7,7 @@ import pytest
 import fastapi
 
 from app.schemas import users as user_schemas
-from app.services import auth_service as auth_service_module
+from app.services import auth as auth_service_module
 
 
 pytestmark = pytest.mark.anyio

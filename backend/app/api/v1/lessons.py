@@ -8,7 +8,7 @@ from fastapi import status as http_status
 from app.api import dependencies as deps
 from app.models import users as user_models
 from app.schemas import lessons as lesson_schemas
-from app.services import lesson_service as lesson_service_module
+from app.services import lesson as lesson_service_module
 
 router = fastapi.APIRouter()
 

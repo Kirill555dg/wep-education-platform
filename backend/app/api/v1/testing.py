@@ -7,7 +7,7 @@ import fastapi
 from app.api import dependencies as deps
 from app.models import users as user_models
 from app.schemas import homework as homework_schemas
-from app.services import testing_service as testing_service_module
+from app.services import testing as testing_service_module
 
 router = fastapi.APIRouter()
 

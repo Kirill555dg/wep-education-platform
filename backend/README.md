@@ -89,14 +89,14 @@ def create_user(
 **Пример**:
 ```python
 from sqlalchemy.orm import Session
-from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserCreate
+from app.repositories import user as user_repository
+from app.schemas import users as user_schemas
 
 class UserService:
     def __init__(self, db: Session):
-        self.repository = UserRepository(db)
+        self.repository = user_repository.UserRepository(db)
     
-    def create_user(self, user_data: UserCreate):
+    def create_user(self, user_data: user_schemas.UserCreate):
         # Бизнес-логика: проверка уникальности email
         existing = self.repository.get_by_email(user_data.email)
         if existing:

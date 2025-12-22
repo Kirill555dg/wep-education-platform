@@ -3,10 +3,10 @@ Data access repositories
 """
 
 from app.repositories import base as base_repository
-from app.repositories import classroom_repository as classroom_repository
-from app.repositories import homework_repository as homework_repository
-from app.repositories import lesson_repository as lesson_repository
-from app.repositories import user_repository as user_repository
+from app.repositories import classroom as classroom_repository
+from app.repositories import homework as homework_repository
+from app.repositories import lesson as lesson_repository
+from app.repositories import user as user_repository
 
 BaseRepository = base_repository.BaseRepository
 

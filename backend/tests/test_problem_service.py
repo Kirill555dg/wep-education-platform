@@ -6,9 +6,9 @@ import pytest
 
 import fastapi
 
-from app.repositories import homework_repository as homework_repository
+from app.repositories import homework as homework_repository
 from app.schemas import homework as homework_schemas
-from app.services import problem_service as problem_service_module
+from app.services import problem as problem_service_module
 
 
 pytestmark = pytest.mark.anyio

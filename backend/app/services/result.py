@@ -8,9 +8,9 @@ import fastapi
 from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
 
-from app.repositories import classroom_repository as classroom_repository
-from app.repositories import homework_repository as homework_repository
-from app.repositories import user_repository as user_repository
+from app.repositories import classroom as classroom_repository
+from app.repositories import homework as homework_repository
+from app.repositories import user as user_repository
 from app.schemas import homework as homework_schemas
 
 

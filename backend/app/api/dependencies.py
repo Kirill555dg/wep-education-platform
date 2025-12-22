@@ -10,15 +10,15 @@ from sqlalchemy.ext import asyncio as sa_asyncio
 from app.core import security as core_security
 from app.db import session as db_session
 from app.models import users as user_models
-from app.repositories import homework_repository as homework_repository
-from app.repositories import user_repository as user_repository
-from app.services import auth_service as auth_service
-from app.services import classroom_service as classroom_service
-from app.services import homework_service as homework_service
-from app.services import lesson_service as lesson_service
-from app.services import problem_service as problem_service
-from app.services import result_service as result_service
-from app.services import testing_service as testing_service
+from app.repositories import homework as homework_repo
+from app.repositories import user as user_repo
+from app.services import auth as auth_service
+from app.services import classroom as classroom_service
+from app.services import homework as homework_service
+from app.services import lesson as lesson_service
+from app.services import problem as problem_service
+from app.services import result as result_service
+from app.services import testing as testing_service
 
 # Security
 security = fastapi_security.HTTPBearer()
@@ -71,8 +71,8 @@ async def get_current_user(
     Raises:
         HTTPException: If user not found or inactive
     """
-    user_repo = user_repository.UserRepository(db)
-    user = await user_repo.get_by_id(user_id)
+    user_repository = user_repo.UserRepository(db)
+    user = await user_repository.get_by_id(user_id)
 
     if not user:
         raise fastapi.HTTPException(
@@ -99,8 +99,8 @@ async def get_current_teacher(
     Raises:
         HTTPException: If user is not a teacher
     """
-    teacher_repo = user_repository.TeacherRepository(db)
-    teacher = await teacher_repo.get_by_user_id(current_user.id)
+    teacher_repository = user_repo.TeacherRepository(db)
+    teacher = await teacher_repository.get_by_user_id(current_user.id)
 
     if not teacher:
         raise fastapi.HTTPException(
@@ -121,8 +121,8 @@ async def get_current_student(
     Raises:
         HTTPException: If user is not a student
     """
-    student_repo = user_repository.StudentRepository(db)
-    student = await student_repo.get_by_user_id(current_user.id)
+    student_repository = user_repo.StudentRepository(db)
+    student = await student_repository.get_by_user_id(current_user.id)
 
     if not student:
         raise fastapi.HTTPException(
@@ -180,4 +180,4 @@ def get_problem_service(
     db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
 ) -> problem_service.ProblemService:
     """Get ProblemService instance"""
-    return problem_service.ProblemService(homework_repository.ProblemRepository(db))
+    return problem_service.ProblemService(homework_repo.ProblemRepository(db))

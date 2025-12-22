@@ -8,7 +8,7 @@ from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.core import security as core_security
 from app.core import datetime_extensions as dte
-from app.repositories import user_repository as user_repository
+from app.repositories import user as user_repository
 from app.schemas import users as user_schemas
 
 
