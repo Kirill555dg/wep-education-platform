@@ -12,6 +12,7 @@ from sqlalchemy.ext import asyncio as sa_asyncio
 from app.repositories import classroom as classroom_repository
 from app.repositories import user as user_repository
 from app.schemas import classrooms as classroom_schemas
+from app.services import access_control as access_control
 
 
 class ClassroomService:
@@ -48,12 +49,10 @@ class ClassroomService:
             HTTPException: If user is not a teacher
         """
         # Verify user is a teacher
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-        if not teacher:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only teachers can create classrooms",
-            )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only teachers can create classrooms",
+        )
 
         # Generate unique invite code
         invite_code = nanoid.generate(size=10)
@@ -114,20 +113,21 @@ class ClassroomService:
         teacher_user_id: int,
     ) -> classroom_schemas.ClassroomResponse:
         """Update classroom (teacher only)"""
-        classroom = await self.classroom_repo.get_by_id(classroom_id)
-        if not classroom:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Classroom not found",
-            )
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(classroom_id),
+            detail="Classroom not found",
+        )
 
         # Verify teacher owns classroom
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-        if not teacher or classroom.teacher_id != teacher.id:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can update it",
-            )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can update it",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can update it",
+        )
 
         updated = await self.classroom_repo.update(
             classroom_id, classroom_data.model_dump(exclude_unset=True)
@@ -221,19 +221,19 @@ class ClassroomService:
             HTTPException: If not authorized
         """
         # Verify teacher owns classroom
-        classroom = await self.classroom_repo.get_by_id(classroom_id)
-        if not classroom:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Classroom not found",
-            )
-
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-        if not teacher or classroom.teacher_id != teacher.id:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can view students",
-            )
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(classroom_id),
+            detail="Classroom not found",
+        )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can view students",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can view students",
+        )
 
         # Get students
         memberships = await self.student_classroom_repo.get_by_classroom(classroom_id, skip, limit)

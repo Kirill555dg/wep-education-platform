@@ -11,6 +11,7 @@ from app.repositories import homework as homework_repository
 from app.repositories import lesson as lesson_repository
 from app.repositories import user as user_repository
 from app.schemas import homework as homework_schemas
+from app.services import access_control as access_control
 
 
 class HomeworkService:
@@ -57,14 +58,19 @@ class HomeworkService:
             )
 
         # Verify teacher owns classroom
-        classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-
-        if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can create homework",
-            )
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(lesson.classroom_id),
+            detail="Classroom not found",
+        )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can create homework",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can create homework",
+        )
 
         # Create homework
         homework_dict = homework_data.model_dump(exclude={"problem_ids", "problem_points"})
@@ -188,14 +194,19 @@ class HomeworkService:
                 detail="Lesson not found",
             )
 
-        classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-
-        if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can update homework",
-            )
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(lesson.classroom_id),
+            detail="Classroom not found",
+        )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can update homework",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can update homework",
+        )
 
         updated = await self.homework_repo.update(
             homework_id, homework_data.model_dump(exclude_unset=True)

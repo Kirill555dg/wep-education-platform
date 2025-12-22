@@ -10,6 +10,7 @@ from app.repositories import classroom as classroom_repository
 from app.repositories import lesson as lesson_repository
 from app.repositories import user as user_repository
 from app.schemas import lessons as lesson_schemas
+from app.services import access_control as access_control
 
 
 class LessonService:
@@ -46,20 +47,21 @@ class LessonService:
             HTTPException: If not authorized or classroom not found
         """
         # Verify classroom exists
-        classroom = await self.classroom_repo.get_by_id(lesson_data.classroom_id)
-        if not classroom:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Classroom not found",
-            )
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(lesson_data.classroom_id),
+            detail="Classroom not found",
+        )
 
         # Verify teacher owns classroom
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-        if not teacher or classroom.teacher_id != teacher.id:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can create lessons",
-            )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can create lessons",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can create lessons",
+        )
 
         # Create lesson
         lesson_dict = lesson_data.model_dump(exclude={"theory_material_ids"})
@@ -123,14 +125,19 @@ class LessonService:
             )
 
         # Verify teacher owns classroom
-        classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-
-        if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can update lessons",
-            )
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(lesson.classroom_id),
+            detail="Classroom not found",
+        )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can update lessons",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can update lessons",
+        )
 
         updated = await self.lesson_repo.update(lesson_id, lesson_data.model_dump(exclude_unset=True))
         if not updated:
@@ -151,13 +158,18 @@ class LessonService:
             )
 
         # Verify teacher owns classroom
-        classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
-        teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
-
-        if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only classroom owner can delete lessons",
-            )
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(lesson.classroom_id),
+            detail="Classroom not found",
+        )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can delete lessons",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can delete lessons",
+        )
 
         return await self.lesson_repo.delete(lesson_id)
