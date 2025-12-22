@@ -29,9 +29,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
       </QueryProvider>
     </ErrorBoundary>
   </React.StrictMode>
