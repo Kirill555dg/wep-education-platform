@@ -2,17 +2,21 @@
 Security utilities for password hashing and JWT
 """
 
+import logging
 import typing as tp
 
 import datetime as dt
 
 import argon2
-from argon2 import exceptions as argon2_exceptions
-from jose import exceptions as jose_exceptions
-from jose import jwt as jose_jwt
+import argon2.exceptions as argon2_exceptions
+import jose.exceptions as jose_exceptions
+import jose.jwt as jose_jwt
 
 from app.core import config as core_config
 from app.core import datetime_extensions as dte
+
+# Note: logger name is stable for config filters/formatters.
+logger = logging.getLogger("app.security")
 
 # Initialize Argon2 password hasher with recommended parameters
 # Argon2id is the recommended variant (hybrid of Argon2i and Argon2d)
@@ -41,13 +45,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
         # Check if hash needs rehashing (parameters changed)
         if ph.check_needs_rehash(hashed_password):
-            print("ℹ️  Password hash needs update for better security")
+            logger.info("password_hash_needs_update")
 
         return True
     except argon2_exceptions.VerifyMismatchError:
         return False
     except Exception as e:
-        print(f"❌ Password verification error: {e}")
+        logger.exception("password_verification_error", extra={"error": str(e)})
         return False
 
 

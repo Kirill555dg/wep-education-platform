@@ -31,6 +31,14 @@ class Settings(pydantic_settings.BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Logging
+    # - Local dev: colored key=value logs by default (DEBUG=True)
+    # - Server: JSON logs without ANSI by default (DEBUG=False)
+    LOG_LEVEL: str | None = None  # e.g. "DEBUG", "INFO"
+    LOG_JSON: bool | None = None
+    LOG_COLOR: bool | None = None
+    SERVICE_NAME: str = "wep-backend"
+
     model_config = pydantic_settings.SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
