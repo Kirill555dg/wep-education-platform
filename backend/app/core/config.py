@@ -44,6 +44,11 @@ class Settings(pydantic_settings.BaseSettings):
     LOG_COLOR: bool | None = None
     SERVICE_NAME: str = "wep-backend"
 
+    # Realtime
+    # For WebSocket chat fanout in multi-instance deployments.
+    # Example: "redis://redis:6379/0" (docker-compose) or "redis://127.0.0.1:6379/0" (local)
+    REDIS_URL: str | None = None
+
     model_config = pydantic_settings.SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

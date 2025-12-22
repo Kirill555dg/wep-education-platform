@@ -5,6 +5,7 @@ FastAPI application entry point
 import typing as tp
 
 import logging
+import inspect
 
 import fastapi
 from fastapi import exceptions as fastapi_exceptions
@@ -17,6 +18,8 @@ from app.api.middleware import request_id as request_id_middleware
 from app.api import v1 as api_v1
 from app.core import config as core_config
 from app.core import logging_config as logging_config
+from app.realtime import connection_manager as connection_manager_module
+from app.realtime import redis_pubsub as redis_pubsub_module
 
 # Configure logging as early as possible.
 logging_config.setup_logging()
@@ -116,10 +119,46 @@ async def on_startup() -> None:
         },
     )
 
+    # Realtime: WebSocket chat fanout (multi-instance) via Redis Pub/Sub.
+    app.state.chat_connection_manager = connection_manager_module.ConnectionManager()
+    app.state.redis = None
+    app.state.chat_broker = None
+
+    if core_config.settings.REDIS_URL:
+        import redis.asyncio as redis_asyncio
+
+        redis_client = redis_asyncio.from_url(core_config.settings.REDIS_URL)
+        app.state.redis = redis_client
+        app.state.chat_broker = redis_pubsub_module.RedisPubSubBroker(
+            redis_client,
+            manager=app.state.chat_connection_manager,
+        )
+        logger.info("redis_ready", extra={"redis_url": core_config.settings.REDIS_URL})
+
 
 @app.on_event("shutdown")
-def on_shutdown() -> None:
+async def on_shutdown() -> None:
     """
     Cleanup on application shutdown
     """
+    broker = getattr(app.state, "chat_broker", None)
+    if broker is not None:
+        try:
+            await broker.shutdown()
+        except Exception:
+            logger.exception("broker_shutdown_failed")
+
+    redis_client = getattr(app.state, "redis", None)
+    if redis_client is not None:
+        try:
+            close_fn = getattr(redis_client, "aclose", None)
+            if callable(close_fn):
+                await close_fn()
+            else:
+                maybe = redis_client.close()
+                if inspect.isawaitable(maybe):
+                    await maybe
+        except Exception:
+            logger.exception("redis_close_failed")
+
     logger.info("app_shutting_down", extra={"app_name": core_config.settings.APP_NAME})

@@ -71,6 +71,10 @@ class ChatService:
 
         raise domain_errors.ForbiddenError("Only classroom members can access chat")
 
+    async def require_access(self, classroom_id: int, *, user: user_models.User) -> None:
+        """Ensure user can access classroom chat."""
+        await self._require_user_can_access_classroom(classroom_id=classroom_id, user=user)
+
     async def list_messages(
         self,
         classroom_id: int,

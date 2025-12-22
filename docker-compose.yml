@@ -23,6 +23,21 @@ services:
     networks:
       - wep_network
 
+  # Redis (Pub/Sub for realtime chat)
+  redis:
+    image: redis:7-alpine
+    container_name: wep_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wep_network
+
   # Backend API (FastAPI)
   backend:
     build:
@@ -33,6 +48,9 @@ services:
     environment:
       # Database
       DATABASE_URL: postgresql://${POSTGRES_USER:-wep_user}:${POSTGRES_PASSWORD:-wep_password}@postgres:5432/${POSTGRES_DB:-wep_education}
+
+      # Realtime
+      REDIS_URL: redis://redis:6379/0
       
       # Application
       APP_NAME: "Web Education Platform API"
@@ -53,6 +71,8 @@ services:
       - "8000:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - wep_network

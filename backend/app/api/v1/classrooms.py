@@ -4,10 +4,16 @@ Classroom management endpoints
 
 import fastapi
 from fastapi import status as http_status
+import pydantic
+import starlette.websockets as starlette_websockets
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.api import dependencies as deps
 from app.api import pagination as api_pagination
+from app.db import session as db_session
+from app.domain import errors as domain_errors
 from app.models import users as user_models
+from app.realtime import auth as realtime_auth
 from app.schemas import communication as communication_schemas
 from app.schemas import classrooms as classroom_schemas
 from app.services import chat as chat_service_module
@@ -157,3 +163,73 @@ async def post_chat_message(
     chat_service: chat_service_module.ChatService = fastapi.Depends(deps.get_chat_service),
 ):
     return await chat_service.post_message(classroom_id, user=current_user, payload=payload)
+
+
+@router.websocket("/{classroom_id}/chat/ws")
+async def classroom_chat_ws(
+    websocket: fastapi.WebSocket,
+    classroom_id: int,
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
+):
+    """
+    Realtime classroom chat via WebSocket.
+
+    Auth: `?token=<jwt>` query param or `Authorization: Bearer <jwt>` header.
+    """
+    manager = getattr(websocket.app.state, "chat_connection_manager", None)
+    broker = getattr(websocket.app.state, "chat_broker", None)
+
+    if manager is None or broker is None:
+        await websocket.close(code=1011, reason="Realtime broker is not configured")
+        return
+
+    try:
+        user = await realtime_auth.require_current_user(websocket, db)
+        chat_service = chat_service_module.ChatService(db)
+        await chat_service.require_access(classroom_id, user=user)
+    except domain_errors.DomainError as e:
+        await websocket.close(code=1008, reason=e.message)
+        return
+
+    await websocket.accept()
+    await manager.connect(classroom_id, websocket)
+    await broker.ensure_subscription(classroom_id)
+
+    await websocket.send_json({"type": "ready", "classroom_id": classroom_id})
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if not isinstance(data, dict):
+                await websocket.send_json(
+                    {"type": "error", "code": "bad_request", "detail": "Invalid payload"}
+                )
+                continue
+
+            msg_type = data.get("type")
+            if msg_type == "ping":
+                await websocket.send_json({"type": "pong"})
+                continue
+
+            if msg_type != "message":
+                await websocket.send_json(
+                    {"type": "error", "code": "bad_request", "detail": "Unknown message type"}
+                )
+                continue
+
+            try:
+                create_payload = communication_schemas.MessageCreate(content=str(data.get("content", "")))
+            except pydantic.ValidationError as e:
+                await websocket.send_json(
+                    {"type": "error", "code": "bad_request", "detail": "Invalid message", "meta": e.errors()}
+                )
+                continue
+
+            message = await chat_service.post_message(classroom_id, user=user, payload=create_payload)
+            event = {"type": "message", "payload": message.model_dump(mode="json")}
+            await broker.publish(classroom_id, event)
+    except starlette_websockets.WebSocketDisconnect:
+        pass
+    finally:
+        await broker.release_subscription(classroom_id)
+        await manager.disconnect(classroom_id, websocket)
