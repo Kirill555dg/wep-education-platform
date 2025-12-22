@@ -50,7 +50,7 @@ export function TeacherClassroomStatsPage() {
 
   const studentsQuery = useQuery({
     queryKey: ["stats", "teacher", "classroom", classroomId, "students"],
-    queryFn: async () => await classroomsApi.listStudents(classroomId, { skip: 0, limit: 200 }),
+    queryFn: async () => await classroomsApi.listStudents(classroomId, { skip: 0, limit: 100 }),
     enabled: Number.isFinite(classroomId) && classroomId > 0,
   });
 
@@ -73,7 +73,7 @@ export function TeacherClassroomStatsPage() {
 
   const homeworkStatsQuery = useQuery({
     queryKey: ["stats", "teacher", "homework", homeworkId],
-    queryFn: async () => await statisticsApi.homeworkStats(homeworkId as number, { skip: 0, limit: 200 }),
+    queryFn: async () => await statisticsApi.homeworkStats(homeworkId as number, { skip: 0, limit: 100 }),
     enabled: homeworkId != null,
   });
 
@@ -91,7 +91,7 @@ export function TeacherClassroomStatsPage() {
     queryKey: ["stats", "teacher", "classroom", classroomId, "student-aggregate"],
     queryFn: async () => {
       const homeworks = homeworksQuery.data ?? [];
-      const pages = await Promise.all(homeworks.map(async (h) => await statisticsApi.homeworkStats(h.id, { skip: 0, limit: 200 })));
+      const pages = await Promise.all(homeworks.map(async (h) => await statisticsApi.homeworkStats(h.id, { skip: 0, limit: 100 })));
       const rows = pages.flatMap((p) => p.items);
       return rows;
     },
