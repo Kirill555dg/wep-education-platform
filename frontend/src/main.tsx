@@ -6,6 +6,7 @@ import "./shared/styles/globals.css";
 import { logger } from "@/shared/lib/logger";
 import { env } from "@/shared/config/env";
 import { loggingConfig } from "@/shared/config/logging";
+import { ErrorBoundary } from "@/shared/ui/error-boundary";
 
 logger.info("frontend_start", { apiBaseUrl: env.apiBaseUrl, logLevel: loggingConfig.level });
 
@@ -25,8 +26,10 @@ window.addEventListener("unhandledrejection", (event) => {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );
