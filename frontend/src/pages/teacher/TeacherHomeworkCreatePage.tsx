@@ -11,8 +11,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
+import type { ProblemFullResponse } from "@/shared/api/generated";
 
-type Selected = { points: number };
+type Selected = { points: number; title: string; problem_type: string };
+
+function normalizePoints(raw: unknown): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return 1;
+  const int = Math.floor(n);
+  if (int < 1) return 1;
+  // Keep things sane for MVP UI; backend may enforce other constraints.
+  return Math.min(int, 100);
+}
 
 export function TeacherHomeworkCreatePage() {
   const { toast } = useToast();
@@ -38,35 +48,61 @@ export function TeacherHomeworkCreatePage() {
   const problemsQuery = useProblemsList({ skip: 0, limit: 100, q, type });
   const filteredProblems = problemsQuery.data?.items ?? [];
 
+  const selectedEntries = useMemo(() => {
+    const entries = Object.entries(selected)
+      .map(([id, v]) => ({ id: Number(id), ...v }))
+      .sort((a, b) => a.id - b.id);
+    return entries;
+  }, [selected]);
+
   const totalPoints = useMemo(() => {
     return Object.values(selected).reduce((acc, s) => acc + (Number.isFinite(s.points) ? s.points : 0), 0);
   }, [selected]);
 
-  const toggleProblem = (id: number) => {
+  const toggleProblem = (p: Pick<ProblemFullResponse, "id" | "title" | "problem_type">) => {
     setSelected((prev) => {
       const next = { ...prev };
-      if (next[id]) delete next[id];
-      else next[id] = { points: 1 };
+      if (next[p.id]) delete next[p.id];
+      else next[p.id] = { points: 1, title: p.title, problem_type: p.problem_type };
       return next;
     });
   };
 
   const setPoints = (id: number, points: number) => {
-    setSelected((prev) => ({ ...prev, [id]: { points } }));
+    setSelected((prev) => {
+      const current = prev[id];
+      if (!current) return prev;
+      return { ...prev, [id]: { ...current, points: normalizePoints(points) } };
+    });
   };
 
   const onCreate = async () => {
     try {
-      const ids = Object.keys(selected).map((x) => Number(x));
-      const points = ids.map((id) => selected[id]?.points ?? 1);
-      const maxScore = points.reduce((acc, p) => acc + (Number.isFinite(p) ? p : 0), 0);
+      const titleTrimmed = title.trim();
+      if (titleTrimmed.length < 3) {
+        toast({ title: "Проверьте форму", description: "Название ДЗ должно быть не короче 3 символов", variant: "destructive" });
+        return;
+      }
+
+      if (selectedEntries.length === 0) {
+        toast({ title: "Проверьте форму", description: "Выберите хотя бы одну задачу", variant: "destructive" });
+        return;
+      }
+
+      const ids = selectedEntries.map((e) => e.id);
+      const points = selectedEntries.map((e) => normalizePoints(e.points));
+      const maxScore = points.reduce((acc, p) => acc + p, 0);
+      if (maxScore <= 0) {
+        toast({ title: "Проверьте форму", description: "Сумма баллов должна быть больше 0", variant: "destructive" });
+        return;
+      }
 
       const created = await homeworkApi.create({
         lesson_id: lessonId,
-        title,
+        title: titleTrimmed,
         description: description || null,
         deadline: deadline || null,
-        max_score: maxScore || 0,
+        max_score: maxScore,
         problem_ids: ids,
         problem_points: points,
       });
@@ -82,7 +118,7 @@ export function TeacherHomeworkCreatePage() {
     }
   };
 
-  const canCreate = title.trim().length >= 3 && Object.keys(selected).length > 0;
+  const canCreate = title.trim().length >= 3 && selectedEntries.length > 0 && totalPoints > 0;
 
   return (
     <div className="grid gap-6">
@@ -125,7 +161,48 @@ export function TeacherHomeworkCreatePage() {
               <input type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} className="h-4 w-4" />
               <span className="text-sm">Опубликовать сразу</span>
             </div>
-            <div className="text-sm text-muted-foreground">Max score: {totalPoints}</div>
+
+            <Card className="bg-muted/10">
+              <CardHeader>
+                <CardTitle className="text-base">Выбрано задач: {selectedEntries.length}</CardTitle>
+                <CardDescription>Итоговый max_score = сумма баллов</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                {selectedEntries.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">Пока ничего не выбрано</div>
+                ) : (
+                  <div className="grid gap-2">
+                    {selectedEntries.map((s) => (
+                      <div key={s.id} className="flex items-start justify-between gap-3 border rounded-md px-3 py-2 bg-background">
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">
+                            #{s.id} · {s.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">{s.problem_type}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">баллы</span>
+                          <Input
+                            type="number"
+                            min={1}
+                            step={1}
+                            className="w-20"
+                            value={String(s.points)}
+                            onChange={(e) => setPoints(s.id, Number(e.target.value))}
+                          />
+                          <Button size="sm" variant="outline" type="button" onClick={() => toggleProblem({ id: s.id, title: s.title, problem_type: s.problem_type })}>
+                            Убрать
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="text-sm text-muted-foreground">Max score: {totalPoints}</div>
+              </CardContent>
+            </Card>
+
             <div className="flex gap-2">
               <Button onClick={() => void onCreate()} disabled={!canCreate}>
                 Создать
@@ -175,7 +252,7 @@ export function TeacherHomeworkCreatePage() {
                   <div key={p.id} className="flex items-start justify-between gap-3 border rounded-md px-3 py-2">
                     <div className="min-w-0">
                       <label className="flex items-start gap-2 cursor-pointer">
-                        <input type="checkbox" checked={checked} onChange={() => toggleProblem(p.id)} className="mt-1 h-4 w-4" />
+                        <input type="checkbox" checked={checked} onChange={() => toggleProblem(p)} className="mt-1 h-4 w-4" />
                         <span className="min-w-0">
                           <div className="font-medium truncate">
                             #{p.id} · {p.title}
@@ -187,9 +264,12 @@ export function TeacherHomeworkCreatePage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">баллы</span>
                       <Input
+                        type="number"
+                        min={1}
+                        step={1}
                         className="w-20"
                         value={checked ? String(selected[p.id]?.points ?? 1) : ""}
-                        onChange={(e) => setPoints(p.id, Number(e.target.value || "0"))}
+                        onChange={(e) => setPoints(p.id, Number(e.target.value || "1"))}
                         disabled={!checked}
                       />
                     </div>
