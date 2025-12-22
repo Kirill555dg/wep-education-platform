@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { classroomsApi, getErrorMessage } from "@/shared/api";
 import { env } from "@/shared/config/env";
@@ -161,9 +162,9 @@ export function ClassroomChat(props: { classroomId: number }) {
           chat: {wsState}
         </div>
         <div className="text-xs text-muted-foreground">
-          <a className="underline" href={`/chat?classroomId=${classroomId}`}>
+          <Link className="underline" to={`/chat?classroomId=${classroomId}`}>
             Открыть в чате
-          </a>
+          </Link>
         </div>
         {wsError ? (
           <div className="text-xs text-destructive" data-testid="chat-error">

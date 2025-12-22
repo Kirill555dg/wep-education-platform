@@ -11,10 +11,12 @@ import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
 import { TeacherLessonPage } from "@/pages/teacher/TeacherLessonPage";
 import { TeacherProblemsPage } from "@/pages/teacher/TeacherProblemsPage";
 import { TeacherProblemEditorPage } from "@/pages/teacher/TeacherProblemEditorPage";
+import { TeacherStatsPage } from "@/pages/teacher/TeacherStatsPage";
 import { StudentClassroomPage } from "@/pages/student/StudentClassroomPage";
 import { StudentHomePage } from "@/pages/student/StudentHomePage";
 import { StudentLessonPage } from "@/pages/student/StudentLessonPage";
 import { StudentHomeworkPage } from "@/pages/student/StudentHomeworkPage";
+import { StudentStatsPage } from "@/pages/student/StudentStatsPage";
 
 function App() {
   return (
@@ -33,6 +35,7 @@ function App() {
             <Route path="/teacher/lessons/:lessonId" element={<TeacherLessonPage />} />
             <Route path="/teacher/problems" element={<TeacherProblemsPage />} />
             <Route path="/teacher/problems/:problemId" element={<TeacherProblemEditorPage />} />
+            <Route path="/teacher/stats" element={<TeacherStatsPage />} />
           </Route>
 
           <Route element={<RequireRole role="student" />}>
@@ -40,6 +43,7 @@ function App() {
             <Route path="/student/classrooms/:classroomId" element={<StudentClassroomPage />} />
             <Route path="/student/lessons/:lessonId" element={<StudentLessonPage />} />
             <Route path="/student/homeworks/:homeworkId" element={<StudentHomeworkPage />} />
+            <Route path="/student/stats" element={<StudentStatsPage />} />
           </Route>
         </Route>
       </Route>
