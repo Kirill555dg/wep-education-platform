@@ -2,8 +2,6 @@
 Authentication endpoints
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 
@@ -74,7 +72,7 @@ async def get_current_user_profile(
 async def get_current_user_role(
     current_user: user_models.User = fastapi.Depends(deps.get_current_user),
     auth_service: auth_service_module.AuthService = fastapi.Depends(deps.get_auth_service),
-) -> tp.Dict[str, tp.Optional[str]]:
+) -> dict[str, str | None]:
     """
     Get current user's role (teacher or student)
 

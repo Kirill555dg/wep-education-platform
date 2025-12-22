@@ -2,8 +2,6 @@
 Homework service
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
@@ -129,7 +127,7 @@ class HomeworkService:
 
     async def get_homework_problems(
         self, homework_id: int, user_id: int
-    ) -> tp.List[tp.Union[homework_schemas.ProblemResponse, homework_schemas.ProblemFullResponse]]:
+    ) -> list[homework_schemas.ProblemResponse | homework_schemas.ProblemFullResponse]:
         """
         Get problems for homework
 
@@ -157,10 +155,9 @@ class HomeworkService:
         hw_problems = await self.hw_problem_repo.get_by_homework(homework_id)
         problem_ids = [hp.problem_id for hp in hw_problems]
 
-        problems = []
-        for problem_id in problem_ids:
-            problems.append(await self.problem_repo.get_by_id(problem_id))
-        problems_filtered = [p for p in problems if p]  # Filter None
+        problems = await self.problem_repo.get_by_ids(problem_ids)
+        problems_by_id = {problem_item.id: problem_item for problem_item in problems}
+        problems_filtered = [problems_by_id[problem_id] for problem_id in problem_ids if problem_id in problems_by_id]
 
         if is_teacher:
             # Teachers see full info
@@ -213,7 +210,7 @@ class HomeworkService:
 
     async def get_lesson_homework(
         self, lesson_id: int, user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[homework_schemas.HomeworkResponse]:
+    ) -> list[homework_schemas.HomeworkResponse]:
         """
         Get all homework for a lesson
 

@@ -18,19 +18,19 @@ class UserRepository(base_repository.BaseRepository[user_models.User]):
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(user_models.User, db)
 
-    async def get_by_username(self, username: str) -> tp.Optional[user_models.User]:
+    async def get_by_username(self, username: str) -> user_models.User | None:
         """Get user by username"""
         stmt = sa.select(user_models.User).where(user_models.User.username == username)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.User | None, obj)
 
-    async def get_by_email(self, email: str) -> tp.Optional[user_models.User]:
+    async def get_by_email(self, email: str) -> user_models.User | None:
         """Get user by email"""
         stmt = sa.select(user_models.User).where(user_models.User.email == email)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.User | None, obj)
 
-    async def get_by_username_or_email(self, username_or_email: str) -> tp.Optional[user_models.User]:
+    async def get_by_username_or_email(self, username_or_email: str) -> user_models.User | None:
         """Get user by username or email"""
         stmt = sa.select(user_models.User).where(
             sa.or_(
@@ -38,20 +38,20 @@ class UserRepository(base_repository.BaseRepository[user_models.User]):
                 user_models.User.email == username_or_email,
             )
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.User | None, obj)
 
-    async def get_with_login_data(self, user_id: int) -> tp.Optional[user_models.User]:
+    async def get_with_login_data(self, user_id: int) -> user_models.User | None:
         """Get user with login data"""
         stmt = (
             sa.select(user_models.User)
             .options(orm.joinedload(user_models.User.login_data))
             .where(user_models.User.id == user_id)
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.User | None, obj)
 
-    async def get_with_profile(self, user_id: int) -> tp.Optional[user_models.User]:
+    async def get_with_profile(self, user_id: int) -> user_models.User | None:
         """Get user with teacher/student profile"""
         stmt = (
             sa.select(user_models.User)
@@ -61,10 +61,10 @@ class UserRepository(base_repository.BaseRepository[user_models.User]):
             )
             .where(user_models.User.id == user_id)
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.User | None, obj)
 
-    async def get_active_users(self, skip: int = 0, limit: int = 100) -> tp.List[user_models.User]:
+    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[user_models.User]:
         """Get all active users"""
         stmt = (
             sa.select(user_models.User)
@@ -72,8 +72,8 @@ class UserRepository(base_repository.BaseRepository[user_models.User]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[user_models.User], items)
 
 
 class LoginDataRepository(base_repository.BaseRepository[user_models.LoginData]):
@@ -82,11 +82,11 @@ class LoginDataRepository(base_repository.BaseRepository[user_models.LoginData])
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(user_models.LoginData, db)
 
-    async def get_by_user_id(self, user_id: int) -> tp.Optional[user_models.LoginData]:
+    async def get_by_user_id(self, user_id: int) -> user_models.LoginData | None:
         """Get login data by user ID"""
         stmt = sa.select(user_models.LoginData).where(user_models.LoginData.user_id == user_id)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.LoginData | None, obj)
 
     async def create_for_user(self, user_id: int, hashed_password: str) -> user_models.LoginData:
         """Create login data for user"""
@@ -94,7 +94,7 @@ class LoginDataRepository(base_repository.BaseRepository[user_models.LoginData])
 
     async def update_password(
         self, user_id: int, hashed_password: str
-    ) -> tp.Optional[user_models.LoginData]:
+    ) -> user_models.LoginData | None:
         """Update user password"""
         login_data = await self.get_by_user_id(user_id)
         if not login_data:
@@ -108,25 +108,25 @@ class TeacherRepository(base_repository.BaseRepository[user_models.Teacher]):
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(user_models.Teacher, db)
 
-    async def get_by_user_id(self, user_id: int) -> tp.Optional[user_models.Teacher]:
+    async def get_by_user_id(self, user_id: int) -> user_models.Teacher | None:
         """Get teacher by user ID"""
         stmt = sa.select(user_models.Teacher).where(user_models.Teacher.user_id == user_id)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.Teacher | None, obj)
 
-    async def get_with_user(self, teacher_id: int) -> tp.Optional[user_models.Teacher]:
+    async def get_with_user(self, teacher_id: int) -> user_models.Teacher | None:
         """Get teacher with user data"""
         stmt = (
             sa.select(user_models.Teacher)
             .options(orm.joinedload(user_models.Teacher.user))
             .where(user_models.Teacher.id == teacher_id)
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.Teacher | None, obj)
 
     async def get_by_subject(
         self, subject: str, skip: int = 0, limit: int = 100
-    ) -> tp.List[user_models.Teacher]:
+    ) -> list[user_models.Teacher]:
         """Get teachers by subject specialization"""
         stmt = (
             sa.select(user_models.Teacher)
@@ -134,8 +134,8 @@ class TeacherRepository(base_repository.BaseRepository[user_models.Teacher]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[user_models.Teacher], items)
 
 
 class StudentRepository(base_repository.BaseRepository[user_models.Student]):
@@ -144,25 +144,25 @@ class StudentRepository(base_repository.BaseRepository[user_models.Student]):
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(user_models.Student, db)
 
-    async def get_by_user_id(self, user_id: int) -> tp.Optional[user_models.Student]:
+    async def get_by_user_id(self, user_id: int) -> user_models.Student | None:
         """Get student by user ID"""
         stmt = sa.select(user_models.Student).where(user_models.Student.user_id == user_id)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.Student | None, obj)
 
-    async def get_with_user(self, student_id: int) -> tp.Optional[user_models.Student]:
+    async def get_with_user(self, student_id: int) -> user_models.Student | None:
         """Get student with user data"""
         stmt = (
             sa.select(user_models.Student)
             .options(orm.joinedload(user_models.Student.user))
             .where(user_models.Student.id == student_id)
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(user_models.Student | None, obj)
 
     async def get_by_grade_level(
         self, grade_level: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[user_models.Student]:
+    ) -> list[user_models.Student]:
         """Get students by grade level"""
         stmt = (
             sa.select(user_models.Student)
@@ -170,5 +170,5 @@ class StudentRepository(base_repository.BaseRepository[user_models.Student]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[user_models.Student], items)

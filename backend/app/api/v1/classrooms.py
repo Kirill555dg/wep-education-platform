@@ -2,8 +2,6 @@
 Classroom management endpoints
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 
@@ -38,7 +36,7 @@ async def create_classroom(
     return await classroom_service.create_classroom(classroom_data, current_user.id)
 
 
-@router.get("", response_model=tp.List[classroom_schemas.ClassroomResponse])
+@router.get("", response_model=list[classroom_schemas.ClassroomResponse])
 async def get_my_classrooms(
     skip: int = fastapi.Query(0, ge=0),
     limit: int = fastapi.Query(100, ge=1, le=100),

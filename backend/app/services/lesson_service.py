@@ -2,8 +2,6 @@
 Lesson service
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
@@ -91,7 +89,7 @@ class LessonService:
 
     async def get_classroom_lessons(
         self, classroom_id: int, user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[lesson_schemas.LessonResponse]:
+    ) -> list[lesson_schemas.LessonResponse]:
         """
         Get lessons for classroom
 

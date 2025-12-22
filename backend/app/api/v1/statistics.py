@@ -2,8 +2,6 @@
 Statistics and results endpoints
 """
 
-import typing as tp
-
 import fastapi
 
 from app.api import dependencies as deps
@@ -14,7 +12,7 @@ from app.services import result_service as result_service_module
 router = fastapi.APIRouter()
 
 
-@router.get("/me", response_model=tp.List[homework_schemas.StatisticsResponse])
+@router.get("/me", response_model=list[homework_schemas.StatisticsResponse])
 async def get_my_statistics(
     skip: int = fastapi.Query(0, ge=0),
     limit: int = fastapi.Query(100, ge=1, le=100),
@@ -51,7 +49,7 @@ async def get_my_progress(
 
 @router.get(
     "/homework/{homework_id}",
-    response_model=tp.List[homework_schemas.StatisticsResponse],
+    response_model=list[homework_schemas.StatisticsResponse],
 )
 async def get_homework_statistics(
     homework_id: int,
@@ -88,7 +86,7 @@ async def get_classroom_progress(
 
 @router.get(
     "/student/{student_user_id}",
-    response_model=tp.List[homework_schemas.StatisticsResponse],
+    response_model=list[homework_schemas.StatisticsResponse],
 )
 async def get_student_statistics_by_teacher(
     student_user_id: int,

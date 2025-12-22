@@ -21,7 +21,7 @@ class LessonRepository(base_repository.BaseRepository[lesson_models.Lesson]):
 
     async def get_by_classroom(
         self, classroom_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[lesson_models.Lesson]:
+    ) -> list[lesson_models.Lesson]:
         """Get lessons for classroom"""
         stmt = (
             sa.select(lesson_models.Lesson)
@@ -30,12 +30,12 @@ class LessonRepository(base_repository.BaseRepository[lesson_models.Lesson]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[lesson_models.Lesson], items)
 
     async def get_published(
         self, classroom_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[lesson_models.Lesson]:
+    ) -> list[lesson_models.Lesson]:
         """Get published lessons for classroom"""
         stmt = (
             sa.select(lesson_models.Lesson)
@@ -47,18 +47,18 @@ class LessonRepository(base_repository.BaseRepository[lesson_models.Lesson]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[lesson_models.Lesson], items)
 
-    async def get_with_materials(self, lesson_id: int) -> tp.Optional[lesson_models.Lesson]:
+    async def get_with_materials(self, lesson_id: int) -> lesson_models.Lesson | None:
         """Get lesson with materials"""
         stmt = (
             sa.select(lesson_models.Lesson)
             .options(orm.joinedload(lesson_models.Lesson.lesson_materials))
             .where(lesson_models.Lesson.id == lesson_id)
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(lesson_models.Lesson | None, obj)
 
     async def count_by_classroom(self, classroom_id: int) -> int:
         """Count lessons in classroom"""
@@ -78,15 +78,15 @@ class LessonMaterialRepository(base_repository.BaseRepository[lesson_models.Less
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(lesson_models.LessonMaterial, db)
 
-    async def get_by_lesson(self, lesson_id: int) -> tp.List[lesson_models.LessonMaterial]:
+    async def get_by_lesson(self, lesson_id: int) -> list[lesson_models.LessonMaterial]:
         """Get materials for lesson"""
         stmt = (
             sa.select(lesson_models.LessonMaterial)
             .where(lesson_models.LessonMaterial.lesson_id == lesson_id)
             .order_by(lesson_models.LessonMaterial.order_number)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[lesson_models.LessonMaterial], items)
 
     async def add_material_to_lesson(
         self, lesson_id: int, material_id: int, order_number: int = 0, is_required: bool = True
@@ -110,7 +110,7 @@ class TheoryMaterialRepository(base_repository.BaseRepository[theory_models.Theo
 
     async def get_by_subsection(
         self, subsection_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[theory_models.TheoryMaterial]:
+    ) -> list[theory_models.TheoryMaterial]:
         """Get materials for subsection"""
         stmt = (
             sa.select(theory_models.TheoryMaterial)
@@ -119,12 +119,12 @@ class TheoryMaterialRepository(base_repository.BaseRepository[theory_models.Theo
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[theory_models.TheoryMaterial], items)
 
     async def get_published(
         self, subsection_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[theory_models.TheoryMaterial]:
+    ) -> list[theory_models.TheoryMaterial]:
         """Get published materials for subsection"""
         stmt = (
             sa.select(theory_models.TheoryMaterial)
@@ -136,8 +136,8 @@ class TheoryMaterialRepository(base_repository.BaseRepository[theory_models.Theo
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[theory_models.TheoryMaterial], items)
 
 
 class SubjectRepository(base_repository.BaseRepository[theory_models.Subject]):
@@ -146,13 +146,13 @@ class SubjectRepository(base_repository.BaseRepository[theory_models.Subject]):
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(theory_models.Subject, db)
 
-    async def get_by_name(self, name: str) -> tp.Optional[theory_models.Subject]:
+    async def get_by_name(self, name: str) -> theory_models.Subject | None:
         """Get subject by name"""
         stmt = sa.select(theory_models.Subject).where(theory_models.Subject.name == name)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(theory_models.Subject | None, obj)
 
-    async def get_active(self, skip: int = 0, limit: int = 100) -> tp.List[theory_models.Subject]:
+    async def get_active(self, skip: int = 0, limit: int = 100) -> list[theory_models.Subject]:
         """Get active subjects"""
         stmt = (
             sa.select(theory_models.Subject)
@@ -161,5 +161,5 @@ class SubjectRepository(base_repository.BaseRepository[theory_models.Subject]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[theory_models.Subject], items)

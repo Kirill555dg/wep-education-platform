@@ -70,8 +70,8 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(
-    data: tp.Dict[str, tp.Any],
-    expires_delta: tp.Optional[dt.timedelta] = None,
+    data: dict[str, tp.Any],
+    expires_delta: dt.timedelta | None = None,
 ) -> str:
     """
     Create JWT access token
@@ -100,7 +100,7 @@ def create_access_token(
     return tp.cast(str, encoded_jwt)
 
 
-def decode_access_token(token: str) -> tp.Optional[tp.Dict[str, tp.Any]]:
+def decode_access_token(token: str) -> dict[str, tp.Any] | None:
     """
     Decode JWT access token
 
@@ -116,6 +116,6 @@ def decode_access_token(token: str) -> tp.Optional[tp.Dict[str, tp.Any]]:
             core_config.settings.SECRET_KEY,
             algorithms=[core_config.settings.ALGORITHM],
         )
-        return tp.cast(tp.Dict[str, tp.Any], payload)
+        return tp.cast(dict[str, tp.Any], payload)
     except jose_exceptions.JWTError:
         return None

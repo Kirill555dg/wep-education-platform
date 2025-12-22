@@ -25,19 +25,35 @@ class BaseRepository(tp.Generic[T]):
         self.model = model
         self.db = db
 
-    async def get_by_id(self, id: int) -> tp.Optional[T]:
-        """Get entity by ID"""
-        stmt = sa.select(self.model).where(self.model.id == id)  # type: ignore[attr-defined]
+    async def _scalar_one_or_none(self, stmt: sa.Select[tp.Any]) -> tp.Any:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_all(self, skip: int = 0, limit: int = 100) -> tp.List[T]:
-        """Get all entities with pagination"""
-        stmt = sa.select(self.model).offset(skip).limit(limit)
+    async def _scalars_all(self, stmt: sa.Select[tp.Any]) -> list[tp.Any]:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def create(self, obj_in: tp.Dict[str, tp.Any]) -> T:
+    async def get_by_id(self, id: int) -> T | None:
+        """Get entity by ID"""
+        stmt = sa.select(self.model).where(self.model.id == id)  # type: ignore[attr-defined]
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(T | None, obj)
+
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[T]:
+        """Get all entities with pagination"""
+        stmt = sa.select(self.model).offset(skip).limit(limit)
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[T], items)
+
+    async def get_by_ids(self, ids: list[int]) -> list[T]:
+        """Fetch entities by IDs."""
+        if not ids:
+            return []
+        stmt = sa.select(self.model).where(self.model.id.in_(ids))  # type: ignore[attr-defined]
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[T], items)
+
+    async def create(self, obj_in: dict[str, tp.Any]) -> T:
         """Create new entity"""
         db_obj = self.model(**obj_in)
         self.db.add(db_obj)
@@ -45,7 +61,7 @@ class BaseRepository(tp.Generic[T]):
         await self.db.refresh(db_obj)
         return db_obj
 
-    async def update(self, id: int, obj_in: tp.Dict[str, tp.Any]) -> tp.Optional[T]:
+    async def update(self, id: int, obj_in: dict[str, tp.Any]) -> T | None:
         """Update entity by ID"""
         db_obj = await self.get_by_id(id)
         if not db_obj:

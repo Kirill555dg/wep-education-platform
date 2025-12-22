@@ -2,8 +2,6 @@
 Problem management endpoints
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 
@@ -40,7 +38,7 @@ async def create_problem(
     return homework_schemas.ProblemFullResponse.model_validate(problem)
 
 
-@router.get("", response_model=tp.List[homework_schemas.ProblemFullResponse])
+@router.get("", response_model=list[homework_schemas.ProblemFullResponse])
 async def get_problems(
     skip: int = fastapi.Query(0, ge=0),
     limit: int = fastapi.Query(100, ge=1, le=100),

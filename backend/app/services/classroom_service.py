@@ -84,7 +84,7 @@ class ClassroomService:
 
     async def get_teacher_classrooms(
         self, teacher_user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[classroom_schemas.ClassroomResponse]:
+    ) -> list[classroom_schemas.ClassroomResponse]:
         """Get classrooms for teacher"""
         teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
         if not teacher:
@@ -95,7 +95,7 @@ class ClassroomService:
 
     async def get_student_classrooms(
         self, student_user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[classroom_schemas.ClassroomResponse]:
+    ) -> list[classroom_schemas.ClassroomResponse]:
         """Get classrooms for student"""
         student = await self.student_repo.get_by_user_id(student_user_id)
         if not student:
@@ -104,11 +104,8 @@ class ClassroomService:
         memberships = await self.student_classroom_repo.get_by_student(student.id, skip, limit)
         classroom_ids = [m.classroom_id for m in memberships]
 
-        classrooms = []
-        for classroom_id in classroom_ids:
-            classrooms.append(await self.classroom_repo.get_by_id(classroom_id))
-
-        return [classroom_schemas.ClassroomResponse.model_validate(c) for c in classrooms if c]
+        classrooms = await self.classroom_repo.get_by_ids(classroom_ids)
+        return [classroom_schemas.ClassroomResponse.model_validate(classroom_item) for classroom_item in classrooms]
 
     async def update_classroom(
         self,
@@ -207,7 +204,7 @@ class ClassroomService:
 
     async def get_classroom_students(
         self, classroom_id: int, teacher_user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[tp.Dict[str, tp.Any]]:
+    ) -> list[dict[str, tp.Any]]:
         """
         Get list of students in classroom (teacher only)
 

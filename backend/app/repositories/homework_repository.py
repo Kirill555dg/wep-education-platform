@@ -21,7 +21,7 @@ class HomeworkRepository(base_repository.BaseRepository[homework_models.Homework
 
     async def get_by_lesson(
         self, lesson_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[homework_models.Homework]:
+    ) -> list[homework_models.Homework]:
         """Get homeworks for lesson"""
         stmt = (
             sa.select(homework_models.Homework)
@@ -29,12 +29,12 @@ class HomeworkRepository(base_repository.BaseRepository[homework_models.Homework
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[homework_models.Homework], items)
 
     async def get_published(
         self, lesson_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[homework_models.Homework]:
+    ) -> list[homework_models.Homework]:
         """Get published homeworks for lesson"""
         stmt = (
             sa.select(homework_models.Homework)
@@ -45,18 +45,18 @@ class HomeworkRepository(base_repository.BaseRepository[homework_models.Homework
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[homework_models.Homework], items)
 
-    async def get_with_problems(self, homework_id: int) -> tp.Optional[homework_models.Homework]:
+    async def get_with_problems(self, homework_id: int) -> homework_models.Homework | None:
         """Get homework with problems"""
         stmt = (
             sa.select(homework_models.Homework)
             .options(orm.joinedload(homework_models.Homework.homework_problems))
             .where(homework_models.Homework.id == homework_id)
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(homework_models.Homework | None, obj)
 
     async def count_by_lesson(self, lesson_id: int) -> int:
         """Count homeworks in lesson"""
@@ -76,15 +76,15 @@ class HomeworkProblemRepository(base_repository.BaseRepository[homework_models.H
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(homework_models.HomeworkProblem, db)
 
-    async def get_by_homework(self, homework_id: int) -> tp.List[homework_models.HomeworkProblem]:
+    async def get_by_homework(self, homework_id: int) -> list[homework_models.HomeworkProblem]:
         """Get problems for homework"""
         stmt = (
             sa.select(homework_models.HomeworkProblem)
             .where(homework_models.HomeworkProblem.homework_id == homework_id)
             .order_by(homework_models.HomeworkProblem.order_number)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[homework_models.HomeworkProblem], items)
 
     async def add_problem_to_homework(
         self, homework_id: int, problem_id: int, points: float = 10.0, order_number: int = 0
@@ -105,8 +105,7 @@ class HomeworkProblemRepository(base_repository.BaseRepository[homework_models.H
             homework_models.HomeworkProblem.homework_id == homework_id,
             homework_models.HomeworkProblem.problem_id == problem_id,
         )
-        result = await self.db.execute(stmt)
-        hw_problem = result.scalar_one_or_none()
+        hw_problem = await self._scalar_one_or_none(stmt)
 
         if not hw_problem:
             return False
@@ -124,7 +123,7 @@ class ProblemRepository(base_repository.BaseRepository[problem_models.Problem]):
 
     async def get_by_type(
         self, problem_type: str, skip: int = 0, limit: int = 100
-    ) -> tp.List[problem_models.Problem]:
+    ) -> list[problem_models.Problem]:
         """Get problems by type"""
         stmt = (
             sa.select(problem_models.Problem)
@@ -132,12 +131,12 @@ class ProblemRepository(base_repository.BaseRepository[problem_models.Problem]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[problem_models.Problem], items)
 
     async def get_by_difficulty(
         self, difficulty: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[problem_models.Problem]:
+    ) -> list[problem_models.Problem]:
         """Get problems by difficulty"""
         stmt = (
             sa.select(problem_models.Problem)
@@ -145,12 +144,12 @@ class ProblemRepository(base_repository.BaseRepository[problem_models.Problem]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[problem_models.Problem], items)
 
     async def get_published(
         self, skip: int = 0, limit: int = 100
-    ) -> tp.List[problem_models.Problem]:
+    ) -> list[problem_models.Problem]:
         """Get published problems"""
         stmt = (
             sa.select(problem_models.Problem)
@@ -158,8 +157,8 @@ class ProblemRepository(base_repository.BaseRepository[problem_models.Problem]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[problem_models.Problem], items)
 
 
 class StatisticsRepository(base_repository.BaseRepository[homework_models.Statistics]):
@@ -170,7 +169,7 @@ class StatisticsRepository(base_repository.BaseRepository[homework_models.Statis
 
     async def get_by_student(
         self, student_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[homework_models.Statistics]:
+    ) -> list[homework_models.Statistics]:
         """Get statistics for student"""
         stmt = (
             sa.select(homework_models.Statistics)
@@ -179,12 +178,12 @@ class StatisticsRepository(base_repository.BaseRepository[homework_models.Statis
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[homework_models.Statistics], items)
 
     async def get_by_homework(
         self, homework_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[homework_models.Statistics]:
+    ) -> list[homework_models.Statistics]:
         """Get statistics for homework"""
         stmt = (
             sa.select(homework_models.Statistics)
@@ -192,19 +191,19 @@ class StatisticsRepository(base_repository.BaseRepository[homework_models.Statis
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[homework_models.Statistics], items)
 
     async def get_student_homework_stats(
         self, student_id: int, homework_id: int
-    ) -> tp.Optional[homework_models.Statistics]:
+    ) -> homework_models.Statistics | None:
         """Get specific student homework statistics"""
         stmt = sa.select(homework_models.Statistics).where(
             homework_models.Statistics.student_id == student_id,
             homework_models.Statistics.homework_id == homework_id,
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(homework_models.Statistics | None, obj)
 
     async def get_or_create_stats(
         self, student_id: int, homework_id: int, max_score: float
@@ -229,11 +228,11 @@ class StatisticsRepository(base_repository.BaseRepository[homework_models.Statis
         stats_id: int,
         score: float,
         status: str = "in_progress",
-    ) -> tp.Optional[homework_models.Statistics]:
+    ) -> homework_models.Statistics | None:
         """Update statistics score"""
         return await self.update(stats_id, {"score": score, "status": status})
 
-    async def submit_homework(self, stats_id: int) -> tp.Optional[homework_models.Statistics]:
+    async def submit_homework(self, stats_id: int) -> homework_models.Statistics | None:
         """Mark homework as submitted"""
         return await self.update(
             stats_id,
@@ -249,6 +248,5 @@ class StatisticsRepository(base_repository.BaseRepository[homework_models.Statis
             homework_models.Statistics.homework_id == homework_id,
             homework_models.Statistics.status.in_(["submitted", "graded"]),
         )
-        result = await self.db.execute(stmt)
-        avg_value = result.scalar_one_or_none()
+        avg_value = await self._scalar_one_or_none(stmt)
         return float(avg_value) if avg_value else 0.0

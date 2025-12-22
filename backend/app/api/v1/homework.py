@@ -2,8 +2,6 @@
 Homework management endpoints
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 
@@ -43,7 +41,7 @@ async def create_homework(
 
 @router.get(
     "/lesson/{lesson_id}",
-    response_model=tp.List[homework_schemas.HomeworkResponse],
+    response_model=list[homework_schemas.HomeworkResponse],
 )
 async def get_lesson_homework(
     lesson_id: int,
@@ -82,7 +80,7 @@ async def get_homework(
 
 @router.get(
     "/{homework_id}/problems",
-    response_model=tp.List[tp.Union[homework_schemas.ProblemResponse, homework_schemas.ProblemFullResponse]],
+    response_model=list[homework_schemas.ProblemResponse | homework_schemas.ProblemFullResponse],
 )
 async def get_homework_problems(
     homework_id: int,

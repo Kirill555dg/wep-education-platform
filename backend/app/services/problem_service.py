@@ -46,7 +46,7 @@ class ProblemService:
         problem = await self.problem_repo.create(data)
         return problem
 
-    async def get_all_problems(self, skip: int = 0, limit: int = 100) -> tp.List[tp.Any]:
+    async def get_all_problems(self, skip: int = 0, limit: int = 100) -> list[tp.Any]:
         """
         Get all problems
 
@@ -59,7 +59,7 @@ class ProblemService:
         """
         return await self.problem_repo.get_all(skip, limit)
 
-    async def get_problem_by_id(self, problem_id: int) -> tp.Optional[tp.Any]:
+    async def get_problem_by_id(self, problem_id: int) -> tp.Any | None:
         """
         Get problem by ID
 

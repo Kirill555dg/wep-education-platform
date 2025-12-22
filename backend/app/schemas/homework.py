@@ -2,7 +2,6 @@
 Homework Pydantic schemas (DTOs)
 """
 
-import typing as tp
 import datetime as dt
 
 import pydantic
@@ -12,27 +11,27 @@ class HomeworkBase(pydantic.BaseModel):
     """Base homework fields"""
 
     title: str = pydantic.Field(..., min_length=1, max_length=255)
-    description: tp.Optional[str] = None
+    description: str | None = None
     max_score: float = pydantic.Field(default=100.0, gt=0)
-    deadline: tp.Optional[dt.datetime] = None
+    deadline: dt.datetime | None = None
 
 
 class HomeworkCreate(HomeworkBase):
     """Schema for creating homework"""
 
     lesson_id: int
-    problem_ids: tp.List[int] = pydantic.Field(default_factory=list)
-    problem_points: tp.Optional[tp.List[float]] = None  # Points for each problem
+    problem_ids: list[int] = pydantic.Field(default_factory=list)
+    problem_points: list[float] | None = None  # Points for each problem
 
 
 class HomeworkUpdate(pydantic.BaseModel):
     """Schema for updating homework"""
 
-    title: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=255)
-    description: tp.Optional[str] = None
-    max_score: tp.Optional[float] = pydantic.Field(None, gt=0)
-    deadline: tp.Optional[dt.datetime] = None
-    is_published: tp.Optional[bool] = None
+    title: str | None = pydantic.Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    max_score: float | None = pydantic.Field(None, gt=0)
+    deadline: dt.datetime | None = None
+    is_published: bool | None = None
 
 
 class HomeworkResponse(HomeworkBase):
@@ -61,10 +60,10 @@ class ProblemBase(pydantic.BaseModel):
     title: str = pydantic.Field(..., min_length=1, max_length=255)
     description: str = pydantic.Field(..., min_length=1)
     problem_type: str  # Free-form type (e.g., text, multiple_choice)
-    difficulty: tp.Union[int, str] = pydantic.Field(default=1)
-    correct_answer: tp.Optional[str] = None
-    explanation: tp.Optional[str] = None
-    hints: tp.Optional[str] = None  # JSON string
+    difficulty: int | str = pydantic.Field(default=1)
+    correct_answer: str | None = None
+    explanation: str | None = None
+    hints: str | None = None  # JSON string
 
 
 class ProblemCreate(ProblemBase):
@@ -76,14 +75,14 @@ class ProblemCreate(ProblemBase):
 class ProblemUpdate(pydantic.BaseModel):
     """Schema for updating a problem"""
 
-    title: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=255)
-    description: tp.Optional[str] = pydantic.Field(None, min_length=1)
-    problem_type: tp.Optional[str] = None
-    difficulty: tp.Optional[str] = None
-    correct_answer: tp.Optional[str] = None
-    explanation: tp.Optional[str] = None
-    hints: tp.Optional[str] = None
-    is_published: tp.Optional[bool] = None
+    title: str | None = pydantic.Field(None, min_length=1, max_length=255)
+    description: str | None = pydantic.Field(None, min_length=1)
+    problem_type: str | None = None
+    difficulty: str | None = None
+    correct_answer: str | None = None
+    explanation: str | None = None
+    hints: str | None = None
+    is_published: bool | None = None
 
 
 class ProblemResponse(ProblemBase):
@@ -100,8 +99,8 @@ class ProblemResponse(ProblemBase):
 class ProblemFullResponse(ProblemResponse):
     """Full problem response with correct answer (for teachers)"""
 
-    correct_answer: tp.Optional[str]
-    explanation: tp.Optional[str]
+    correct_answer: str | None
+    explanation: str | None
 
 
 # Statistics schemas
@@ -125,10 +124,10 @@ class StatisticsCreate(pydantic.BaseModel):
 class StatisticsUpdate(pydantic.BaseModel):
     """Schema for updating statistics"""
 
-    status: tp.Optional[str] = None
-    score: tp.Optional[float] = pydantic.Field(None, ge=0)
-    time_spent_minutes: tp.Optional[int] = pydantic.Field(None, ge=0)
-    feedback: tp.Optional[str] = None
+    status: str | None = None
+    score: float | None = pydantic.Field(None, ge=0)
+    time_spent_minutes: int | None = pydantic.Field(None, ge=0)
+    feedback: str | None = None
 
 
 class StatisticsResponse(StatisticsBase):
@@ -138,9 +137,9 @@ class StatisticsResponse(StatisticsBase):
     student_id: int
     homework_id: int
     attempts_count: int
-    submitted_at: tp.Optional[dt.datetime]
-    graded_at: tp.Optional[dt.datetime]
-    feedback: tp.Optional[str]
+    submitted_at: dt.datetime | None
+    graded_at: dt.datetime | None
+    feedback: str | None
     created_at: dt.datetime
     updated_at: dt.datetime
 

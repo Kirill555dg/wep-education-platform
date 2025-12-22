@@ -30,7 +30,7 @@ class ResultService:
 
     async def get_student_statistics(
         self, student_user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[homework_schemas.StatisticsResponse]:
+    ) -> list[homework_schemas.StatisticsResponse]:
         """
         Get all statistics for student
 
@@ -54,7 +54,7 @@ class ResultService:
 
     async def get_homework_statistics(
         self, homework_id: int, teacher_user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[homework_schemas.StatisticsResponse]:
+    ) -> list[homework_schemas.StatisticsResponse]:
         """
         Get statistics for all students for a homework (teacher only)
 
@@ -76,7 +76,7 @@ class ResultService:
         stats = await self.stats_repo.get_by_homework(homework_id, skip, limit)
         return [homework_schemas.StatisticsResponse.model_validate(s) for s in stats]
 
-    async def get_student_progress(self, student_user_id: int) -> tp.Dict[str, tp.Any]:
+    async def get_student_progress(self, student_user_id: int) -> dict[str, tp.Any]:
         """
         Get overall student progress
 
@@ -120,7 +120,7 @@ class ResultService:
 
     async def get_classroom_progress(
         self, classroom_id: int, teacher_user_id: int
-    ) -> tp.Dict[str, tp.Any]:
+    ) -> dict[str, tp.Any]:
         """
         Get progress summary for classroom (teacher only)
 

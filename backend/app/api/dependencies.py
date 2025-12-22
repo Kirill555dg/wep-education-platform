@@ -2,8 +2,6 @@
 FastAPI dependencies for dependency injection
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import security as fastapi_security
 from fastapi import status as http_status
@@ -45,7 +43,7 @@ def get_current_user_id(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id: tp.Optional[str] = payload.get("sub")
+    user_id: str | None = payload.get("sub")
     if not user_id:
         raise fastapi.HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,

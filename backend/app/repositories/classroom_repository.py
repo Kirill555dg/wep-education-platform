@@ -20,7 +20,7 @@ class ClassroomRepository(base_repository.BaseRepository[classes_models.Classroo
 
     async def get_by_teacher(
         self, teacher_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[classes_models.Classroom]:
+    ) -> list[classes_models.Classroom]:
         """Get classrooms by teacher"""
         stmt = (
             sa.select(classes_models.Classroom)
@@ -28,28 +28,28 @@ class ClassroomRepository(base_repository.BaseRepository[classes_models.Classroo
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[classes_models.Classroom], items)
 
-    async def get_by_invite_code(self, invite_code: str) -> tp.Optional[classes_models.Classroom]:
+    async def get_by_invite_code(self, invite_code: str) -> classes_models.Classroom | None:
         """Get classroom by invite code"""
         stmt = sa.select(classes_models.Classroom).where(classes_models.Classroom.invite_code == invite_code)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(classes_models.Classroom | None, obj)
 
-    async def get_with_students(self, classroom_id: int) -> tp.Optional[classes_models.Classroom]:
+    async def get_with_students(self, classroom_id: int) -> classes_models.Classroom | None:
         """Get classroom with students"""
         stmt = (
             sa.select(classes_models.Classroom)
             .options(orm.joinedload(classes_models.Classroom.student_memberships))
             .where(classes_models.Classroom.id == classroom_id)
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(classes_models.Classroom | None, obj)
 
     async def get_active_classrooms(
         self, skip: int = 0, limit: int = 100
-    ) -> tp.List[classes_models.Classroom]:
+    ) -> list[classes_models.Classroom]:
         """Get active classrooms"""
         stmt = (
             sa.select(classes_models.Classroom)
@@ -57,12 +57,12 @@ class ClassroomRepository(base_repository.BaseRepository[classes_models.Classroo
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[classes_models.Classroom], items)
 
     async def get_by_subject(
         self, subject: str, skip: int = 0, limit: int = 100
-    ) -> tp.List[classes_models.Classroom]:
+    ) -> list[classes_models.Classroom]:
         """Get classrooms by subject"""
         stmt = (
             sa.select(classes_models.Classroom)
@@ -70,8 +70,8 @@ class ClassroomRepository(base_repository.BaseRepository[classes_models.Classroo
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[classes_models.Classroom], items)
 
 
 class StudentClassroomRepository(base_repository.BaseRepository[classes_models.StudentClassroom]):
@@ -82,7 +82,7 @@ class StudentClassroomRepository(base_repository.BaseRepository[classes_models.S
 
     async def get_by_student(
         self, student_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[classes_models.StudentClassroom]:
+    ) -> list[classes_models.StudentClassroom]:
         """Get classrooms for student"""
         stmt = (
             sa.select(classes_models.StudentClassroom)
@@ -93,12 +93,12 @@ class StudentClassroomRepository(base_repository.BaseRepository[classes_models.S
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[classes_models.StudentClassroom], items)
 
     async def get_by_classroom(
         self, classroom_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[classes_models.StudentClassroom]:
+    ) -> list[classes_models.StudentClassroom]:
         """Get students in classroom"""
         stmt = (
             sa.select(classes_models.StudentClassroom)
@@ -109,19 +109,19 @@ class StudentClassroomRepository(base_repository.BaseRepository[classes_models.S
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[classes_models.StudentClassroom], items)
 
     async def get_membership(
         self, student_id: int, classroom_id: int
-    ) -> tp.Optional[classes_models.StudentClassroom]:
+    ) -> classes_models.StudentClassroom | None:
         """Get specific student-classroom membership"""
         stmt = sa.select(classes_models.StudentClassroom).where(
             classes_models.StudentClassroom.student_id == student_id,
             classes_models.StudentClassroom.classroom_id == classroom_id,
         )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(classes_models.StudentClassroom | None, obj)
 
     async def is_student_in_classroom(self, student_id: int, classroom_id: int) -> bool:
         """Check if student is in classroom"""
@@ -149,15 +149,15 @@ class InviteRepository(base_repository.BaseRepository[classes_models.Invite]):
     def __init__(self, db: sa_asyncio.AsyncSession):
         super().__init__(classes_models.Invite, db)
 
-    async def get_by_code(self, invite_code: str) -> tp.Optional[classes_models.Invite]:
+    async def get_by_code(self, invite_code: str) -> classes_models.Invite | None:
         """Get invite by code"""
         stmt = sa.select(classes_models.Invite).where(classes_models.Invite.invite_code == invite_code)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        obj = await self._scalar_one_or_none(stmt)
+        return tp.cast(classes_models.Invite | None, obj)
 
     async def get_by_classroom(
         self, classroom_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[classes_models.Invite]:
+    ) -> list[classes_models.Invite]:
         """Get invites for classroom"""
         stmt = (
             sa.select(classes_models.Invite)
@@ -165,10 +165,10 @@ class InviteRepository(base_repository.BaseRepository[classes_models.Invite]):
             .offset(skip)
             .limit(limit)
         )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[classes_models.Invite], items)
 
-    async def increment_uses(self, invite_id: int) -> tp.Optional[classes_models.Invite]:
+    async def increment_uses(self, invite_id: int) -> classes_models.Invite | None:
         """Increment invite uses count"""
         invite = await self.get_by_id(invite_id)
         if not invite:

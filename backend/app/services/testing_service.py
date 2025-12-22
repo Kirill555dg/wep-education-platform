@@ -2,8 +2,6 @@
 Testing service for answer checking and grading
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
@@ -155,7 +153,7 @@ class TestingService:
 
         return homework_schemas.StatisticsResponse.model_validate(updated_stats)
 
-    def _check_answer(self, student_answer: str, correct_answer: tp.Optional[str]) -> bool:
+    def _check_answer(self, student_answer: str, correct_answer: str | None) -> bool:
         """
         Check if answer is correct
 

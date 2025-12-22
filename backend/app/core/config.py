@@ -2,8 +2,6 @@
 Application configuration settings
 """
 
-import typing as tp
-
 import pydantic_settings
 
 
@@ -23,7 +21,7 @@ class Settings(pydantic_settings.BaseSettings):
     DATABASE_URL: str = "postgresql://wep_user:wep_password@127.0.0.1:5433/wep_education"
 
     # CORS
-    BACKEND_CORS_ORIGINS: tp.List[str] = [
+    BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",  # Frontend dev server
         "http://localhost:3000",
     ]

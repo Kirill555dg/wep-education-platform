@@ -13,7 +13,7 @@ router = fastapi.APIRouter()
 
 
 @router.get("/health")
-def health_check() -> tp.Dict[str, tp.Any]:
+def health_check() -> dict[str, tp.Any]:
     """
     Health check endpoint
 
@@ -29,7 +29,7 @@ def health_check() -> tp.Dict[str, tp.Any]:
 
 
 @router.get("/ping")
-def ping() -> tp.Dict[str, str]:
+def ping() -> dict[str, str]:
     """
     Simple ping endpoint
 

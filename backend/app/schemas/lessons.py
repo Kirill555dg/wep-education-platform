@@ -2,7 +2,6 @@
 Lesson Pydantic schemas (DTOs)
 """
 
-import typing as tp
 import datetime as dt
 
 import pydantic
@@ -12,26 +11,26 @@ class LessonBase(pydantic.BaseModel):
     """Base lesson fields"""
 
     title: str = pydantic.Field(..., min_length=1, max_length=255)
-    description: tp.Optional[str] = None
-    order_number: tp.Optional[int] = pydantic.Field(None, ge=0)
-    scheduled_at: tp.Optional[dt.datetime] = None
+    description: str | None = None
+    order_number: int | None = pydantic.Field(None, ge=0)
+    scheduled_at: dt.datetime | None = None
 
 
 class LessonCreate(LessonBase):
     """Schema for creating a lesson"""
 
     classroom_id: int
-    theory_material_ids: tp.List[int] = pydantic.Field(default_factory=list)
+    theory_material_ids: list[int] = pydantic.Field(default_factory=list)
 
 
 class LessonUpdate(pydantic.BaseModel):
     """Schema for updating a lesson"""
 
-    title: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=255)
-    description: tp.Optional[str] = None
-    order_number: tp.Optional[int] = pydantic.Field(None, ge=0)
-    scheduled_at: tp.Optional[dt.datetime] = None
-    is_published: tp.Optional[bool] = None
+    title: str | None = pydantic.Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    order_number: int | None = pydantic.Field(None, ge=0)
+    scheduled_at: dt.datetime | None = None
+    is_published: bool | None = None
 
 
 class LessonResponse(LessonBase):
@@ -60,7 +59,7 @@ class TheoryMaterialBase(pydantic.BaseModel):
     title: str = pydantic.Field(..., min_length=1, max_length=255)
     content: str = pydantic.Field(..., min_length=1)
     order_number: int = pydantic.Field(default=0, ge=0)
-    estimated_read_time: tp.Optional[int] = pydantic.Field(None, ge=1)
+    estimated_read_time: int | None = pydantic.Field(None, ge=1)
 
 
 class TheoryMaterialCreate(TheoryMaterialBase):
@@ -72,11 +71,11 @@ class TheoryMaterialCreate(TheoryMaterialBase):
 class TheoryMaterialUpdate(pydantic.BaseModel):
     """Schema for updating theory material"""
 
-    title: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=255)
-    content: tp.Optional[str] = pydantic.Field(None, min_length=1)
-    order_number: tp.Optional[int] = pydantic.Field(None, ge=0)
-    estimated_read_time: tp.Optional[int] = pydantic.Field(None, ge=1)
-    is_published: tp.Optional[bool] = None
+    title: str | None = pydantic.Field(None, min_length=1, max_length=255)
+    content: str | None = pydantic.Field(None, min_length=1)
+    order_number: int | None = pydantic.Field(None, ge=0)
+    estimated_read_time: int | None = pydantic.Field(None, ge=1)
+    is_published: bool | None = None
 
 
 class TheoryMaterialResponse(TheoryMaterialBase):

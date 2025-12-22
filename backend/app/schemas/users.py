@@ -3,7 +3,6 @@ User Pydantic schemas (DTOs)
 """
 
 import enum
-import typing as tp
 
 import datetime as dt
 import pydantic
@@ -23,11 +22,11 @@ class UserBase(pydantic.BaseModel):
     email: pydantic.EmailStr
     first_name: str = pydantic.Field(..., min_length=1, max_length=100)
     last_name: str = pydantic.Field(..., min_length=1, max_length=100)
-    middle_name: tp.Optional[str] = pydantic.Field(default=None, max_length=100)
+    middle_name: str | None = pydantic.Field(default=None, max_length=100)
     role: UserRole = UserRole.STUDENT
-    avatar_url: tp.Optional[str] = None
-    username: tp.Optional[str] = pydantic.Field(default=None, min_length=3, max_length=100)
-    full_name: tp.Optional[str] = pydantic.Field(default=None, max_length=255)
+    avatar_url: str | None = None
+    username: str | None = pydantic.Field(default=None, min_length=3, max_length=100)
+    full_name: str | None = pydantic.Field(default=None, max_length=255)
 
 
 class UserCreate(UserBase):
@@ -39,14 +38,14 @@ class UserCreate(UserBase):
 class UserUpdate(pydantic.BaseModel):
     """Schema for updating a user"""
 
-    username: tp.Optional[str] = pydantic.Field(default=None, min_length=3, max_length=100)
-    email: tp.Optional[pydantic.EmailStr] = None
-    first_name: tp.Optional[str] = pydantic.Field(default=None, min_length=1, max_length=100)
-    last_name: tp.Optional[str] = pydantic.Field(default=None, min_length=1, max_length=100)
-    middle_name: tp.Optional[str] = pydantic.Field(default=None, max_length=100)
-    full_name: tp.Optional[str] = pydantic.Field(default=None, max_length=255)
-    avatar_url: tp.Optional[str] = None
-    is_active: tp.Optional[bool] = None
+    username: str | None = pydantic.Field(default=None, min_length=3, max_length=100)
+    email: pydantic.EmailStr | None = None
+    first_name: str | None = pydantic.Field(default=None, min_length=1, max_length=100)
+    last_name: str | None = pydantic.Field(default=None, min_length=1, max_length=100)
+    middle_name: str | None = pydantic.Field(default=None, max_length=100)
+    full_name: str | None = pydantic.Field(default=None, max_length=255)
+    avatar_url: str | None = None
+    is_active: bool | None = None
 
 
 class UserResponse(pydantic.BaseModel):
@@ -56,10 +55,10 @@ class UserResponse(pydantic.BaseModel):
     email: pydantic.EmailStr
     first_name: str
     last_name: str
-    middle_name: tp.Optional[str] = None
+    middle_name: str | None = None
     role: UserRole
-    username: tp.Optional[str] = None
-    full_name: tp.Optional[str] = None
+    username: str | None = None
+    full_name: str | None = None
     is_active: bool
     created_at: dt.datetime
     updated_at: dt.datetime
@@ -78,8 +77,8 @@ class UserInDB(UserResponse):
 class TeacherBase(pydantic.BaseModel):
     """Base teacher fields"""
 
-    bio: tp.Optional[str] = None
-    subject_specialization: tp.Optional[str] = None
+    bio: str | None = None
+    subject_specialization: str | None = None
     years_of_experience: int = pydantic.Field(default=0, ge=0)
 
 
@@ -110,8 +109,8 @@ class TeacherResponse(TeacherBase):
 class StudentBase(pydantic.BaseModel):
     """Base student fields"""
 
-    grade_level: tp.Optional[int] = pydantic.Field(None, ge=1, le=12)
-    student_id_number: tp.Optional[str] = None
+    grade_level: int | None = pydantic.Field(None, ge=1, le=12)
+    student_id_number: str | None = None
 
 
 class StudentCreate(StudentBase):

@@ -2,8 +2,6 @@
 Authentication service
 """
 
-import typing as tp
-
 import datetime as dt
 
 import fastapi
@@ -97,7 +95,7 @@ class AuthService:
     async def authenticate(
         self,
         login_data: user_schemas.LoginRequest,
-    ) -> tp.Optional[user_schemas.TokenResponse]:
+    ) -> user_schemas.TokenResponse | None:
         """
         Authenticate user and return JWT token
 
@@ -155,7 +153,7 @@ class AuthService:
             ),
         )
 
-    async def get_user_role(self, user_id: int) -> tp.Optional[str]:
+    async def get_user_role(self, user_id: int) -> str | None:
         """
         Get user role (teacher or student)
 

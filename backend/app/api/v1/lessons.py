@@ -2,8 +2,6 @@
 Lesson management endpoints
 """
 
-import typing as tp
-
 import fastapi
 from fastapi import status as http_status
 
@@ -39,7 +37,7 @@ async def create_lesson(
 
 @router.get(
     "/classroom/{classroom_id}",
-    response_model=tp.List[lesson_schemas.LessonResponse],
+    response_model=list[lesson_schemas.LessonResponse],
 )
 async def get_classroom_lessons(
     classroom_id: int,

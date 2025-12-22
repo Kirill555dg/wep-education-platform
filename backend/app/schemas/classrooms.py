@@ -2,7 +2,6 @@
 Classroom Pydantic schemas (DTOs)
 """
 
-import typing as tp
 import datetime as dt
 
 import pydantic
@@ -12,9 +11,9 @@ class ClassroomBase(pydantic.BaseModel):
     """Base classroom fields"""
 
     name: str = pydantic.Field(..., min_length=1, max_length=255)
-    description: tp.Optional[str] = None
+    description: str | None = None
     subject: str = pydantic.Field(..., min_length=1, max_length=100)
-    grade_level: tp.Optional[int] = pydantic.Field(None, ge=1, le=12)
+    grade_level: int | None = pydantic.Field(None, ge=1, le=12)
     max_students: int = pydantic.Field(default=30, ge=1, le=100)
 
 
@@ -27,12 +26,12 @@ class ClassroomCreate(ClassroomBase):
 class ClassroomUpdate(pydantic.BaseModel):
     """Schema for updating a classroom"""
 
-    name: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=255)
-    description: tp.Optional[str] = None
-    subject: tp.Optional[str] = pydantic.Field(None, min_length=1, max_length=100)
-    grade_level: tp.Optional[int] = pydantic.Field(None, ge=1, le=12)
-    max_students: tp.Optional[int] = pydantic.Field(None, ge=1, le=100)
-    is_active: tp.Optional[bool] = None
+    name: str | None = pydantic.Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    subject: str | None = pydantic.Field(None, min_length=1, max_length=100)
+    grade_level: int | None = pydantic.Field(None, ge=1, le=12)
+    max_students: int | None = pydantic.Field(None, ge=1, le=100)
+    is_active: bool | None = None
 
 
 class ClassroomResponse(ClassroomBase):
@@ -41,7 +40,7 @@ class ClassroomResponse(ClassroomBase):
     id: int
     teacher_id: int
     is_active: bool
-    invite_code: tp.Optional[str]
+    invite_code: str | None
     created_at: dt.datetime
     updated_at: dt.datetime
     students_count: int = 0  # Calculated field
@@ -61,8 +60,8 @@ class InviteCreate(pydantic.BaseModel):
     """Schema for creating an invite"""
 
     classroom_id: int
-    max_uses: tp.Optional[int] = pydantic.Field(default=1, ge=1)
-    expires_at: tp.Optional[dt.datetime] = None
+    max_uses: int | None = pydantic.Field(default=1, ge=1)
+    expires_at: dt.datetime | None = None
 
 
 class InviteResponse(pydantic.BaseModel):
@@ -71,10 +70,10 @@ class InviteResponse(pydantic.BaseModel):
     id: int
     classroom_id: int
     invite_code: str
-    max_uses: tp.Optional[int]
+    max_uses: int | None
     uses_count: int
     status: str
-    expires_at: tp.Optional[dt.datetime]
+    expires_at: dt.datetime | None
     created_at: dt.datetime
 
     model_config = pydantic.ConfigDict(from_attributes=True)
