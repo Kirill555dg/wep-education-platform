@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,7 @@ const joinSchema = z.object({
 type JoinFormValues = z.infer<typeof joinSchema>;
 
 export function StudentHomePage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -74,9 +75,7 @@ export function StudentHomePage() {
       setItems((prev) => [{ id: joined.id, name: joined.name, subject: joined.subject }, ...prev]);
       toast({ title: "Вы вступили в класс", description: joined.name });
       // Go straight into the classroom.
-      window.setTimeout(() => {
-        window.location.assign(routes.student.classroom(joined.id));
-      }, 0);
+      navigate(routes.student.classroom(joined.id), { replace: true });
     } catch (e) {
       const msg = getErrorMessage(e);
       const requestId = getRequestId(e);
