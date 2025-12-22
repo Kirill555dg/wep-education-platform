@@ -1,13 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { classroomsApi, getErrorMessage, statisticsApi } from "@/shared/api";
+import { classroomsApi, getErrorMessage, getRequestId, statisticsApi } from "@/shared/api";
 import { routes } from "@/shared/config/routes";
+import { useToast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 
+const joinSchema = z.object({
+  invite_code: z
+    .string()
+    .trim()
+    .min(3, "Введите invite code")
+    .max(64, "Слишком длинный invite code")
+    .regex(/^[A-Za-z0-9_-]+$/, "Допустимы только буквы/цифры/`_`/`-`"),
+});
+
+type JoinFormValues = z.infer<typeof joinSchema>;
+
 export function StudentHomePage() {
+  const { toast } = useToast();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<Array<{ id: number; name: string; subject: string }>>([]);
@@ -21,8 +38,13 @@ export function StudentHomePage() {
     total_time_spent_minutes: number;
   } | null>(null);
 
-  const [inviteCode, setInviteCode] = useState("");
-  const [joining, setJoining] = useState(false);
+  const joinForm = useForm<JoinFormValues>({
+    resolver: zodResolver(joinSchema),
+    defaultValues: { invite_code: "" },
+    mode: "onChange",
+  });
+
+  const inviteCode = useMemo(() => joinForm.watch("invite_code"), [joinForm]);
 
   const load = async () => {
     setLoading(true);
@@ -44,19 +66,25 @@ export function StudentHomePage() {
     void load();
   }, []);
 
-  const join = async () => {
-    setJoining(true);
+  const join = joinForm.handleSubmit(async (values) => {
     setError(null);
     try {
-      const joined = await classroomsApi.join({ invite_code: inviteCode });
-      setInviteCode("");
+      const joined = await classroomsApi.join({ invite_code: values.invite_code.trim() });
+      joinForm.reset({ invite_code: "" });
       setItems((prev) => [{ id: joined.id, name: joined.name, subject: joined.subject }, ...prev]);
+      toast({ title: "Вы вступили в класс", description: joined.name });
+      // Go straight into the classroom.
+      window.setTimeout(() => {
+        window.location.assign(routes.student.classroom(joined.id));
+      }, 0);
     } catch (e) {
-      setError(getErrorMessage(e));
-    } finally {
-      setJoining(false);
+      const msg = getErrorMessage(e);
+      const requestId = getRequestId(e);
+      const extra = requestId ? ` (request_id: ${requestId})` : "";
+      setError(`${msg}${extra}`);
+      toast({ title: "Не удалось вступить", description: `${msg}${extra}`, variant: "destructive" });
     }
-  };
+  });
 
   return (
     <div className="grid gap-6">
@@ -72,16 +100,30 @@ export function StudentHomePage() {
           <CardTitle>Вступить в класс</CardTitle>
           <CardDescription>Введи invite code, который дал преподаватель</CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-2">
-          <Input
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value)}
-            placeholder="invite code"
-            data-testid="join-invite-code"
-          />
-          <Button onClick={() => void join()} disabled={!inviteCode || joining} data-testid="join-submit">
-            {joining ? "..." : "Вступить"}
-          </Button>
+        <CardContent>
+          <form onSubmit={join} className="grid gap-2" data-testid="join-form">
+            <div className="flex gap-2">
+              <Input
+                placeholder="invite code"
+                {...joinForm.register("invite_code")}
+                data-testid="join-invite-code"
+                autoCapitalize="off"
+                autoCorrect="off"
+              />
+              <Button
+                type="submit"
+                disabled={!inviteCode.trim() || !joinForm.formState.isValid || joinForm.formState.isSubmitting}
+                data-testid="join-submit"
+              >
+                {joinForm.formState.isSubmitting ? "..." : "Вступить"}
+              </Button>
+            </div>
+            {joinForm.formState.errors.invite_code ? (
+              <p className="text-sm text-destructive" data-testid="join-error">
+                {joinForm.formState.errors.invite_code.message}
+              </p>
+            ) : null}
+          </form>
         </CardContent>
       </Card>
 
