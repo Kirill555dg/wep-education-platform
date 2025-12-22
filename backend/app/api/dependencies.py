@@ -64,7 +64,7 @@ def get_current_user_id(
     if role is None:
         raise fastapi.HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
-            detail="Token missing role",
+            detail={"code": "token_missing_role", "message": "Token missing role"},
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -106,7 +106,10 @@ async def get_current_user(
     if token.role != user.role:
         raise fastapi.HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
-            detail="Role changed, please re-authenticate",
+            detail={
+                "code": "role_changed",
+                "message": "Role changed, please re-authenticate",
+            },
             headers={"WWW-Authenticate": "Bearer"},
         )
 

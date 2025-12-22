@@ -403,13 +403,15 @@ WS контракт (client -> server):
 WS события (server -> client):
 
 - `ready` (+ snapshot):
-  - `{ "type": "ready", "classroom_id": 1, "presence": {"online_user_ids": [..]}, "typing": {"user_ids": [..]} }`
+  - `{ "type": "ready", "classroom_id": 1, "presence": {"online_user_ids": [..]}, "typing": {"user_ids": [..]}, "request_id": "<ws_request_id>" }`
 - `message`:
   - `{ "type": "message", "payload": { ...MessageResponse... } }`
 - `presence`:
   - `{ "type": "presence", "payload": { "user_id": 123, "status": "online|offline" } }`
 - `typing`:
   - `{ "type": "typing", "payload": { "user_id": 123, "is_typing": true } }`
+- `error`:
+  - `{ "type": "error", "error": { "code": "bad_request|validation_error|role_changed|token_missing_role", "message": "...", "meta": {} }, "request_id": "<ws_request_id>" }`
 
 ---
 
@@ -476,6 +478,52 @@ curl -X POST \
   "total": 0,
   "skip": 0,
   "limit": 100
+}
+```
+
+---
+
+## ❗️ Единый контракт ошибок (HTTP)
+
+Любая ошибка HTTP возвращается в формате:
+
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string",
+    "meta": {}
+  },
+  "request_id": "string"
+}
+```
+
+Примеры:
+
+- **401** при смене роли:
+
+```json
+{
+  "error": {
+    "code": "role_changed",
+    "message": "Role changed, please re-authenticate"
+  },
+  "request_id": "..."
+}
+```
+
+- **422** валидация:
+
+```json
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Validation error",
+    "meta": {
+      "errors": []
+    }
+  },
+  "request_id": "..."
 }
 ```
 

@@ -8,9 +8,6 @@ import logging
 import inspect
 
 import fastapi
-from fastapi import exceptions as fastapi_exceptions
-from fastapi import responses as fastapi_responses
-from fastapi import status as http_status
 from fastapi.middleware import cors as fastapi_cors
 import redis.asyncio as redis_asyncio
 
@@ -50,40 +47,6 @@ app.add_middleware(request_id_middleware.RequestIdMiddleware)
 
 # Domain error -> HTTP mapping
 api_errors.register_exception_handlers(app)
-
-
-# Custom validation error handler for better debugging
-@app.exception_handler(fastapi_exceptions.RequestValidationError)
-async def validation_exception_handler(
-    request: fastapi.Request,
-    exc: fastapi_exceptions.RequestValidationError,
-) -> fastapi_responses.JSONResponse:
-    """
-    Custom handler for validation errors to provide detailed error messages
-    """
-    errors = exc.errors()
-    body = exc.body if hasattr(exc, "body") else None
-
-    body_payload: tp.Any = body
-    if not isinstance(body_payload, (dict, list, str, int, float, bool, type(None))):
-        body_payload = str(body_payload)
-
-    logger.warning(
-        "request_validation_error",
-        extra={
-            "path": request.url.path,
-            "errors": errors,
-            "body": body_payload,
-        },
-    )
-
-    return fastapi_responses.JSONResponse(
-        status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "detail": errors,
-            "body": body,
-        },
-    )
 
 
 # Include API router

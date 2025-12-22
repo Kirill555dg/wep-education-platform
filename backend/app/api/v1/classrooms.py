@@ -4,6 +4,7 @@ Classroom management endpoints
 
 import asyncio
 import time
+import uuid
 
 import fastapi
 from fastapi import status as http_status
@@ -192,12 +193,25 @@ async def classroom_chat_ws(
 
     Auth: `?token=<jwt>` query param or `Authorization: Bearer <jwt>` header.
     """
+    ws_request_id = uuid.uuid4().hex
+
+    async def _send_ws_error(
+        *,
+        code: str,
+        message: str,
+        meta: dict[str, object] | None = None,
+    ) -> None:
+        error: dict[str, object] = {"code": code, "message": message, "meta": meta or {}}
+        await websocket.send_json({"type": "error", "error": error, "request_id": ws_request_id})
+
     manager = getattr(websocket.app.state, "chat_connection_manager", None)
     broker = getattr(websocket.app.state, "chat_broker", None)
     redis_client = getattr(websocket.app.state, "redis", None)
 
     if manager is None or broker is None or redis_client is None:
-        await websocket.close(code=1011, reason="Realtime broker is not configured")
+        await websocket.accept()
+        await _send_ws_error(code="realtime_not_configured", message="Realtime broker is not configured")
+        await websocket.close(code=1011)
         return
 
     try:
@@ -205,7 +219,9 @@ async def classroom_chat_ws(
         chat_service = chat_service_module.ChatService(db)
         await chat_service.require_access(classroom_id, user=user)
     except domain_errors.DomainError as e:
-        await websocket.close(code=1008, reason=e.message)
+        await websocket.accept()
+        await _send_ws_error(code=e.code or "unauthorized", message=e.message, meta=e.meta or None)
+        await websocket.close(code=1008)
         return
 
     store = realtime_presence.ChatEphemeralStore(
@@ -229,6 +245,7 @@ async def classroom_chat_ws(
             "classroom_id": classroom_id,
             "presence": {"online_user_ids": online_user_ids},
             "typing": {"user_ids": typing_user_ids},
+            "request_id": ws_request_id,
         }
     )
 
@@ -252,9 +269,7 @@ async def classroom_chat_ws(
         while True:
             data = await websocket.receive_json()
             if not isinstance(data, dict):
-                await websocket.send_json(
-                    {"type": "error", "code": "bad_request", "detail": "Invalid payload"}
-                )
+                await _send_ws_error(code="bad_request", message="Invalid payload")
                 continue
 
             msg_type = data.get("type")
@@ -284,16 +299,16 @@ async def classroom_chat_ws(
                 continue
 
             if msg_type != "message":
-                await websocket.send_json(
-                    {"type": "error", "code": "bad_request", "detail": "Unknown message type"}
-                )
+                await _send_ws_error(code="bad_request", message="Unknown message type")
                 continue
 
             try:
                 create_payload = communication_schemas.MessageCreate(content=str(data.get("content", "")))
             except pydantic.ValidationError as e:
-                await websocket.send_json(
-                    {"type": "error", "code": "bad_request", "detail": "Invalid message", "meta": e.errors()}
+                await _send_ws_error(
+                    code="validation_error",
+                    message="Invalid message",
+                    meta={"errors": e.errors()},
                 )
                 continue
 
