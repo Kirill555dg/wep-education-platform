@@ -169,11 +169,18 @@ export function TeacherLessonPage() {
                 <div className="font-medium">{h.title}</div>
                 <div className="text-xs text-muted-foreground">published: {String(h.is_published)}</div>
               </div>
-              <Button asChild size="sm" variant="secondary">
-                <Link to={routes.student.homework(h.id)} data-testid={`open-homework-${h.id}`}>
-                  Открыть (as student)
-                </Link>
-              </Button>
+              <div className="flex gap-2">
+                <Button asChild size="sm" variant="secondary">
+                  <Link to={routes.teacher.homework(h.id)} data-testid={`open-teacher-homework-${h.id}`}>
+                    Открыть (teacher)
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link to={routes.student.homework(h.id)} data-testid={`open-student-homework-${h.id}`}>
+                    Открыть (student)
+                  </Link>
+                </Button>
+              </div>
             </div>
           ))}
         </CardContent>

@@ -8,6 +8,7 @@ export const routes = {
     home: "/teacher",
     classroom: (id: number | string) => `/teacher/classrooms/${id}`,
     lesson: (id: number | string) => `/teacher/lessons/${id}`,
+    homework: (id: number | string) => `/teacher/homeworks/${id}`,
     problems: "/teacher/problems",
     problemNew: "/teacher/problems/new",
     problem: (id: number | string) => `/teacher/problems/${id}`,
