@@ -6,6 +6,7 @@ import fastapi
 from fastapi import status as http_status
 
 from app.api import dependencies as deps
+from app.api import pagination as api_pagination
 from app.models import users as user_models
 from app.schemas import classrooms as classroom_schemas
 from app.services import classroom as classroom_service_module
@@ -38,8 +39,7 @@ async def create_classroom(
 
 @router.get("", response_model=list[classroom_schemas.ClassroomResponse])
 async def get_my_classrooms(
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_user),
     classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
         deps.get_classroom_service
@@ -52,12 +52,14 @@ async def get_my_classrooms(
     - Students: classrooms they joined
     """
     # Try to get as teacher first
-    teacher_classrooms = await classroom_service.get_teacher_classrooms(current_user.id, skip, limit)
+    teacher_classrooms = await classroom_service.get_teacher_classrooms(
+        current_user.id, pagination.skip, pagination.limit
+    )
     if teacher_classrooms:
         return teacher_classrooms
 
     # Otherwise get as student
-    return await classroom_service.get_student_classrooms(current_user.id, skip, limit)
+    return await classroom_service.get_student_classrooms(current_user.id, pagination.skip, pagination.limit)
 
 
 @router.get("/{classroom_id}", response_model=classroom_schemas.ClassroomResponse)
@@ -108,8 +110,7 @@ async def join_classroom(
 @router.get("/{classroom_id}/students")
 async def get_classroom_students(
     classroom_id: int,
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
     classroom_service: classroom_service_module.ClassroomService = fastapi.Depends(
         deps.get_classroom_service
@@ -120,4 +121,6 @@ async def get_classroom_students(
 
     Returns student information with enrollment dates
     """
-    return await classroom_service.get_classroom_students(classroom_id, current_user.id, skip, limit)
+    return await classroom_service.get_classroom_students(
+        classroom_id, current_user.id, pagination.skip, pagination.limit
+    )

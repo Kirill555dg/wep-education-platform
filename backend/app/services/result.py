@@ -6,6 +6,7 @@ import typing as tp
 
 from sqlalchemy.ext import asyncio as sa_asyncio
 
+from app.core import pagination as core_pagination
 from app.domain import errors as domain_errors
 from app.repositories import classroom as classroom_repository
 from app.repositories import homework as homework_repository
@@ -28,7 +29,10 @@ class ResultService:
         self.student_repo = user_repository.StudentRepository(db)
 
     async def get_student_statistics(
-        self, student_user_id: int, skip: int = 0, limit: int = 100
+        self,
+        student_user_id: int,
+        skip: int = core_pagination.DEFAULT_SKIP,
+        limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[homework_schemas.StatisticsResponse]:
         """
         Get all statistics for student
@@ -49,7 +53,11 @@ class ResultService:
         return [homework_schemas.StatisticsResponse.model_validate(s) for s in stats]
 
     async def get_homework_statistics(
-        self, homework_id: int, teacher_user_id: int, skip: int = 0, limit: int = 100
+        self,
+        homework_id: int,
+        teacher_user_id: int,
+        skip: int = core_pagination.DEFAULT_SKIP,
+        limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[homework_schemas.StatisticsResponse]:
         """
         Get statistics for all students for a homework (teacher only)

@@ -5,6 +5,7 @@ Statistics and results endpoints
 import fastapi
 
 from app.api import dependencies as deps
+from app.api import pagination as api_pagination
 from app.models import users as user_models
 from app.schemas import homework as homework_schemas
 from app.services import result as result_service_module
@@ -14,8 +15,7 @@ router = fastapi.APIRouter()
 
 @router.get("/me", response_model=list[homework_schemas.StatisticsResponse])
 async def get_my_statistics(
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_student),
     result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
@@ -24,7 +24,7 @@ async def get_my_statistics(
 
     Returns all homework attempts with scores and status
     """
-    return await result_service.get_student_statistics(current_user.id, skip, limit)
+    return await result_service.get_student_statistics(current_user.id, pagination.skip, pagination.limit)
 
 
 @router.get("/me/progress")
@@ -53,8 +53,7 @@ async def get_my_progress(
 )
 async def get_homework_statistics(
     homework_id: int,
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
     result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
@@ -63,7 +62,9 @@ async def get_homework_statistics(
 
     Returns all student attempts for the homework
     """
-    return await result_service.get_homework_statistics(homework_id, current_user.id, skip, limit)
+    return await result_service.get_homework_statistics(
+        homework_id, current_user.id, pagination.skip, pagination.limit
+    )
 
 
 @router.get("/classroom/{classroom_id}/progress")
@@ -90,8 +91,7 @@ async def get_classroom_progress(
 )
 async def get_student_statistics_by_teacher(
     student_user_id: int,
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
     result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
 ):
@@ -100,4 +100,4 @@ async def get_student_statistics_by_teacher(
 
     Teachers can view any student's statistics
     """
-    return await result_service.get_student_statistics(student_user_id, skip, limit)
+    return await result_service.get_student_statistics(student_user_id, pagination.skip, pagination.limit)

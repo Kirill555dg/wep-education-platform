@@ -5,6 +5,7 @@ Lesson service
 from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.domain import errors as domain_errors
+from app.core import pagination as core_pagination
 from app.repositories import classroom as classroom_repository
 from app.repositories import lesson as lesson_repository
 from app.repositories import user as user_repository
@@ -86,7 +87,11 @@ class LessonService:
         return response
 
     async def get_classroom_lessons(
-        self, classroom_id: int, user_id: int, skip: int = 0, limit: int = 100
+        self,
+        classroom_id: int,
+        user_id: int,
+        skip: int = core_pagination.DEFAULT_SKIP,
+        limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[lesson_schemas.LessonResponse]:
         """
         Get lessons for classroom

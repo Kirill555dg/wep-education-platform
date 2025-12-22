@@ -8,6 +8,7 @@ import nanoid
 from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.domain import errors as domain_errors
+from app.core import pagination as core_pagination
 from app.repositories import classroom as classroom_repository
 from app.repositories import user as user_repository
 from app.schemas import classrooms as classroom_schemas
@@ -78,7 +79,10 @@ class ClassroomService:
         return response
 
     async def get_teacher_classrooms(
-        self, teacher_user_id: int, skip: int = 0, limit: int = 100
+        self,
+        teacher_user_id: int,
+        skip: int = core_pagination.DEFAULT_SKIP,
+        limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[classroom_schemas.ClassroomResponse]:
         """Get classrooms for teacher"""
         teacher = await self.teacher_repo.get_by_user_id(teacher_user_id)
@@ -89,7 +93,10 @@ class ClassroomService:
         return [classroom_schemas.ClassroomResponse.model_validate(c) for c in classrooms]
 
     async def get_student_classrooms(
-        self, student_user_id: int, skip: int = 0, limit: int = 100
+        self,
+        student_user_id: int,
+        skip: int = core_pagination.DEFAULT_SKIP,
+        limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[classroom_schemas.ClassroomResponse]:
         """Get classrooms for student"""
         student = await self.student_repo.get_by_user_id(student_user_id)
@@ -184,7 +191,11 @@ class ClassroomService:
         return classroom_schemas.ClassroomResponse.model_validate(classroom)
 
     async def get_classroom_students(
-        self, classroom_id: int, teacher_user_id: int, skip: int = 0, limit: int = 100
+        self,
+        classroom_id: int,
+        teacher_user_id: int,
+        skip: int = core_pagination.DEFAULT_SKIP,
+        limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[dict[str, tp.Any]]:
         """
         Get list of students in classroom (teacher only)

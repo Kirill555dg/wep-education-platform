@@ -6,6 +6,7 @@ import fastapi
 from fastapi import status as http_status
 
 from app.api import dependencies as deps
+from app.api import pagination as api_pagination
 from app.models import users as user_models
 from app.schemas import homework as homework_schemas
 from app.services import problem as problem_service_module
@@ -40,8 +41,7 @@ async def create_problem(
 
 @router.get("", response_model=list[homework_schemas.ProblemFullResponse])
 async def get_problems(
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),
     problem_service: problem_service_module.ProblemService = fastapi.Depends(deps.get_problem_service),
 ):
@@ -50,7 +50,7 @@ async def get_problems(
 
     Teachers can see all problems with correct answers
     """
-    problems = await problem_service.get_all_problems(skip, limit)
+    problems = await problem_service.get_all_problems(pagination.skip, pagination.limit)
     return [homework_schemas.ProblemFullResponse.model_validate(problem_item) for problem_item in problems]
 
 

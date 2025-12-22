@@ -16,6 +16,11 @@ class Settings(pydantic_settings.BaseSettings):
     # API
     API_V1_PREFIX: str = "/api/v1"
 
+    # Pagination
+    PAGINATION_DEFAULT_SKIP: int = 0
+    PAGINATION_DEFAULT_LIMIT: int = 100
+    PAGINATION_MAX_LIMIT: int = 100
+
     # Database
     # Используем 127.0.0.1 вместо localhost для избежания GSSAPI auth проблем на macOS
     DATABASE_URL: str = "postgresql://wep_user:wep_password@127.0.0.1:5433/wep_education"

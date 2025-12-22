@@ -6,6 +6,7 @@ import fastapi
 from fastapi import status as http_status
 
 from app.api import dependencies as deps
+from app.api import pagination as api_pagination
 from app.models import users as user_models
 from app.schemas import homework as homework_schemas
 from app.services import homework as homework_service_module
@@ -45,8 +46,7 @@ async def create_homework(
 )
 async def get_lesson_homework(
     lesson_id: int,
-    skip: int = fastapi.Query(0, ge=0),
-    limit: int = fastapi.Query(100, ge=1, le=100),
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
     current_user: user_models.User = fastapi.Depends(deps.get_current_user),
     homework_service: homework_service_module.HomeworkService = fastapi.Depends(
         deps.get_homework_service
@@ -58,7 +58,9 @@ async def get_lesson_homework(
     - Teachers see all homework (including unpublished)
     - Students see only published homework
     """
-    return await homework_service.get_lesson_homework(lesson_id, current_user.id, skip, limit)
+    return await homework_service.get_lesson_homework(
+        lesson_id, current_user.id, pagination.skip, pagination.limit
+    )
 
 
 @router.get("/{homework_id}", response_model=homework_schemas.HomeworkDetailResponse)

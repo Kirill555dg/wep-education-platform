@@ -6,6 +6,7 @@ Manages problem creation, retrieval, and management
 import typing as tp
 
 from app.domain import errors as domain_errors
+from app.core import pagination as core_pagination
 from app.repositories import homework as homework_repository
 from app.schemas import homework as homework_schemas
 
@@ -44,7 +45,11 @@ class ProblemService:
         problem = await self.problem_repo.create(data)
         return problem
 
-    async def get_all_problems(self, skip: int = 0, limit: int = 100) -> list[tp.Any]:
+    async def get_all_problems(
+        self,
+        skip: int = core_pagination.DEFAULT_SKIP,
+        limit: int = core_pagination.DEFAULT_LIMIT,
+    ) -> list[tp.Any]:
         """
         Get all problems
 
