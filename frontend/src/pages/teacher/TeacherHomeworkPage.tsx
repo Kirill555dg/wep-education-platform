@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -45,17 +45,14 @@ export function TeacherHomeworkPage() {
   const [deadline, setDeadline] = useState("");
 
   // Initialize form values once data arrives (simple MVP)
-  const initKey = `${hwQuery.data?.id ?? ""}:${hwQuery.data?.updated_at ?? ""}`;
-  useMemo(() => {
+  useEffect(() => {
     const d = hwQuery.data;
     if (!d) return;
     setTitle(d.title);
     setDescription(d.description ?? "");
     setMaxScoreText(String(d.max_score ?? ""));
     setDeadline(d.deadline ?? "");
-    return;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initKey]);
+  }, [hwQuery.data?.id, hwQuery.data?.updated_at]);
 
   const onSave = async () => {
     setSaveError(null);

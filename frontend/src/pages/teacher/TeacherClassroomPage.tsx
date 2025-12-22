@@ -91,9 +91,14 @@ export function TeacherClassroomPage() {
             </span>
           </div>
         </div>
-        <Button asChild variant="outline">
-          <Link to={routes.teacher.home}>Назад</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="secondary">
+            <Link to={routes.teacher.classroomSettings(classroomId)}>Настройки</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to={routes.teacher.home}>Назад</Link>
+          </Button>
+        </div>
       </div>
 
       <Card>

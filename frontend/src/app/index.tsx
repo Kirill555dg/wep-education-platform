@@ -7,9 +7,11 @@ import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { ChatPage } from "@/pages/chat/ChatPage";
 import { TeacherClassroomPage } from "@/pages/teacher/TeacherClassroomPage";
+import { TeacherClassroomSettingsPage } from "@/pages/teacher/TeacherClassroomSettingsPage";
 import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
 import { TeacherLessonPage } from "@/pages/teacher/TeacherLessonPage";
 import { TeacherHomeworkPage } from "@/pages/teacher/TeacherHomeworkPage";
+import { TeacherHomeworkCreatePage } from "@/pages/teacher/TeacherHomeworkCreatePage";
 import { TeacherProblemsPage } from "@/pages/teacher/TeacherProblemsPage";
 import { TeacherProblemEditorPage } from "@/pages/teacher/TeacherProblemEditorPage";
 import { TeacherStatsPage } from "@/pages/teacher/TeacherStatsPage";
@@ -34,7 +36,9 @@ function App() {
           <Route element={<RequireRole role="teacher" />}>
             <Route path="/teacher" element={<TeacherHomePage />} />
             <Route path="/teacher/classrooms/:classroomId" element={<TeacherClassroomPage />} />
+            <Route path="/teacher/classrooms/:classroomId/settings" element={<TeacherClassroomSettingsPage />} />
             <Route path="/teacher/lessons/:lessonId" element={<TeacherLessonPage />} />
+            <Route path="/teacher/lessons/:lessonId/homeworks/new" element={<TeacherHomeworkCreatePage />} />
             <Route path="/teacher/homeworks/:homeworkId" element={<TeacherHomeworkPage />} />
             <Route path="/teacher/problems" element={<TeacherProblemsPage />} />
             <Route path="/teacher/problems/:problemId" element={<TeacherProblemEditorPage />} />

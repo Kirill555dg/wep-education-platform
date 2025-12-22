@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { getErrorMessage, homeworkApi, lessonsApi, problemsApi } from "@/shared/api";
+import { getErrorMessage, homeworkApi, lessonsApi } from "@/shared/api";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/ui/dialog";
-import { Input } from "@/shared/ui/input";
-import { Textarea } from "@/shared/ui/textarea";
 
 export function TeacherLessonPage() {
   const navigate = useNavigate();
@@ -19,12 +16,6 @@ export function TeacherLessonPage() {
 
   const [lessonTitle, setLessonTitle] = useState<string>("");
   const [homeworks, setHomeworks] = useState<Array<{ id: number; title: string; is_published: boolean }>>([]);
-
-  const [createOpen, setCreateOpen] = useState(false);
-  const [hwTitle, setHwTitle] = useState("");
-  const [problemTitle, setProblemTitle] = useState("");
-  const [problemAnswer, setProblemAnswer] = useState("");
-  const [problemText, setProblemText] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -50,42 +41,6 @@ export function TeacherLessonPage() {
     void load();
   }, [lessonId]);
 
-  const createHomeworkWithProblem = async () => {
-    setError(null);
-    try {
-      const createdProblem = await problemsApi.create({
-        title: problemTitle,
-        description: problemText || "Ответь кратко",
-        problem_type: "short_answer",
-        correct_answer: problemAnswer,
-        explanation: null,
-        hints: null,
-      });
-
-      const createdHomework = await homeworkApi.create({
-        lesson_id: lessonId,
-        title: hwTitle,
-        description: null,
-        max_score: 1,
-        deadline: null,
-        problem_ids: [createdProblem.id],
-        problem_points: [1],
-      });
-
-      // Publish for students.
-      const published = await homeworkApi.update(createdHomework.id, { is_published: true });
-
-      setHomeworks((prev) => [{ id: published.id, title: published.title, is_published: !!published.is_published }, ...prev]);
-      setCreateOpen(false);
-      setHwTitle("");
-      setProblemTitle("");
-      setProblemAnswer("");
-      setProblemText("");
-    } catch (e) {
-      setError(getErrorMessage(e));
-    }
-  };
-
   if (loading) return <div className="text-sm text-muted-foreground">Загрузка...</div>;
   if (error) return <div className="text-sm text-destructive">{error}</div>;
 
@@ -109,57 +64,11 @@ export function TeacherLessonPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Домашние задания</span>
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" data-testid="create-homework-open">
-                  Создать ДЗ (1 задача)
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>ДЗ + задача</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-3">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Название ДЗ</label>
-                    <Input value={hwTitle} onChange={(e) => setHwTitle(e.target.value)} data-testid="create-homework-title" />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Название задачи</label>
-                    <Input
-                      value={problemTitle}
-                      onChange={(e) => setProblemTitle(e.target.value)}
-                      data-testid="create-problem-title"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Текст задачи</label>
-                    <Textarea
-                      value={problemText}
-                      onChange={(e) => setProblemText(e.target.value)}
-                      data-testid="create-problem-description"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Правильный ответ</label>
-                    <Input
-                      value={problemAnswer}
-                      onChange={(e) => setProblemAnswer(e.target.value)}
-                      data-testid="create-problem-answer"
-                    />
-                  </div>
-                  <Button
-                    onClick={() => void createHomeworkWithProblem()}
-                    disabled={!hwTitle || !problemTitle || !problemAnswer}
-                    data-testid="create-homework-submit"
-                  >
-                    Создать и опубликовать
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button asChild size="sm" data-testid="create-homework-open">
+              <Link to={routes.teacher.homeworkNewForLesson(lessonId)}>Создать ДЗ</Link>
+            </Button>
           </CardTitle>
-          <CardDescription>Для демонстрации MVP: создаётся задача + ДЗ и сразу публикуется</CardDescription>
+          <CardDescription>Создание и сборка ДЗ из базы задач</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2">
           {homeworks.length === 0 ? <div className="text-sm text-muted-foreground">Пока нет ДЗ</div> : null}
