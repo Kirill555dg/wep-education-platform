@@ -8,7 +8,8 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
-    pool: "threads",
+    // Bun + vitest: vmThreads tend to be the most compatible.
+    pool: "vmThreads",
     fileParallelism: false,
     coverage: {
       provider: "v8",

@@ -9,7 +9,6 @@
 - **Vite** — сборщик
 - **React Router v6** — маршрутизация
 - **Zustand** — state management
-- **TanStack Query** — управление серверным состоянием
 - **React Hook Form + Zod** — формы и валидация
 - **Tailwind CSS** — стилизация
 - **Radix UI** — UI компоненты
@@ -31,6 +30,13 @@ bun run dev
 
 Приложение будет доступно по адресу: http://localhost:5173
 
+### Генерация клиента из OpenAPI (рекомендуется)
+
+```bash
+# backend должен быть запущен
+bun run api:regen
+```
+
 ### Сборка для продакшена
 
 ```bash
@@ -45,7 +51,7 @@ bun run preview
 
 ## 🧪 Тестирование
 
-### Unit-тесты (Vitest)
+### Unit-тесты (bun:test)
 
 ```bash
 # Запуск тестов
@@ -58,8 +64,10 @@ bun run test:watch
 ### E2E-тесты (Cypress)
 
 ```bash
-# Запуск E2E тестов
-bun run test:e2e
+# Backend должен быть запущен. По умолчанию фронт ждёт API на http://localhost:8023
+#
+# Если backend работает на другом порту/хосте — укажи оба env:
+BACKEND_URL="http://localhost:8023" VITE_API_URL="http://localhost:8023" bun run test:e2e
 
 # Открыть Cypress UI
 bun run cypress
@@ -70,41 +78,30 @@ bun run cypress
 ```
 frontend/
 ├── src/
-│   ├── app/               # Инициализация приложения
-│   │   ├── index.tsx      # Главный компонент App
-│   │   ├── providers/     # Провайдеры (Auth, Class)
-│   │   └── router/        # Роутинг и защищенные маршруты
+│   ├── app/                 # Инициализация приложения (router/guards, providers)
+│   │   ├── index.tsx        # Root routes
+│   │   ├── providers/       # Bootstrapper'ы
+│   │   └── router/          # Guards (RequireAuth/RequireRole)
 │   │
-│   ├── pages/             # Страницы приложения
-│   │   ├── auth/          # Авторизация
-│   │   ├── profile/       # Профиль пользователя
-│   │   ├── student/       # Страница студента
-│   │   ├── teacher/       # Страница преподавателя
-│   │   └── notifications/ # Уведомления
+│   ├── pages/               # Страницы приложения
+│   │   ├── auth/            # Login / Register
+│   │   ├── common/          # Redirects
+│   │   ├── student/         # Student flows
+│   │   └── teacher/         # Teacher flows
 │   │
-│   ├── widgets/           # Комплексные UI-блоки
-│   │   ├── header/        # Шапка
-│   │   ├── footer/        # Подвал
-│   │   └── layout/        # Layout
+│   ├── widgets/             # Комплексные UI-блоки
+│   │   ├── chat/            # ClassroomChat (WS + HTTP fallback)
+│   │   ├── header/          # AppHeader
+│   │   └── layout/          # AppLayout
 │   │
-│   ├── features/          # Бизнес-функции
-│   │   ├── auth/          # Авторизация
-│   │   ├── profile/       # Редактирование профиля
-│   │   ├── notifications/ # Уведомления
-│   │   └── join-class/    # Присоединение к классу
-│   │
-│   ├── entities/          # Бизнес-сущности
-│   │   ├── user/          # Пользователь
-│   │   ├── student/       # Студент
-│   │   ├── teacher/       # Преподаватель
-│   │   ├── class/         # Класс/Предмет
-│   │   └── notification/  # Уведомление
+│   ├── entities/            # Бизнес-сущности
+│   │   └── session/         # Session store (user + auth bootstrap)
 │   │
 │   └── shared/            # Переиспользуемый код
 │       ├── ui/            # UI-компоненты
 │       ├── hooks/         # Хуки
 │       ├── lib/           # Утилиты
-│       ├── api/           # Axios
+│       ├── api/           # OpenAPI client (generated) + wrappers + errors
 │       └── styles/        # Глобальные стили
 │
 ├── public/                # Статические файлы
@@ -115,9 +112,23 @@ frontend/
 ## ✨ Функционал
 
 ### 🔐 Авторизация
-- Регистрация (студент/преподаватель)
-- Вход в систему
-- Сброс пароля
+- Регистрация (student/teacher)
+- Вход в систему (JWT в `localStorage`)
+- Role-based routing (student/teacher)
+
+### 👩‍🏫 Teacher MVP
+- Создание класса
+- Создание урока (автопубликация для student)
+- Создание ДЗ с одной задачей (создаётся задача + ДЗ, ДЗ публикуется)
+
+### 👨‍🎓 Student MVP
+- Вступление в класс по invite code
+- Просмотр уроков и ДЗ
+- Отправка ответа на задачу
+
+### 💬 Чат
+- Realtime чат класса через WebSocket
+- Fallback на HTTP (если realtime недоступен)
 - Защищенные маршруты
 
 ### 👤 Профиль
@@ -173,7 +184,7 @@ import { useAuth } from "@/features/auth/model/store";
 ### Генерация клиента из OpenAPI (рекомендуется)
 
 ```bash
-# backend должен быть запущен на http://localhost:8000
+# backend должен быть запущен на http://localhost:8023
 bun run api:regen
 ```
 
@@ -362,10 +373,10 @@ Backend URL настраивается через переменную окру�
 
 ```bash
 # .env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8023
 ```
 
-По умолчанию: `http://localhost:8000`
+По умолчанию: `http://localhost:8023`
 
 ### JWT Authentication
 

@@ -3,25 +3,25 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./app/index";
 import "./shared/styles/globals.css";
+import { logger } from "@/shared/lib/logger";
+import { env } from "@/shared/config/env";
+import { loggingConfig } from "@/shared/config/logging";
 
-import { setAuthApi } from "@/features/auth/api/api";
-import { authApiMock } from "@/features/auth/api/api-mock";
-import { authApiReal } from "@/features/auth/api/api-real";
-import { setProfileApi } from "@/features/profile/api/profile-api";
-import { profileApiMock } from "@/features/profile/api/profile-api-mock";
-import { profileApiReal } from "@/features/profile/api/profile-api-real";
-import { API_CONFIG } from "@/shared/config/api.config";
+logger.info("frontend_start", { apiBaseUrl: env.apiBaseUrl, logLevel: loggingConfig.level });
 
-// Configure API based on environment
-if (API_CONFIG.USE_REAL_API) {
-  console.log("🌐 Using REAL API at:", API_CONFIG.BACKEND_URL);
-  setAuthApi(authApiReal);
-  setProfileApi(profileApiReal);
-} else {
-  console.log("🎭 Using MOCK API (development mode)");
-  setAuthApi(authApiMock);
-  setProfileApi(profileApiMock);
-}
+window.addEventListener("error", (event) => {
+  logger.error("window_error", {
+    message: event.error?.message || event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+  });
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event.reason instanceof Error ? event.reason.message : String(event.reason);
+  logger.error("unhandled_rejection", { reason });
+});
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
