@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { statisticsApi } from "@/shared/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { ErrorState } from "@/shared/ui/error-state";
+import { StudentProgressChart } from "@/widgets/statistics/StudentProgressChart";
 
 export function StudentStatsPage() {
   const progressQuery = useQuery({
@@ -39,6 +40,7 @@ export function StudentStatsPage() {
             <div className="text-muted-foreground">Загрузка...</div>
           ) : progressQuery.data ? (
             <>
+              <StudentProgressChart data={progressQuery.data} />
               <div>Всего ДЗ: {progressQuery.data.total_homeworks}</div>
               <div>Выполнено: {progressQuery.data.completed}</div>
               <div>В процессе: {progressQuery.data.in_progress}</div>
