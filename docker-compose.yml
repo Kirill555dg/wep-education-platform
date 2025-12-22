@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
     environment:
       # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-wep_user}:${POSTGRES_PASSWORD:-wep_password}@postgres:5432/${POSTGRES_DB:-wep_education}?gssencmode=disable
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wep_user}:${POSTGRES_PASSWORD:-wep_password}@postgres:5432/${POSTGRES_DB:-wep_education}
       
       # Application
       APP_NAME: "Web Education Platform API"

@@ -5,6 +5,7 @@ Tests for AuthService
 import pytest
 
 from app.domain import errors as domain_errors
+from app.repositories import user as user_repository
 from app.schemas import users as user_schemas
 from app.services import auth as auth_service_module
 
@@ -32,8 +33,11 @@ async def test_register_user_teacher(db_session):
     assert user.last_name == "Doe"
     assert user.role.value == "teacher"
     assert user.is_active is True
-    # Password should be hashed, not plain text
-    assert user.hashed_password != "TestPassword123!"
+    # Password hash should exist in DB and not equal to plain
+    login_repo = user_repository.LoginDataRepository(db_session)
+    login_data = await login_repo.get_by_user_id(user.id)
+    assert login_data is not None
+    assert login_data.hashed_password != "TestPassword123!"
 
 
 async def test_register_user_student(db_session):

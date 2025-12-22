@@ -62,7 +62,6 @@ class UserResponse(pydantic.BaseModel):
     is_active: bool
     created_at: dt.datetime
     updated_at: dt.datetime
-    hashed_password: str = ""
 
     model_config = pydantic.ConfigDict(from_attributes=True)
 

@@ -84,7 +84,6 @@ class AuthService:
             is_active=user.is_active,
             created_at=user.created_at,
             updated_at=user.updated_at,
-            hashed_password=hashed_password,
         )
 
     async def authenticate(
@@ -141,7 +140,6 @@ class AuthService:
                 is_active=user.is_active,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
-                hashed_password=login_info.hashed_password,
             ),
         )
 
