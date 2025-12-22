@@ -9,6 +9,7 @@ from app.api import pagination as api_pagination
 from app.models import users as user_models
 from app.schemas import pagination as pagination_schemas
 from app.schemas import homework as homework_schemas
+from app.schemas import progress as progress_schemas
 from app.services import result as result_service_module
 
 router = fastapi.APIRouter()
@@ -30,7 +31,7 @@ async def get_my_statistics(
     return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
-@router.get("/me/progress")
+@router.get("/me/progress", response_model=progress_schemas.StudentProgressResponse)
 async def get_my_progress(
     current_user: user_models.User = fastapi.Depends(deps.get_current_student),
     result_service: result_service_module.ResultService = fastapi.Depends(deps.get_result_service),
@@ -72,7 +73,10 @@ async def get_homework_statistics(
     return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
-@router.get("/classroom/{classroom_id}/progress")
+@router.get(
+    "/classroom/{classroom_id}/progress",
+    response_model=progress_schemas.ClassroomProgressResponse,
+)
 async def get_classroom_progress(
     classroom_id: int,
     current_user: user_models.User = fastapi.Depends(deps.get_current_teacher),

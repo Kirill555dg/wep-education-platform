@@ -109,10 +109,10 @@ async def test_result_service_classroom_progress_aggregates(db_session):
     )
 
     progress = await result_service.get_classroom_progress(created_classroom.id, teacher.id)
-    assert progress["total_students"] == 1
-    assert progress["total_homeworks_assigned"] == 2
-    assert progress["completed_homeworks"] == 1
-    assert progress["average_completion_rate"] == 50.0
+    assert progress.total_students == 1
+    assert progress.total_homeworks_assigned == 2
+    assert progress.completed_homeworks == 1
+    assert progress.average_completion_rate == 50.0
 
 
 async def test_result_service_student_progress_aggregates(db_session):
@@ -210,11 +210,11 @@ async def test_result_service_student_progress_aggregates(db_session):
     )
 
     summary = await result_service.get_student_progress(student.id)
-    assert summary["total_homeworks"] == 3
-    assert summary["completed"] == 2
-    assert summary["in_progress"] == 1
-    assert summary["not_started"] == 0
-    assert summary["total_attempts"] == 4
-    assert summary["total_time_spent_minutes"] == 35
-    assert summary["average_score_percentage"] == 80.0
+    assert summary.total_homeworks == 3
+    assert summary.completed == 2
+    assert summary.in_progress == 1
+    assert summary.not_started == 0
+    assert summary.total_attempts == 4
+    assert summary.total_time_spent_minutes == 35
+    assert summary.average_score_percentage == 80.0
 

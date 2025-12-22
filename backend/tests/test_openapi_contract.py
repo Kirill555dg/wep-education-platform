@@ -23,3 +23,16 @@ def test_openapi_operations_have_standard_error_responses():
     ref = responses["401"]["content"]["application/json"]["schema"]["$ref"]
     assert ref == "#/components/schemas/ErrorResponse"
 
+
+def test_openapi_progress_endpoints_are_typed():
+    schema = app.openapi()
+    paths = schema.get("paths", {})
+
+    op = paths["/api/v1/statistics/me/progress"]["get"]
+    resp = op["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    assert resp == "#/components/schemas/StudentProgressResponse"
+
+    op = paths["/api/v1/statistics/classroom/{classroom_id}/progress"]["get"]
+    resp = op["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    assert resp == "#/components/schemas/ClassroomProgressResponse"
+

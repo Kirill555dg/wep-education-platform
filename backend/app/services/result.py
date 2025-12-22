@@ -2,8 +2,6 @@
 Result service for aggregating student progress
 """
 
-import typing as tp
-
 from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.core import pagination as core_pagination
@@ -12,6 +10,7 @@ from app.repositories import classroom as classroom_repository
 from app.repositories import homework as homework_repository
 from app.repositories import user as user_repository
 from app.schemas import homework as homework_schemas
+from app.schemas import progress as progress_schemas
 
 
 class ResultService:
@@ -89,7 +88,7 @@ class ResultService:
     async def count_homework_statistics(self, homework_id: int) -> int:
         return await self.stats_repo.count_by_homework(homework_id)
 
-    async def get_student_progress(self, student_user_id: int) -> dict[str, tp.Any]:
+    async def get_student_progress(self, student_user_id: int) -> progress_schemas.StudentProgressResponse:
         """
         Get overall student progress
 
@@ -103,11 +102,12 @@ class ResultService:
         if not student:
             raise domain_errors.NotFoundError("Student not found")
 
-        return await self.stats_repo.get_student_progress_summary(student.id)
+        summary = await self.stats_repo.get_student_progress_summary(student.id)
+        return progress_schemas.StudentProgressResponse.model_validate(summary)
 
     async def get_classroom_progress(
         self, classroom_id: int, teacher_user_id: int
-    ) -> dict[str, tp.Any]:
+    ) -> progress_schemas.ClassroomProgressResponse:
         """
         Get progress summary for classroom (teacher only)
 
@@ -130,10 +130,9 @@ class ResultService:
             else 0.0
         )
 
-        return {
-            "total_students": total_students,
-            "active_students": total_students,
-            "total_homeworks_assigned": total_homeworks_assigned,
-            "completed_homeworks": completed_homeworks,
-            "average_completion_rate": round(completion_rate, 2),
-        }
+        return progress_schemas.ClassroomProgressResponse(
+            total_students=total_students,
+            total_homeworks_assigned=total_homeworks_assigned,
+            completed_homeworks=completed_homeworks,
+            average_completion_rate=round(completion_rate, 2),
+        )
