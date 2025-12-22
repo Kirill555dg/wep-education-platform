@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { getErrorMessage, homeworkApi, lessonsApi, problemsApi } from "@/shared/api";
+import { useProblemsList } from "@/entities/problem/api/queries";
+import { getErrorMessage, homeworkApi, lessonsApi } from "@/shared/api";
 import { routes } from "@/shared/config/routes";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/ui/button";
@@ -25,11 +26,6 @@ export function TeacherHomeworkCreatePage() {
     enabled: Number.isFinite(lessonId) && lessonId > 0,
   });
 
-  const problemsQuery = useQuery({
-    queryKey: ["teacher", "problems", "list"],
-    queryFn: async () => await problemsApi.list({ skip: 0, limit: 100 }),
-  });
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("");
@@ -39,16 +35,8 @@ export function TeacherHomeworkCreatePage() {
   const [type, setType] = useState("");
   const [selected, setSelected] = useState<Record<number, Selected>>({});
 
-  const filteredProblems = useMemo(() => {
-    const items = problemsQuery.data?.items ?? [];
-    const qq = q.trim().toLowerCase();
-    const tt = type.trim().toLowerCase();
-    return items.filter((p) => {
-      const matchesQ = !qq || p.title.toLowerCase().includes(qq) || p.description.toLowerCase().includes(qq);
-      const matchesT = !tt || p.problem_type.toLowerCase().includes(tt);
-      return matchesQ && matchesT;
-    });
-  }, [problemsQuery.data, q, type]);
+  const problemsQuery = useProblemsList({ skip: 0, limit: 100, q, type });
+  const filteredProblems = problemsQuery.data?.items ?? [];
 
   const totalPoints = useMemo(() => {
     return Object.values(selected).reduce((acc, s) => acc + (Number.isFinite(s.points) ? s.points : 0), 0);

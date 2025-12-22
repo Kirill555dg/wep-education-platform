@@ -158,17 +158,12 @@ export function TeacherClassroomStatsPage() {
       byHomework.set(r.homework_id, cur);
     }
 
-    const titleById = new Map<number, string>();
-    for (const h of homeworksQuery.data ?? []) titleById.set(h.id, h.title);
-
-    const points = Array.from(byHomework.entries()).map(([id, agg]) => {
-      const pct = agg.max > 0 ? Math.round((agg.score / agg.max) * 100) : 0;
-      const title = titleById.get(id);
-      return { name: title ? title : `#${id}`, value: pct };
+    const homeworks = homeworksQuery.data ?? [];
+    const points = homeworks.map((h) => {
+      const agg = byHomework.get(h.id);
+      const pct = agg && agg.max > 0 ? Math.round((agg.score / agg.max) * 100) : 0;
+      return { name: h.title, value: pct };
     });
-
-    // Keep stable order: by homework id (close enough for MVP)
-    points.sort((a, b) => a.name.localeCompare(b.name));
     return points.slice(0, 20);
   }, [studentAggQuery.data, homeworksQuery.data]);
 

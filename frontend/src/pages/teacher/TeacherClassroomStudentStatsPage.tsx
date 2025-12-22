@@ -64,6 +64,12 @@ export function TeacherClassroomStudentStatsPage() {
     return items.filter((r) => classroomHomeworkIds.has(r.homework_id));
   }, [studentStatsQuery.data, classroomHomeworkIds]);
 
+  const rowByHomeworkId = useMemo(() => {
+    const m = new Map<number, StatisticsResponse>();
+    for (const r of rows) m.set(r.homework_id, r);
+    return m;
+  }, [rows]);
+
   const aggregates = useMemo(() => {
     let completed = 0;
     let score = 0;
@@ -82,12 +88,14 @@ export function TeacherClassroomStudentStatsPage() {
   }, [rows, homeworksQuery.data]);
 
   const trend: ClassroomHomeworkTrendPoint[] = useMemo(() => {
-    const pts = rows.map((r) => {
-      const pct = r.max_score > 0 ? Math.round(((r.score ?? 0) / r.max_score) * 100) : 0;
-      return { name: homeworkTitle.get(r.homework_id) ?? `#${r.homework_id}`, value: pct };
+    const homeworks = homeworksQuery.data ?? [];
+    const pts = homeworks.map((h) => {
+      const r = rowByHomeworkId.get(h.id);
+      const pct = r && r.max_score > 0 ? Math.round(((r.score ?? 0) / r.max_score) * 100) : 0;
+      return { name: h.title, value: pct };
     });
     return pts.slice(0, 20);
-  }, [rows, homeworkTitle]);
+  }, [homeworksQuery.data, rowByHomeworkId]);
 
   const columns = useMemo<Array<ColumnDef<StatisticsResponse>>>(
     () => [

@@ -110,7 +110,17 @@ export function TeacherHomeworkPage() {
     () => [
       {
         header: "Ученик",
-        cell: ({ row }) => studentNameByStudentId.get(row.original.student_id) ?? `student#${row.original.student_id}`,
+        cell: ({ row }) => {
+          const name = studentNameByStudentId.get(row.original.student_id) ?? `student#${row.original.student_id}`;
+          const classroomId = lessonQuery.data?.classroom_id;
+          return classroomId ? (
+            <Link className="underline underline-offset-4" to={routes.teacher.classroomStudentStats(classroomId, row.original.student_id)}>
+              {name}
+            </Link>
+          ) : (
+            name
+          );
+        },
       },
       { header: "score", cell: ({ row }) => `${row.original.score ?? 0}/${row.original.max_score}` },
       { header: "status", accessorKey: "status" },
@@ -118,7 +128,7 @@ export function TeacherHomeworkPage() {
       { header: "minutes", accessorKey: "time_spent_minutes" },
       { header: "submitted_at", accessorKey: "submitted_at" },
     ],
-    [studentNameByStudentId]
+    [studentNameByStudentId, lessonQuery.data?.classroom_id]
   );
 
   return (
