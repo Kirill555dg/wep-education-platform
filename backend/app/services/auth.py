@@ -153,15 +153,8 @@ class AuthService:
         Returns:
             "teacher" or "student" or None
         """
-        teacher = await self.teacher_repo.get_by_user_id(user_id)
-        if teacher:
-            return "teacher"
-
-        student = await self.student_repo.get_by_user_id(user_id)
-        if student:
-            return "student"
-
-        return None
+        user = await self.user_repo.get_by_id(user_id)
+        return user.role if user else None
 
     async def get_current_user(self, user_id: int) -> user_schemas.UserResponse:
         """

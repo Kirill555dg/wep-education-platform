@@ -413,6 +413,37 @@ WS события (server -> client):
 
 ---
 
+## 🚀 Быстрый старт для фронта (dev)
+
+1) Подними инфраструктуру и сида:
+
+```bash
+cd backend
+make bootstrap
+make dev
+```
+
+2) Получи креды + invite codes + ids (только в DEBUG):
+
+```bash
+curl "http://localhost:8000/api/v1/testing/dev-seed-info"
+```
+
+3) Логин (получи JWT):
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username_or_email":"teacher@wep.dev","password":"TeacherPass123!"}' \
+  "http://localhost:8000/api/v1/auth/login"
+```
+
+4) Подключись к WS чату:
+
+`ws://localhost:8000/api/v1/classrooms/<id>/chat/ws?token=<jwt>`
+
+---
+
 ## 🗄️ База данных
 
 ### PostgreSQL

@@ -71,12 +71,10 @@ async def get_current_user_profile(
 @router.get("/me/role")
 async def get_current_user_role(
     current_user: user_models.User = fastapi.Depends(deps.get_current_user),
-    auth_service: auth_service_module.AuthService = fastapi.Depends(deps.get_auth_service),
 ) -> dict[str, str | None]:
     """
     Get current user's role (teacher or student)
 
     Returns: {"role": "teacher"} or {"role": "student"}
     """
-    role = await auth_service.get_user_role(current_user.id)
-    return {"role": role}
+    return {"role": current_user.role}
