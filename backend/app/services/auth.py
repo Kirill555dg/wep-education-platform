@@ -67,10 +67,12 @@ class AuthService:
         hashed_password = core_security.get_password_hash(user_data.password)
         await self.login_repo.create_for_user(user.id, hashed_password)
 
-        # Create BOTH teacher and student profiles
-        # This allows users to switch between roles
-        await self.teacher_repo.create({"user_id": user.id})
-        await self.student_repo.create({"user_id": user.id})
+        # Create profile only for selected role.
+        # Additional roles can be enabled later via `switch_role`.
+        if user.role == user_schemas.UserRole.TEACHER.value:
+            await self.teacher_repo.create({"user_id": user.id})
+        else:
+            await self.student_repo.create({"user_id": user.id})
 
         return user_schemas.UserResponse(
             id=user.id,
@@ -155,6 +157,38 @@ class AuthService:
         """
         user = await self.user_repo.get_by_id(user_id)
         return user.role if user else None
+
+    async def get_roles(self, user_id: int) -> user_schemas.UserRolesResponse:
+        user = await self.user_repo.get_with_profile(user_id)
+        if not user:
+            raise domain_errors.NotFoundError("User not found")
+
+        enabled: list[user_schemas.UserRole] = []
+        if user.student is not None:
+            enabled.append(user_schemas.UserRole.STUDENT)
+        if user.teacher is not None:
+            enabled.append(user_schemas.UserRole.TEACHER)
+
+        return user_schemas.UserRolesResponse(
+            active_role=user_schemas.UserRole(user.role),
+            enabled_roles=enabled,
+        )
+
+    async def switch_role(self, user_id: int, role: user_schemas.UserRole) -> user_schemas.UserRolesResponse:
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise domain_errors.NotFoundError("User not found")
+
+        # Ensure role profile exists.
+        if role == user_schemas.UserRole.TEACHER:
+            if not await self.teacher_repo.get_by_user_id(user_id):
+                await self.teacher_repo.create({"user_id": user_id})
+        else:
+            if not await self.student_repo.get_by_user_id(user_id):
+                await self.student_repo.create({"user_id": user_id})
+
+        await self.user_repo.update(user_id, {"role": role.value})
+        return await self.get_roles(user_id)
 
     async def get_current_user(self, user_id: int) -> user_schemas.UserResponse:
         """

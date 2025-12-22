@@ -78,3 +78,28 @@ async def get_current_user_role(
     Returns: {"role": "teacher"} or {"role": "student"}
     """
     return {"role": current_user.role}
+
+
+@router.get("/me/roles", response_model=user_schemas.UserRolesResponse)
+async def get_current_user_roles(
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+    auth_service: auth_service_module.AuthService = fastapi.Depends(deps.get_auth_service),
+) -> user_schemas.UserRolesResponse:
+    """
+    Get active role + enabled roles for current user.
+    """
+    return await auth_service.get_roles(current_user.id)
+
+
+@router.post("/me/role", response_model=user_schemas.UserRolesResponse)
+async def switch_my_role(
+    payload: user_schemas.RoleSwitchRequest,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+    auth_service: auth_service_module.AuthService = fastapi.Depends(deps.get_auth_service),
+) -> user_schemas.UserRolesResponse:
+    """
+    Switch active role for current user.
+
+    If target role profile does not exist, it will be created.
+    """
+    return await auth_service.switch_role(current_user.id, payload.role)

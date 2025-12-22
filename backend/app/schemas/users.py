@@ -35,6 +35,15 @@ class UserCreate(UserBase):
     password: str = pydantic.Field(..., min_length=8, max_length=128)
 
 
+class RoleSwitchRequest(pydantic.BaseModel):
+    role: UserRole
+
+
+class UserRolesResponse(pydantic.BaseModel):
+    active_role: UserRole
+    enabled_roles: list[UserRole]
+
+
 class UserUpdate(pydantic.BaseModel):
     """Schema for updating a user"""
 

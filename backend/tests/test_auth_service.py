@@ -39,6 +39,12 @@ async def test_register_user_teacher(db_session):
     assert login_data is not None
     assert login_data.hashed_password != "TestPassword123!"
 
+    # Teacher profile exists; student profile should not be auto-created anymore
+    teacher_repo = user_repository.TeacherRepository(db_session)
+    student_repo = user_repository.StudentRepository(db_session)
+    assert await teacher_repo.get_by_user_id(user.id) is not None
+    assert await student_repo.get_by_user_id(user.id) is None
+
 
 async def test_register_user_student(db_session):
     """Test registering a new student user"""
@@ -57,6 +63,34 @@ async def test_register_user_student(db_session):
     assert user.email == "student@example.com"
     assert user.role.value == "student"
     assert user.is_active is True
+
+    # Student profile exists; teacher profile should not be auto-created anymore
+    teacher_repo = user_repository.TeacherRepository(db_session)
+    student_repo = user_repository.StudentRepository(db_session)
+    assert await student_repo.get_by_user_id(user.id) is not None
+    assert await teacher_repo.get_by_user_id(user.id) is None
+
+
+async def test_switch_role_creates_profile_and_updates_active_role(db_session):
+    auth_service = auth_service_module.AuthService(db_session)
+    teacher_repo = user_repository.TeacherRepository(db_session)
+
+    user = await auth_service.register_user(
+        user_schemas.UserCreate(
+            email="switch@example.com",
+            password="SwitchPass123!",
+            first_name="Role",
+            last_name="Switch",
+            role="student",
+        )
+    )
+
+    assert await teacher_repo.get_by_user_id(user.id) is None
+
+    roles = await auth_service.switch_role(user.id, user_schemas.UserRole.TEACHER)
+    assert roles.active_role == user_schemas.UserRole.TEACHER
+    assert user_schemas.UserRole.TEACHER in roles.enabled_roles
+    assert await teacher_repo.get_by_user_id(user.id) is not None
 
 
 async def test_register_duplicate_email(db_session):
