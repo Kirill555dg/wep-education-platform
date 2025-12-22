@@ -8,7 +8,9 @@ from fastapi import status as http_status
 from app.api import dependencies as deps
 from app.api import pagination as api_pagination
 from app.models import users as user_models
+from app.schemas import communication as communication_schemas
 from app.schemas import classrooms as classroom_schemas
+from app.services import chat as chat_service_module
 from app.services import classroom as classroom_service_module
 
 router = fastapi.APIRouter()
@@ -124,3 +126,34 @@ async def get_classroom_students(
     return await classroom_service.get_classroom_students(
         classroom_id, current_user.id, pagination.skip, pagination.limit
     )
+
+
+@router.get(
+    "/{classroom_id}/chat/messages",
+    response_model=list[communication_schemas.MessageResponse],
+)
+async def list_chat_messages(
+    classroom_id: int,
+    pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+    chat_service: chat_service_module.ChatService = fastapi.Depends(deps.get_chat_service),
+):
+    return await chat_service.list_messages(
+        classroom_id,
+        user=current_user,
+        skip=pagination.skip,
+        limit=pagination.limit,
+    )
+
+
+@router.post(
+    "/{classroom_id}/chat/messages",
+    response_model=communication_schemas.MessageResponse,
+)
+async def post_chat_message(
+    classroom_id: int,
+    payload: communication_schemas.MessageCreate,
+    current_user: user_models.User = fastapi.Depends(deps.get_current_user),
+    chat_service: chat_service_module.ChatService = fastapi.Depends(deps.get_chat_service),
+):
+    return await chat_service.post_message(classroom_id, user=current_user, payload=payload)

@@ -53,7 +53,7 @@ async def get_classroom_lessons(
     - Students see only published lessons
     """
     return await lesson_service.get_classroom_lessons(
-        classroom_id, current_user.id, pagination.skip, pagination.limit
+        classroom_id, current_user, pagination.skip, pagination.limit
     )
 
 

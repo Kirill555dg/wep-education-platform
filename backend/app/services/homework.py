@@ -6,6 +6,7 @@ from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.domain import errors as domain_errors
 from app.core import pagination as core_pagination
+from app.models import users as user_models
 from app.repositories import classroom as classroom_repository
 from app.repositories import homework as homework_repository
 from app.repositories import lesson as lesson_repository
@@ -86,7 +87,7 @@ class HomeworkService:
         return response
 
     async def get_homework(
-        self, homework_id: int, user_id: int
+        self, homework_id: int, user: user_models.User
     ) -> homework_schemas.HomeworkDetailResponse:
         """
         Get homework by ID
@@ -108,7 +109,7 @@ class HomeworkService:
             raise domain_errors.NotFoundError("Lesson not found")
 
         classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
-        teacher = await self.teacher_repo.get_by_user_id(user_id)
+        teacher = await self.teacher_repo.get_by_user_id(user.id) if user.role == "teacher" else None
 
         # If not teacher of this classroom and homework not published, deny access
         is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
@@ -120,7 +121,7 @@ class HomeworkService:
         return response
 
     async def get_homework_problems(
-        self, homework_id: int, user_id: int
+        self, homework_id: int, user: user_models.User
     ) -> list[homework_schemas.ProblemResponse | homework_schemas.ProblemFullResponse]:
         """
         Get problems for homework
@@ -136,7 +137,7 @@ class HomeworkService:
             raise domain_errors.NotFoundError("Lesson not found")
 
         classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
-        teacher = await self.teacher_repo.get_by_user_id(user_id)
+        teacher = await self.teacher_repo.get_by_user_id(user.id) if user.role == "teacher" else None
         is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
 
         # Get homework problems
@@ -195,7 +196,7 @@ class HomeworkService:
     async def get_lesson_homework(
         self,
         lesson_id: int,
-        user_id: int,
+        user: user_models.User,
         skip: int = core_pagination.DEFAULT_SKIP,
         limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[homework_schemas.HomeworkResponse]:
@@ -218,7 +219,7 @@ class HomeworkService:
         if not lesson:
             return []
 
-        teacher = await self.teacher_repo.get_by_user_id(user_id)
+        teacher = await self.teacher_repo.get_by_user_id(user.id) if user.role == "teacher" else None
         classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
         is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
 

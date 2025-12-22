@@ -58,9 +58,7 @@ async def get_lesson_homework(
     - Teachers see all homework (including unpublished)
     - Students see only published homework
     """
-    return await homework_service.get_lesson_homework(
-        lesson_id, current_user.id, pagination.skip, pagination.limit
-    )
+    return await homework_service.get_lesson_homework(lesson_id, current_user, pagination.skip, pagination.limit)
 
 
 @router.get("/{homework_id}", response_model=homework_schemas.HomeworkDetailResponse)
@@ -77,7 +75,7 @@ async def get_homework(
     Returns homework information.
     Students can only see published homework.
     """
-    return await homework_service.get_homework(homework_id, current_user.id)
+    return await homework_service.get_homework(homework_id, current_user)
 
 
 @router.get(
@@ -97,7 +95,7 @@ async def get_homework_problems(
     - Teachers see problems with correct answers
     - Students see problems without correct answers
     """
-    return await homework_service.get_homework_problems(homework_id, current_user.id)
+    return await homework_service.get_homework_problems(homework_id, current_user)
 
 
 @router.patch("/{homework_id}", response_model=homework_schemas.HomeworkResponse)

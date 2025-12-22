@@ -18,6 +18,8 @@ from app.services import homework as homework_service
 from app.services import lesson as lesson_service
 from app.services import problem as problem_service
 from app.services import result as result_service
+from app.services import chat as chat_service
+from app.services import theory as theory_service
 from app.services import testing as testing_service
 
 # Security
@@ -99,13 +101,19 @@ async def get_current_teacher(
     Raises:
         HTTPException: If user is not a teacher
     """
+    if current_user.role != "teacher":
+        raise fastapi.HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Only teachers can access this resource",
+        )
+
     teacher_repository = user_repo.TeacherRepository(db)
     teacher = await teacher_repository.get_by_user_id(current_user.id)
 
     if not teacher:
         raise fastapi.HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only teachers can access this resource",
+            detail="Teacher profile not found",
         )
 
     return current_user
@@ -121,13 +129,19 @@ async def get_current_student(
     Raises:
         HTTPException: If user is not a student
     """
+    if current_user.role != "student":
+        raise fastapi.HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="Only students can access this resource",
+        )
+
     student_repository = user_repo.StudentRepository(db)
     student = await student_repository.get_by_user_id(current_user.id)
 
     if not student:
         raise fastapi.HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Only students can access this resource",
+            detail="Student profile not found",
         )
 
     return current_user
@@ -181,3 +195,17 @@ def get_problem_service(
 ) -> problem_service.ProblemService:
     """Get ProblemService instance"""
     return problem_service.ProblemService(homework_repo.ProblemRepository(db))
+
+
+def get_theory_service(
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
+) -> theory_service.TheoryService:
+    """Get TheoryService instance"""
+    return theory_service.TheoryService(db)
+
+
+def get_chat_service(
+    db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
+) -> chat_service.ChatService:
+    """Get ChatService instance"""
+    return chat_service.ChatService(db)

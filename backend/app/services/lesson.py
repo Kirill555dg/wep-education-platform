@@ -6,6 +6,7 @@ from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.domain import errors as domain_errors
 from app.core import pagination as core_pagination
+from app.models import users as user_models
 from app.repositories import classroom as classroom_repository
 from app.repositories import lesson as lesson_repository
 from app.repositories import user as user_repository
@@ -89,7 +90,7 @@ class LessonService:
     async def get_classroom_lessons(
         self,
         classroom_id: int,
-        user_id: int,
+        user: user_models.User,
         skip: int = core_pagination.DEFAULT_SKIP,
         limit: int = core_pagination.DEFAULT_LIMIT,
     ) -> list[lesson_schemas.LessonResponse]:
@@ -99,7 +100,7 @@ class LessonService:
         Students see only published lessons, teachers see all
         """
         # Check if user is teacher of this classroom
-        teacher = await self.teacher_repo.get_by_user_id(user_id)
+        teacher = await self.teacher_repo.get_by_user_id(user.id) if user.role == "teacher" else None
         classroom = await self.classroom_repo.get_by_id(classroom_id)
 
         if teacher and classroom and classroom.teacher_id == teacher.id:

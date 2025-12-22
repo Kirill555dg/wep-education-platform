@@ -357,6 +357,44 @@ curl http://localhost:8000/api/v1/health
 
 ---
 
+## 📚 Theory (контент)
+
+Базовые эндпоинты для фронта (subjects → sections → subsections → materials):
+
+- **GET** `/api/v1/theory/subjects`
+- **GET** `/api/v1/theory/subjects/{subject_id}`
+- **GET** `/api/v1/theory/subjects/{subject_id}/sections`
+- **GET** `/api/v1/theory/sections/{section_id}/subsections`
+- **GET** `/api/v1/theory/subsections/{subsection_id}/materials`
+- **GET** `/api/v1/theory/materials/{material_id}`
+
+Пример:
+
+```bash
+curl -H "Authorization: Bearer <token>" "http://localhost:8000/api/v1/theory/subjects?skip=0&limit=100"
+```
+
+---
+
+## 💬 Classroom chat
+
+- **GET** `/api/v1/classrooms/{classroom_id}/chat/messages`
+- **POST** `/api/v1/classrooms/{classroom_id}/chat/messages`
+
+Пример:
+
+```bash
+curl -H "Authorization: Bearer <token>" "http://localhost:8000/api/v1/classrooms/1/chat/messages?skip=0&limit=100"
+
+curl -X POST \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Hello!"}' \
+  "http://localhost:8000/api/v1/classrooms/1/chat/messages"
+```
+
+---
+
 ## 🗄️ База данных
 
 ### PostgreSQL

@@ -163,3 +163,43 @@ class SubjectRepository(base_repository.BaseRepository[theory_models.Subject]):
         )
         items = await self._scalars_all(stmt)
         return tp.cast(list[theory_models.Subject], items)
+
+
+class SectionRepository(base_repository.BaseRepository[theory_models.Section]):
+    """Repository for Section operations"""
+
+    def __init__(self, db: sa_asyncio.AsyncSession):
+        super().__init__(theory_models.Section, db)
+
+    async def get_by_subject(
+        self, subject_id: int, skip: int = 0, limit: int = 100
+    ) -> list[theory_models.Section]:
+        stmt = (
+            sa.select(theory_models.Section)
+            .where(theory_models.Section.subject_id == subject_id)
+            .order_by(theory_models.Section.order_number)
+            .offset(skip)
+            .limit(limit)
+        )
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[theory_models.Section], items)
+
+
+class SubsectionRepository(base_repository.BaseRepository[theory_models.Subsection]):
+    """Repository for Subsection operations"""
+
+    def __init__(self, db: sa_asyncio.AsyncSession):
+        super().__init__(theory_models.Subsection, db)
+
+    async def get_by_section(
+        self, section_id: int, skip: int = 0, limit: int = 100
+    ) -> list[theory_models.Subsection]:
+        stmt = (
+            sa.select(theory_models.Subsection)
+            .where(theory_models.Subsection.section_id == section_id)
+            .order_by(theory_models.Subsection.order_number)
+            .offset(skip)
+            .limit(limit)
+        )
+        items = await self._scalars_all(stmt)
+        return tp.cast(list[theory_models.Subsection], items)

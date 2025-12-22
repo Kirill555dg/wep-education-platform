@@ -11,6 +11,7 @@ from app.api.v1 import homework as homework
 from app.api.v1 import lessons as lessons
 from app.api.v1 import problems as problems
 from app.api.v1 import statistics as statistics
+from app.api.v1 import theory as theory
 from app.api.v1 import testing as testing
 
 api_router = fastapi.APIRouter()
@@ -24,3 +25,4 @@ api_router.include_router(homework.router, prefix="/homework", tags=["Homework"]
 api_router.include_router(problems.router, prefix="/problems", tags=["Problems"])
 api_router.include_router(testing.router, prefix="/testing", tags=["Testing"])
 api_router.include_router(statistics.router, prefix="/statistics", tags=["Statistics"])
+api_router.include_router(theory.router, prefix="/theory", tags=["Theory"])
