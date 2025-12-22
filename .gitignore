@@ -1,6 +1,8 @@
 # Dependencies
 node_modules
 .pnpm-store
+## Lockfiles should be committed for reproducible installs (do not ignore bun.lock).
+bun.lockb
 
 # Build outputs
 dist
@@ -40,6 +42,9 @@ lerna-debug.log*
 .cypress
 cypress/screenshots
 cypress/videos
+frontend/cypress/screenshots
+frontend/cypress/videos
+frontend/cypress/downloads
 
 # Temporary files
 *.tmp
