@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { getErrorMessage, homeworkApi, statisticsApi } from "@/shared/api";
+import { classroomsApi, getErrorMessage, homeworkApi, lessonsApi, statisticsApi } from "@/shared/api";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -35,6 +35,26 @@ export function TeacherHomeworkPage() {
     queryFn: async () => await statisticsApi.homeworkStats(homeworkId, { skip: 0, limit: 100 }),
     enabled: Number.isFinite(homeworkId) && homeworkId > 0,
   });
+
+  const lessonQuery = useQuery({
+    queryKey: ["teacher", "homework", homeworkId, "lesson"],
+    queryFn: async () => await lessonsApi.get(hwQuery.data!.lesson_id),
+    enabled: Boolean(hwQuery.data?.lesson_id),
+  });
+
+  const studentsQuery = useQuery({
+    queryKey: ["teacher", "classroom", lessonQuery.data?.classroom_id, "students"],
+    queryFn: async () => await classroomsApi.listStudents(lessonQuery.data!.classroom_id, { skip: 0, limit: 100 }),
+    enabled: Boolean(lessonQuery.data?.classroom_id),
+  });
+
+  const studentNameByStudentId = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const s of studentsQuery.data?.items ?? []) {
+      m.set(s.student_id, s.user.full_name);
+    }
+    return m;
+  }, [studentsQuery.data]);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -88,14 +108,17 @@ export function TeacherHomeworkPage() {
 
   const columns = useMemo<Array<ColumnDef<StatisticsResponse>>>(
     () => [
-      { header: "student_id", accessorKey: "student_id" },
+      {
+        header: "Ученик",
+        cell: ({ row }) => studentNameByStudentId.get(row.original.student_id) ?? `student#${row.original.student_id}`,
+      },
       { header: "score", cell: ({ row }) => `${row.original.score ?? 0}/${row.original.max_score}` },
       { header: "status", accessorKey: "status" },
       { header: "attempts", accessorKey: "attempts_count" },
       { header: "minutes", accessorKey: "time_spent_minutes" },
       { header: "submitted_at", accessorKey: "submitted_at" },
     ],
-    []
+    [studentNameByStudentId]
   );
 
   return (

@@ -6,10 +6,11 @@ import {
   type Page_StatisticsResponse_,
   type StudentProgressResponse,
 } from "@/shared/api/generated";
+import { clampLimit, clampSkip } from "@/shared/api/pagination";
 
 export const statisticsApi = {
   async listMine(params: { skip?: number; limit?: number } = {}): Promise<Page_StatisticsResponse_> {
-    return await StatisticsService.getMyStatisticsApiV1StatisticsMeGet(params.skip ?? 0, params.limit ?? 100);
+    return await StatisticsService.getMyStatisticsApiV1StatisticsMeGet(clampSkip(params.skip), clampLimit(params.limit));
   },
 
   async myProgress(): Promise<StudentProgressResponse> {
@@ -24,8 +25,8 @@ export const statisticsApi = {
   async homeworkStats(homeworkId: number, params: { skip?: number; limit?: number } = {}): Promise<Page_StatisticsResponse_> {
     return await StatisticsService.getHomeworkStatisticsApiV1StatisticsHomeworkHomeworkIdGet(
       homeworkId,
-      params.skip ?? 0,
-      params.limit ?? 100
+      clampSkip(params.skip),
+      clampLimit(params.limit)
     );
   },
 
@@ -36,8 +37,8 @@ export const statisticsApi = {
   ): Promise<Page_StatisticsResponse_> {
     return await StatisticsService.getStudentStatisticsByTeacherApiV1StatisticsStudentStudentUserIdGet(
       studentUserId,
-      params.skip ?? 0,
-      params.limit ?? 100
+      clampSkip(params.skip),
+      clampLimit(params.limit)
     );
   },
 } as const;

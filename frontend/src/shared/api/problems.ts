@@ -7,10 +7,11 @@ import {
   type ProblemFullResponse,
   type ProblemUpdate,
 } from "@/shared/api/generated";
+import { clampLimit, clampSkip } from "@/shared/api/pagination";
 
 export const problemsApi = {
   async list(params: { skip?: number; limit?: number } = {}): Promise<Page_ProblemFullResponse_> {
-    return await ProblemsService.getProblemsApiV1ProblemsGet(params.skip ?? 0, params.limit ?? 100);
+    return await ProblemsService.getProblemsApiV1ProblemsGet(clampSkip(params.skip), clampLimit(params.limit));
   },
 
   async get(problemId: number): Promise<ProblemFullResponse> {

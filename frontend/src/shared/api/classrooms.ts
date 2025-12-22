@@ -13,10 +13,11 @@ import {
   type Page_ClassroomStudentResponse_,
   type Page_MessageResponse_,
 } from "@/shared/api/generated";
+import { clampLimit, clampSkip } from "@/shared/api/pagination";
 
 export const classroomsApi = {
   async listMine(params: { skip?: number; limit?: number } = {}): Promise<Page_ClassroomResponse_> {
-    return await ClassroomsService.getMyClassroomsApiV1ClassroomsGet(params.skip ?? 0, params.limit ?? 100);
+    return await ClassroomsService.getMyClassroomsApiV1ClassroomsGet(clampSkip(params.skip), clampLimit(params.limit));
   },
 
   async create(payload: ClassroomCreate): Promise<ClassroomResponse> {
@@ -41,8 +42,8 @@ export const classroomsApi = {
   ): Promise<Page_ClassroomStudentResponse_> {
     return await ClassroomsService.getClassroomStudentsApiV1ClassroomsClassroomIdStudentsGet(
       classroomId,
-      params.skip ?? 0,
-      params.limit ?? 100
+      clampSkip(params.skip),
+      clampLimit(params.limit)
     );
   },
 
@@ -54,8 +55,8 @@ export const classroomsApi = {
       classroomId,
       params.beforeId ?? null,
       params.tail ?? false,
-      params.skip ?? 0,
-      params.limit ?? 100
+      clampSkip(params.skip),
+      clampLimit(params.limit)
     );
   },
 

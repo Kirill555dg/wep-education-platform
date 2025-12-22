@@ -8,13 +8,14 @@ import {
   type LessonUpdate,
   type Page_LessonResponse_,
 } from "@/shared/api/generated";
+import { clampLimit, clampSkip } from "@/shared/api/pagination";
 
 export const lessonsApi = {
   async listByClassroom(classroomId: number, params: { skip?: number; limit?: number } = {}): Promise<Page_LessonResponse_> {
     return await LessonsService.getClassroomLessonsApiV1LessonsClassroomClassroomIdGet(
       classroomId,
-      params.skip ?? 0,
-      params.limit ?? 100
+      clampSkip(params.skip),
+      clampLimit(params.limit)
     );
   },
 

@@ -16,6 +16,7 @@ import { TeacherProblemsPage } from "@/pages/teacher/TeacherProblemsPage";
 import { TeacherProblemEditorPage } from "@/pages/teacher/TeacherProblemEditorPage";
 import { TeacherStatsPage } from "@/pages/teacher/TeacherStatsPage";
 import { TeacherClassroomStatsPage } from "@/pages/teacher/TeacherClassroomStatsPage";
+import { TeacherClassroomStudentStatsPage } from "@/pages/teacher/TeacherClassroomStudentStatsPage";
 import { StudentClassroomPage } from "@/pages/student/StudentClassroomPage";
 import { StudentHomePage } from "@/pages/student/StudentHomePage";
 import { StudentLessonPage } from "@/pages/student/StudentLessonPage";
@@ -44,6 +45,10 @@ function App() {
             <Route path="/teacher/problems/:problemId" element={<TeacherProblemEditorPage />} />
             <Route path="/teacher/stats" element={<TeacherStatsPage />} />
             <Route path="/teacher/stats/classrooms/:classroomId" element={<TeacherClassroomStatsPage />} />
+            <Route
+              path="/teacher/stats/classrooms/:classroomId/students/:studentId"
+              element={<TeacherClassroomStudentStatsPage />}
+            />
           </Route>
 
           <Route element={<RequireRole role="student" />}>

@@ -13,13 +13,14 @@ import {
   type ProblemResponse,
   type StatisticsResponse,
 } from "@/shared/api/generated";
+import { clampLimit, clampSkip } from "@/shared/api/pagination";
 
 export const homeworkApi = {
   async listByLesson(lessonId: number, params: { skip?: number; limit?: number } = {}): Promise<Page_HomeworkResponse_> {
     return await HomeworkService.getLessonHomeworkApiV1HomeworkLessonLessonIdGet(
       lessonId,
-      params.skip ?? 0,
-      params.limit ?? 100
+      clampSkip(params.skip),
+      clampLimit(params.limit)
     );
   },
 

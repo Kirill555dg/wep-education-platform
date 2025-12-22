@@ -174,7 +174,14 @@ export function TeacherClassroomStatsPage() {
 
   const studentColumns = useMemo<Array<ColumnDef<StudentAggregateRow>>>(
     () => [
-      { header: "Ученик", accessorKey: "student_name" },
+      {
+        header: "Ученик",
+        cell: ({ row }) => (
+          <Link className="underline underline-offset-4" to={routes.teacher.classroomStudentStats(classroomId, row.original.student_id)}>
+            {row.original.student_name}
+          </Link>
+        ),
+      },
       {
         header: "Выполнено",
         cell: ({ row }) => `${row.original.completed_homeworks}/${row.original.total_homeworks}`,
