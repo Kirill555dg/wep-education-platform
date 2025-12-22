@@ -12,6 +12,7 @@ import { TeacherLessonPage } from "@/pages/teacher/TeacherLessonPage";
 import { TeacherProblemsPage } from "@/pages/teacher/TeacherProblemsPage";
 import { TeacherProblemEditorPage } from "@/pages/teacher/TeacherProblemEditorPage";
 import { TeacherStatsPage } from "@/pages/teacher/TeacherStatsPage";
+import { TeacherClassroomStatsPage } from "@/pages/teacher/TeacherClassroomStatsPage";
 import { StudentClassroomPage } from "@/pages/student/StudentClassroomPage";
 import { StudentHomePage } from "@/pages/student/StudentHomePage";
 import { StudentLessonPage } from "@/pages/student/StudentLessonPage";
@@ -36,6 +37,7 @@ function App() {
             <Route path="/teacher/problems" element={<TeacherProblemsPage />} />
             <Route path="/teacher/problems/:problemId" element={<TeacherProblemEditorPage />} />
             <Route path="/teacher/stats" element={<TeacherStatsPage />} />
+            <Route path="/teacher/stats/classrooms/:classroomId" element={<TeacherClassroomStatsPage />} />
           </Route>
 
           <Route element={<RequireRole role="student" />}>

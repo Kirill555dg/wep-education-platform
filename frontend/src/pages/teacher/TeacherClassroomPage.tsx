@@ -7,7 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
-import { ClassroomChat } from "@/widgets/chat/ClassroomChat";
+import { ClassroomChatPreview } from "@/widgets/chat/ClassroomChatPreview";
 
 export function TeacherClassroomPage() {
   const navigate = useNavigate();
@@ -142,10 +142,10 @@ export function TeacherClassroomPage() {
       <Card>
         <CardHeader>
           <CardTitle>Чат класса</CardTitle>
-          <CardDescription>Realtime чат (WebSocket) + fallback на HTTP</CardDescription>
+          <CardDescription>Единый чат находится на отдельной странице</CardDescription>
         </CardHeader>
         <CardContent>
-          <ClassroomChat classroomId={classroomId} />
+          <ClassroomChatPreview classroomId={classroomId} />
         </CardContent>
       </Card>
     </div>

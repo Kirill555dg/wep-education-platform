@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { classroomsApi, statisticsApi } from "@/shared/api";
+import { classroomsApi } from "@/shared/api";
+import { routes } from "@/shared/config/routes";
+import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { ErrorState } from "@/shared/ui/error-state";
-import { Input } from "@/shared/ui/input";
 
 export function TeacherStatsPage() {
   const classroomsQuery = useQuery({
@@ -13,20 +15,12 @@ export function TeacherStatsPage() {
   });
 
   const classrooms = useMemo(() => classroomsQuery.data?.items ?? [], [classroomsQuery.data]);
-  const [classroomIdText, setClassroomIdText] = useState("");
-  const classroomId = Number(classroomIdText);
-
-  const progressQuery = useQuery({
-    queryKey: ["stats", "teacher", "classroom", classroomId],
-    queryFn: async () => await statisticsApi.classroomProgress(classroomId),
-    enabled: Number.isFinite(classroomId) && classroomId > 0,
-  });
 
   return (
     <div className="grid gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Статистика</h1>
-        <p className="text-sm text-muted-foreground">Прогресс по классам (teacher)</p>
+        <p className="text-sm text-muted-foreground">Выберите класс — откроется детальная аналитика по ДЗ и ученикам</p>
       </div>
 
       {classroomsQuery.error ? (
@@ -35,52 +29,25 @@ export function TeacherStatsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Выбор класса</CardTitle>
-          <CardDescription>Выберите класс, чтобы увидеть прогресс</CardDescription>
+          <CardTitle>Классы</CardTitle>
+          <CardDescription>Детальная статистика: по классу → по ДЗ → по каждому ученику</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2">
-          <label className="text-sm font-medium">Classroom ID</label>
-          <Input value={classroomIdText} onChange={(e) => setClassroomIdText(e.target.value)} placeholder="например: 1" />
-          <div className="text-xs text-muted-foreground">
-            Подсказка: ваши классы (id: name):
-            <div className="mt-1 grid gap-1">
-              {classroomsQuery.isLoading ? <div>Загрузка...</div> : null}
-              {classrooms.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setClassroomIdText(String(c.id))}
-                  className="text-left underline underline-offset-4 hover:text-foreground"
-                >
-                  {c.id}: {c.name}
-                </button>
-              ))}
+          {classroomsQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+          {classrooms.length === 0 && !classroomsQuery.isLoading ? <div className="text-sm text-muted-foreground">Пока нет классов</div> : null}
+          {classrooms.map((c) => (
+            <div key={c.id} className="flex items-center justify-between border rounded-md px-3 py-2">
+              <div>
+                <div className="font-medium">{c.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  id: {c.id} · {c.subject}
+                </div>
+              </div>
+              <Button asChild size="sm" variant="secondary">
+                <Link to={routes.teacher.classroomStats(c.id)}>Открыть статистику</Link>
+              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {progressQuery.error ? (
-        <ErrorState message={String((progressQuery.error as Error)?.message || progressQuery.error)} onRetry={() => progressQuery.refetch()} />
-      ) : null}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Прогресс класса</CardTitle>
-          <CardDescription>Агрегированные показатели</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2 text-sm">
-          {!progressQuery.isLoading && !progressQuery.data ? (
-            <div className="text-muted-foreground">Выберите класс</div>
-          ) : null}
-          {progressQuery.isLoading ? <div className="text-muted-foreground">Загрузка...</div> : null}
-          {progressQuery.data ? (
-            <>
-              <div>Всего учеников: {progressQuery.data.total_students}</div>
-              <div>Всего ДЗ назначено: {progressQuery.data.total_homeworks_assigned}</div>
-              <div>Выполнено ДЗ: {progressQuery.data.completed_homeworks}</div>
-              <div>Средний completion rate: {progressQuery.data.average_completion_rate}%</div>
-            </>
-          ) : null}
+          ))}
         </CardContent>
       </Card>
     </div>

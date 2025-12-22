@@ -5,7 +5,7 @@ import { classroomsApi, getErrorMessage, lessonsApi } from "@/shared/api";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { ClassroomChat } from "@/widgets/chat/ClassroomChat";
+import { ClassroomChatPreview } from "@/widgets/chat/ClassroomChatPreview";
 
 export function StudentClassroomPage() {
   const navigate = useNavigate();
@@ -82,10 +82,10 @@ export function StudentClassroomPage() {
       <Card>
         <CardHeader>
           <CardTitle>Чат класса</CardTitle>
-          <CardDescription>Задавай вопросы и получай ответы в realtime</CardDescription>
+          <CardDescription>Единый чат находится на отдельной странице</CardDescription>
         </CardHeader>
         <CardContent>
-          <ClassroomChat classroomId={classroomId} />
+          <ClassroomChatPreview classroomId={classroomId} />
         </CardContent>
       </Card>
     </div>

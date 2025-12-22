@@ -12,6 +12,7 @@ export const routes = {
     problemNew: "/teacher/problems/new",
     problem: (id: number | string) => `/teacher/problems/${id}`,
     stats: "/teacher/stats",
+    classroomStats: (id: number | string) => `/teacher/stats/classrooms/${id}`,
   },
 
   student: {

@@ -41,6 +41,9 @@ export function StudentStatsPage() {
           ) : progressQuery.data ? (
             <>
               <StudentProgressChart data={progressQuery.data} />
+              {progressQuery.data.total_homeworks === 0 ? (
+                <div className="text-muted-foreground">Пока нет назначенных ДЗ — график появится после первых заданий</div>
+              ) : null}
               <div>Всего ДЗ: {progressQuery.data.total_homeworks}</div>
               <div>Выполнено: {progressQuery.data.completed}</div>
               <div>В процессе: {progressQuery.data.in_progress}</div>
