@@ -4,8 +4,7 @@ Tests for AuthService
 
 import pytest
 
-import fastapi
-
+from app.domain import errors as domain_errors
 from app.schemas import users as user_schemas
 from app.services import auth as auth_service_module
 
@@ -80,11 +79,10 @@ async def test_register_duplicate_email(db_session):
         role="teacher",
     )
 
-    with pytest.raises(fastapi.HTTPException) as exc_info:
+    with pytest.raises(domain_errors.BadRequestError) as exc_info:
         await auth_service.register_user(duplicate_data)
 
-    assert exc_info.value.status_code == 400
-    assert "already registered" in str(exc_info.value.detail).lower()
+    assert "already registered" in str(exc_info.value).lower()
 
 
 async def test_authenticate_success(db_session):

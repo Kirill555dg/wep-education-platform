@@ -2,10 +2,9 @@
 Homework service
 """
 
-import fastapi
-from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
 
+from app.domain import errors as domain_errors
 from app.repositories import classroom as classroom_repository
 from app.repositories import homework as homework_repository
 from app.repositories import lesson as lesson_repository
@@ -47,15 +46,12 @@ class HomeworkService:
             Created homework
 
         Raises:
-            HTTPException: If not authorized
+            DomainError: If not authorized
         """
         # Verify lesson exists
         lesson = await self.lesson_repo.get_by_id(homework_data.lesson_id)
         if not lesson:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
-            )
+            raise domain_errors.NotFoundError("Lesson not found")
 
         # Verify teacher owns classroom
         classroom = access_control.require_classroom(
@@ -103,18 +99,12 @@ class HomeworkService:
         """
         homework = await self.homework_repo.get_by_id(homework_id)
         if not homework:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Homework not found",
-            )
+            raise domain_errors.NotFoundError("Homework not found")
 
         # Check if published for students
         lesson = await self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
-            )
+            raise domain_errors.NotFoundError("Lesson not found")
 
         classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = await self.teacher_repo.get_by_user_id(user_id)
@@ -122,10 +112,7 @@ class HomeworkService:
         # If not teacher of this classroom and homework not published, deny access
         is_teacher = teacher and classroom and classroom.teacher_id == teacher.id
         if not is_teacher and not homework.is_published:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Homework not published yet",
-            )
+            raise domain_errors.ForbiddenError("Homework not published yet")
 
         response = homework_schemas.HomeworkDetailResponse.model_validate(homework)
         response.problems_count = len(await self.hw_problem_repo.get_by_homework(homework_id))
@@ -141,17 +128,11 @@ class HomeworkService:
         """
         homework = await self.homework_repo.get_by_id(homework_id)
         if not homework:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Homework not found",
-            )
+            raise domain_errors.NotFoundError("Homework not found")
 
         lesson = await self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
-            )
+            raise domain_errors.NotFoundError("Lesson not found")
 
         classroom = await self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = await self.teacher_repo.get_by_user_id(user_id)
@@ -181,18 +162,12 @@ class HomeworkService:
         """Update homework (teacher only)"""
         homework = await self.homework_repo.get_by_id(homework_id)
         if not homework:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Homework not found",
-            )
+            raise domain_errors.NotFoundError("Homework not found")
 
         # Verify teacher owns classroom
         lesson = await self.lesson_repo.get_by_id(homework.lesson_id)
         if not lesson:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
-            )
+            raise domain_errors.NotFoundError("Lesson not found")
 
         classroom = access_control.require_classroom(
             await self.classroom_repo.get_by_id(lesson.classroom_id),
@@ -212,10 +187,7 @@ class HomeworkService:
             homework_id, homework_data.model_dump(exclude_unset=True)
         )
         if not updated:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update homework",
-            )
+            raise domain_errors.InternalError("Failed to update homework")
 
         return homework_schemas.HomeworkResponse.model_validate(updated)
 

@@ -4,11 +4,10 @@ Classroom service
 
 import typing as tp
 
-import fastapi
 import nanoid
-from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
 
+from app.domain import errors as domain_errors
 from app.repositories import classroom as classroom_repository
 from app.repositories import user as user_repository
 from app.schemas import classrooms as classroom_schemas
@@ -70,10 +69,7 @@ class ClassroomService:
         """Get classroom by ID"""
         classroom = await self.classroom_repo.get_by_id(classroom_id)
         if not classroom:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Classroom not found",
-            )
+            raise domain_errors.NotFoundError("Classroom not found")
 
         response = classroom_schemas.ClassroomResponse.model_validate(classroom)
         response.students_count = await self.student_classroom_repo.count_students_in_classroom(
@@ -133,10 +129,7 @@ class ClassroomService:
             classroom_id, classroom_data.model_dump(exclude_unset=True)
         )
         if not updated:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update classroom",
-            )
+            raise domain_errors.InternalError("Failed to update classroom")
 
         return classroom_schemas.ClassroomResponse.model_validate(updated)
 
@@ -161,34 +154,22 @@ class ClassroomService:
         # Verify user is a student
         student = await self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="Only students can join classrooms",
-            )
+            raise domain_errors.ForbiddenError("Only students can join classrooms")
 
         # Find classroom by invite code
         classroom = await self.classroom_repo.get_by_invite_code(join_data.invite_code)
         if not classroom:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Invalid invite code",
-            )
+            raise domain_errors.NotFoundError("Invalid invite code")
 
         # Check if already member
         existing = await self.student_classroom_repo.get_membership(student.id, classroom.id)
         if existing and existing.is_active:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail="Already a member of this classroom",
-            )
+            raise domain_errors.BadRequestError("Already a member of this classroom")
 
         # Check max students
         current_students = await self.student_classroom_repo.count_students_in_classroom(classroom.id)
         if classroom.max_students and current_students >= classroom.max_students:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail="Classroom is full",
-            )
+            raise domain_errors.BadRequestError("Classroom is full")
 
         # Enroll student
         if existing:

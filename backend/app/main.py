@@ -10,6 +10,7 @@ from fastapi import responses as fastapi_responses
 from fastapi import status as http_status
 from fastapi.middleware import cors as fastapi_cors
 
+from app.api import errors as api_errors
 from app.api import v1 as api_v1
 from app.core import config as core_config
 from app.db import session as db_session
@@ -32,6 +33,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Domain error -> HTTP mapping
+api_errors.register_exception_handlers(app)
 
 
 # Custom validation error handler for better debugging

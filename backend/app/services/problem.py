@@ -5,9 +5,7 @@ Manages problem creation, retrieval, and management
 
 import typing as tp
 
-import fastapi
-from fastapi import status as http_status
-
+from app.domain import errors as domain_errors
 from app.repositories import homework as homework_repository
 from app.schemas import homework as homework_schemas
 
@@ -71,10 +69,7 @@ class ProblemService:
         """
         problem = await self.problem_repo.get_by_id(problem_id)
         if not problem:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Problem not found",
-            )
+            raise domain_errors.NotFoundError("Problem not found")
         return problem
 
     async def update_problem(
@@ -107,10 +102,7 @@ class ProblemService:
         # Update problem
         problem = await self.problem_repo.update(problem_id, data)
         if not problem:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Problem not found",
-            )
+            raise domain_errors.NotFoundError("Problem not found")
         return problem
 
     async def delete_problem(self, problem_id: int, teacher_id: int) -> bool:
@@ -129,8 +121,5 @@ class ProblemService:
         """
         success = await self.problem_repo.delete(problem_id)
         if not success:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Problem not found",
-            )
+            raise domain_errors.NotFoundError("Problem not found")
         return True

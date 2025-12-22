@@ -2,12 +2,11 @@
 Authentication service
 """
 
-import fastapi
-from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.core import security as core_security
 from app.core import datetime_extensions as dte
+from app.domain import errors as domain_errors
 from app.repositories import user as user_repository
 from app.schemas import users as user_schemas
 
@@ -37,17 +36,14 @@ class AuthService:
             Created user
 
         Raises:
-            HTTPException: If username or email already exists
+            DomainError: If email already exists
         """
         generated_username = user_data.username or user_data.email.split("@")[0]
 
         # Check if email exists
         existing_email = await self.user_repo.get_by_email(user_data.email)
         if existing_email:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered",
-            )
+            raise domain_errors.BadRequestError("Email already registered")
 
         # Create user
         user = await self.user_repo.create(
@@ -114,10 +110,7 @@ class AuthService:
 
         # Check if user is active
         if not user.is_active:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_403_FORBIDDEN,
-                detail="User account is inactive",
-            )
+            raise domain_errors.ForbiddenError("User account is inactive")
 
         # Get login data
         login_info = await self.login_repo.get_by_user_id(user.id)
@@ -183,13 +176,10 @@ class AuthService:
             User data
 
         Raises:
-            HTTPException: If user not found
+            DomainError: If user not found
         """
         user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
+            raise domain_errors.NotFoundError("User not found")
 
         return user_schemas.UserResponse.model_validate(user)

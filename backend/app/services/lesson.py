@@ -2,10 +2,9 @@
 Lesson service
 """
 
-import fastapi
-from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
 
+from app.domain import errors as domain_errors
 from app.repositories import classroom as classroom_repository
 from app.repositories import lesson as lesson_repository
 from app.repositories import user as user_repository
@@ -44,7 +43,7 @@ class LessonService:
             Created lesson
 
         Raises:
-            HTTPException: If not authorized or classroom not found
+            DomainError: If not authorized or classroom not found
         """
         # Verify classroom exists
         classroom = access_control.require_classroom(
@@ -79,10 +78,7 @@ class LessonService:
         """Get lesson by ID"""
         lesson = await self.lesson_repo.get_by_id(lesson_id)
         if not lesson:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
-            )
+            raise domain_errors.NotFoundError("Lesson not found")
 
         response = lesson_schemas.LessonDetailResponse.model_validate(lesson)
         response.materials_count = len(await self.lesson_material_repo.get_by_lesson(lesson_id))
@@ -119,10 +115,7 @@ class LessonService:
         """Update lesson (teacher only)"""
         lesson = await self.lesson_repo.get_by_id(lesson_id)
         if not lesson:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
-            )
+            raise domain_errors.NotFoundError("Lesson not found")
 
         # Verify teacher owns classroom
         classroom = access_control.require_classroom(
@@ -141,10 +134,7 @@ class LessonService:
 
         updated = await self.lesson_repo.update(lesson_id, lesson_data.model_dump(exclude_unset=True))
         if not updated:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update lesson",
-            )
+            raise domain_errors.InternalError("Failed to update lesson")
 
         return lesson_schemas.LessonResponse.model_validate(updated)
 
@@ -152,10 +142,7 @@ class LessonService:
         """Delete lesson (teacher only)"""
         lesson = await self.lesson_repo.get_by_id(lesson_id)
         if not lesson:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Lesson not found",
-            )
+            raise domain_errors.NotFoundError("Lesson not found")
 
         # Verify teacher owns classroom
         classroom = access_control.require_classroom(

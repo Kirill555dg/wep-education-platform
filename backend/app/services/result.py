@@ -4,10 +4,9 @@ Result service for aggregating student progress
 
 import typing as tp
 
-import fastapi
-from fastapi import status as http_status
 from sqlalchemy.ext import asyncio as sa_asyncio
 
+from app.domain import errors as domain_errors
 from app.repositories import classroom as classroom_repository
 from app.repositories import homework as homework_repository
 from app.repositories import user as user_repository
@@ -44,10 +43,7 @@ class ResultService:
         """
         student = await self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Student not found",
-            )
+            raise domain_errors.NotFoundError("Student not found")
 
         stats = await self.stats_repo.get_by_student(student.id, skip, limit)
         return [homework_schemas.StatisticsResponse.model_validate(s) for s in stats]
@@ -88,10 +84,7 @@ class ResultService:
         """
         student = await self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise fastapi.HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail="Student not found",
-            )
+            raise domain_errors.NotFoundError("Student not found")
 
         return await self.stats_repo.get_student_progress_summary(student.id)
 
