@@ -201,7 +201,7 @@
           "Authentication"
         ],
         "summary": "Register",
-        "description": "Register new user (student or teacher)\n\n- **username**: Unique username (3-100 characters)\n- **email**: Valid email address\n- **password**: Password (min 8 characters)\n- **full_name**: User's full name\n- **is_teacher**: False for student, True for teacher",
+        "description": "Register new user (student or teacher)\n\n- **email**: Valid email address\n- **password**: Password (min 8 characters)\n- **first_name / last_name / middle_name**: User's name parts\n- **role**: Initial active role (\"student\" | \"teacher\")",
         "operationId": "register_api_v1_auth_register_post",
         "requestBody": {
           "content": {

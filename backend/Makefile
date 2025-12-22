@@ -10,8 +10,9 @@ POSTGRES_PORT ?= 5433
 POSTGRES_USER ?= wep_user
 POSTGRES_PASSWORD ?= wep_password
 POSTGRES_DB ?= wep_education
+OPENAPI_OUT ?= ../frontend/src/api/openapi.json
 
-.PHONY: install sync lint format type test check run dev clean migrate seed-dev db-up db-down db-reset db-wait bootstrap
+.PHONY: install sync lint format type test check run dev clean migrate seed-dev db-up db-down db-reset db-wait bootstrap openapi-export
 
 install:
 	$(UV) venv --python $(PYTHON)
@@ -45,6 +46,9 @@ migrate:
 
 seed-dev:
 	$(PYTHON_BIN) -m app.scripts.seed_dev_data
+
+openapi-export:
+	$(PYTHON_BIN) -m app.scripts.export_openapi --out "$(OPENAPI_OUT)"
 
 db-up:
 	POSTGRES_PORT=$(POSTGRES_PORT) POSTGRES_USER=$(POSTGRES_USER) POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) POSTGRES_DB=$(POSTGRES_DB) docker-compose -f "$(DB_COMPOSE_FILE)" up -d postgres

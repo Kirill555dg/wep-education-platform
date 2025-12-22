@@ -327,6 +327,7 @@ make dev
 - `make check` — линт + типы + тесты
 - `make run` — uvicorn без `--reload`
 - `make sync` — синхронизация зависимостей из `requirements.txt`
+- `make openapi-export` — экспорт OpenAPI в `../frontend/src/api/openapi.json`
 
 **Приложение будет доступно:**
 - API: http://localhost:8000
