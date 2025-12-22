@@ -70,10 +70,13 @@ Cypress.Commands.add("registerUser", (role: "teacher" | "student") => {
 });
 
 Cypress.Commands.add("loginUi", (email: string, password: string) => {
+  cy.intercept("POST", "**/api/v1/auth/login").as("login");
   cy.visit("/login");
   cy.get("[data-testid=login-email]").clear().type(email);
   cy.get("[data-testid=login-password]").clear().type(password);
   cy.get("[data-testid=login-submit]").click();
+  cy.wait("@login").its("response.statusCode").should("eq", 200);
+  cy.get("[data-testid=login-error]").should("not.exist");
 });
 
 Cypress.Commands.add("logoutUi", () => {

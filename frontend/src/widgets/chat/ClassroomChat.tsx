@@ -14,6 +14,15 @@ function toWsBaseUrl(httpBaseUrl: string): string {
   return httpBaseUrl;
 }
 
+function getWsOrigin(httpBaseUrl: string): string {
+  // Prod: same-origin behind nginx (`env.apiBaseUrl === ""`).
+  if (!httpBaseUrl) {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${window.location.host}`;
+  }
+  return toWsBaseUrl(httpBaseUrl);
+}
+
 export function ClassroomChat(props: { classroomId: number }) {
   const { classroomId } = props;
 
@@ -29,8 +38,8 @@ export function ClassroomChat(props: { classroomId: number }) {
 
   const wsUrl = useMemo(() => {
     const token = localStorage.getItem("access_token") || "";
-    const base = toWsBaseUrl(env.apiBaseUrl);
-    return `${base}/api/v1/classrooms/${classroomId}/chat/ws?token=${encodeURIComponent(token)}`;
+    const origin = getWsOrigin(env.apiBaseUrl);
+    return `${origin}/api/v1/classrooms/${classroomId}/chat/ws?token=${encodeURIComponent(token)}`;
   }, [classroomId]);
 
   const loadTail = async () => {

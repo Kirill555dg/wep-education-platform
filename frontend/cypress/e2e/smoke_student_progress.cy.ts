@@ -8,7 +8,7 @@ describe("Smoke: student progress", () => {
 
     cy.registerUser("teacher").then(({ email, password }) => {
       cy.loginUi(email, password);
-      cy.url().should("include", "/teacher");
+      cy.get("[data-testid=teacher-title]", { timeout: 15000 }).should("be.visible");
     });
 
     cy.get("[data-testid=create-classroom-open]").click();
@@ -51,7 +51,7 @@ describe("Smoke: student progress", () => {
 
     cy.registerUser("student").then(({ email, password }) => {
       cy.loginUi(email, password);
-      cy.url().should("include", "/student");
+      cy.get("[data-testid=student-title]", { timeout: 15000 }).should("be.visible");
     });
 
     cy.get("@inviteCode").then((inviteCode) => {

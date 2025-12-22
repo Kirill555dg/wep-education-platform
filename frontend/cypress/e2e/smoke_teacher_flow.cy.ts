@@ -6,7 +6,7 @@ describe("Smoke: teacher core flow", () => {
 
     cy.registerUser("teacher").then(({ email, password }) => {
       cy.loginUi(email, password);
-      cy.url().should("include", "/teacher");
+      cy.get("[data-testid=teacher-title]", { timeout: 15000 }).should("be.visible");
     });
 
     cy.get("[data-testid=create-classroom-open]").click();
