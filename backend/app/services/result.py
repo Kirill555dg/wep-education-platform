@@ -93,30 +93,7 @@ class ResultService:
                 detail="Student not found",
             )
 
-        all_stats = await self.stats_repo.get_by_student(student.id, skip=0, limit=1000)
-
-        total_homeworks = len(all_stats)
-        completed = len([s for s in all_stats if s.status in ["submitted", "graded"]])
-        in_progress = len([s for s in all_stats if s.status == "in_progress"])
-        not_started = len([s for s in all_stats if s.status == "not_started"])
-
-        # Calculate average score
-        graded_stats = [s for s in all_stats if s.status == "graded"]
-        avg_score = 0.0
-        if graded_stats:
-            total_score = sum(s.score for s in graded_stats)
-            total_max = sum(s.max_score for s in graded_stats)
-            avg_score = (total_score / total_max * 100) if total_max > 0 else 0.0
-
-        return {
-            "total_homeworks": total_homeworks,
-            "completed": completed,
-            "in_progress": in_progress,
-            "not_started": not_started,
-            "average_score_percentage": round(avg_score, 2),
-            "total_attempts": sum(s.attempts_count for s in all_stats),
-            "total_time_spent_minutes": sum(s.time_spent_minutes for s in all_stats),
-        }
+        return await self.stats_repo.get_student_progress_summary(student.id)
 
     async def get_classroom_progress(
         self, classroom_id: int, teacher_user_id: int
@@ -131,26 +108,22 @@ class ResultService:
         Returns:
             Classroom progress summary
         """
-        # Get all students in classroom
-        memberships = await self.student_classroom_repo.get_by_classroom(classroom_id)
-        student_ids = [m.student_id for m in memberships]
+        summary = await self.stats_repo.get_classroom_progress_summary(classroom_id)
 
-        if not student_ids:
-            return {"total_students": 0, "active_students": 0, "average_completion_rate": 0.0}
+        total_students = summary["total_students"]
+        total_homeworks_assigned = summary["total_homeworks_assigned"]
+        completed_homeworks = summary["completed_homeworks"]
 
-        # Get all statistics for these students
-        all_stats = []
-        for student_id in student_ids:
-            stats = await self.stats_repo.get_by_student(student_id, skip=0, limit=1000)
-            all_stats.extend(stats)
-
-        completed = len([s for s in all_stats if s.status in ["submitted", "graded"]])
-        total = len(all_stats)
-        completion_rate = (completed / total * 100) if total > 0 else 0.0
+        completion_rate = (
+            completed_homeworks / total_homeworks_assigned * 100.0
+            if total_homeworks_assigned > 0
+            else 0.0
+        )
 
         return {
-            "total_students": len(student_ids),
-            "total_homeworks_assigned": total,
-            "completed_homeworks": completed,
+            "total_students": total_students,
+            "active_students": total_students,
+            "total_homeworks_assigned": total_homeworks_assigned,
+            "completed_homeworks": completed_homeworks,
             "average_completion_rate": round(completion_rate, 2),
         }

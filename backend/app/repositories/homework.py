@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from sqlalchemy import orm as orm
 from sqlalchemy.ext import asyncio as sa_asyncio
 
+from app.models import classes as classes_models
 from app.models import homework as homework_models
 from app.models import problems as problem_models
 from app.repositories import base as base_repository
@@ -250,3 +251,106 @@ class StatisticsRepository(base_repository.BaseRepository[homework_models.Statis
         )
         avg_value = await self._scalar_one_or_none(stmt)
         return float(avg_value) if avg_value else 0.0
+
+    async def get_student_progress_summary(self, student_id: int) -> dict[str, tp.Any]:
+        """Aggregate student progress in a single SQL query."""
+        completed_statuses = [
+            homework_models.HomeworkStatus.SUBMITTED,
+            homework_models.HomeworkStatus.GRADED,
+        ]
+
+        stmt = sa.select(
+            sa.func.count(homework_models.Statistics.id).label("total_homeworks"),
+            sa.func.count(
+                sa.case((homework_models.Statistics.status.in_(completed_statuses), 1))
+            ).label("completed"),
+            sa.func.count(
+                sa.case(
+                    (homework_models.Statistics.status == homework_models.HomeworkStatus.IN_PROGRESS, 1)
+                )
+            ).label("in_progress"),
+            sa.func.count(
+                sa.case(
+                    (homework_models.Statistics.status == homework_models.HomeworkStatus.NOT_STARTED, 1)
+                )
+            ).label("not_started"),
+            sa.func.coalesce(sa.func.sum(homework_models.Statistics.attempts_count), 0).label("total_attempts"),
+            sa.func.coalesce(sa.func.sum(homework_models.Statistics.time_spent_minutes), 0).label(
+                "total_time_spent_minutes"
+            ),
+            sa.func.coalesce(
+                sa.func.sum(
+                    sa.case(
+                        (homework_models.Statistics.status == homework_models.HomeworkStatus.GRADED, homework_models.Statistics.score),
+                        else_=0.0,
+                    )
+                ),
+                0.0,
+            ).label("graded_score_sum"),
+            sa.func.coalesce(
+                sa.func.sum(
+                    sa.case(
+                        (homework_models.Statistics.status == homework_models.HomeworkStatus.GRADED, homework_models.Statistics.max_score),
+                        else_=0.0,
+                    )
+                ),
+                0.0,
+            ).label("graded_max_sum"),
+        ).where(homework_models.Statistics.student_id == student_id)
+
+        row = (await self.db.execute(stmt)).one()
+        total_homeworks = tp.cast(int, row.total_homeworks)
+        completed = tp.cast(int, row.completed)
+        in_progress = tp.cast(int, row.in_progress)
+        not_started = tp.cast(int, row.not_started)
+        total_attempts = tp.cast(int, row.total_attempts)
+        total_time_spent_minutes = tp.cast(int, row.total_time_spent_minutes)
+        graded_score_sum = float(row.graded_score_sum)
+        graded_max_sum = float(row.graded_max_sum)
+        avg_score_pct = (graded_score_sum / graded_max_sum * 100.0) if graded_max_sum > 0 else 0.0
+
+        return {
+            "total_homeworks": total_homeworks,
+            "completed": completed,
+            "in_progress": in_progress,
+            "not_started": not_started,
+            "average_score_percentage": round(avg_score_pct, 2),
+            "total_attempts": total_attempts,
+            "total_time_spent_minutes": total_time_spent_minutes,
+        }
+
+    async def get_classroom_progress_summary(self, classroom_id: int) -> dict[str, int]:
+        """Aggregate classroom progress in a single SQL query."""
+        completed_statuses = [
+            homework_models.HomeworkStatus.SUBMITTED,
+            homework_models.HomeworkStatus.GRADED,
+        ]
+
+        # Note: `statistics.student_id` is a Student.id (not User.id),
+        # so we join via student_classrooms.student_id.
+        stmt = (
+            sa.select(
+                sa.func.count(sa.distinct(classes_models.StudentClassroom.student_id)).label("total_students"),
+                sa.func.count(homework_models.Statistics.id).label("total_homeworks_assigned"),
+                sa.func.count(
+                    sa.case((homework_models.Statistics.status.in_(completed_statuses), 1))
+                ).label("completed_homeworks"),
+            )
+            .select_from(classes_models.StudentClassroom)
+            .join(
+                homework_models.Statistics,
+                homework_models.Statistics.student_id == classes_models.StudentClassroom.student_id,
+                isouter=True,
+            )
+            .where(
+                classes_models.StudentClassroom.classroom_id == classroom_id,
+                classes_models.StudentClassroom.is_active,
+            )
+        )
+
+        row = (await self.db.execute(stmt)).one()
+        return {
+            "total_students": tp.cast(int, row.total_students),
+            "total_homeworks_assigned": tp.cast(int, row.total_homeworks_assigned),
+            "completed_homeworks": tp.cast(int, row.completed_homeworks),
+        }
