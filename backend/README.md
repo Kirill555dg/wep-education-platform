@@ -277,12 +277,15 @@ make install
 cp .env.example .env
 ```
 
-**Важно**: Для локальной разработки убедитесь, что PostgreSQL запущен:
+**Важно**: Для локальной разработки убедитесь, что PostgreSQL запущен.
+
+Самый простой вариант — использовать цели `Makefile` (они поднимают PostgreSQL из `../database/docker-compose.yml`
+на хост-порту `5433`):
 
 ```bash
-# Из корня репозитория
-cd database
-make up
+# Из директории backend/
+make db-up
+make db-wait
 ```
 
 #### 3. Запуск миграций
@@ -431,7 +434,20 @@ make dev
 curl "http://localhost:8000/api/v1/testing/dev-seed-info"
 ```
 
-3) Логин (получи JWT):
+3) Сгенерируй OpenAPI и клиента (bun):
+
+```bash
+cd ../frontend
+bun install
+
+# 1) Скачать OpenAPI из запущенного бекенда
+# 2) Сгенерировать axios-клиент в ./src/api/client
+bun run api:regen
+```
+
+OpenAPI также доступен напрямую: `http://localhost:8000/api/openapi.json`.
+
+4) Логин (получи JWT):
 
 ```bash
 curl -X POST \
@@ -440,7 +456,7 @@ curl -X POST \
   "http://localhost:8000/api/v1/auth/login"
 ```
 
-4) Подключись к WS чату:
+5) Подключись к WS чату:
 
 `ws://localhost:8000/api/v1/classrooms/<id>/chat/ws?token=<jwt>`
 
@@ -464,7 +480,7 @@ curl -X POST \
 Ожидаемое поведение фронта:
 
 - после `POST /api/v1/auth/me/role` сделать новый `POST /api/v1/auth/login`
-- если на любом запросе получен **401** с detail `Role changed, please re-authenticate` — показать пользователю предложение переавторизоваться
+- если на любом запросе получен **401** с `error.code="role_changed"` — показать пользователю предложение переавторизоваться
 
 ---
 

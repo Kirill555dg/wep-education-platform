@@ -170,6 +170,13 @@ import { useAuth } from "@/features/auth/model/store";
 
 Фронтенд имеет полноценный типизированный API-клиент для работы с FastAPI бекендом.
 
+### Генерация клиента из OpenAPI (рекомендуется)
+
+```bash
+# backend должен быть запущен на http://localhost:8000
+bun run api:regen
+```
+
 ### Структура API-слоя
 
 ```

@@ -70,6 +70,10 @@ docker-compose --profile tools up -d
 ```bash
 cd frontend
 bun install
+
+# (опционально) Сгенерировать клиента из OpenAPI запущенного backend
+# bun run api:regen
+
 bun run dev
 ```
 
@@ -79,8 +83,14 @@ bun run dev
 
 ```bash
 cd backend
-pip install -e .
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Создать venv и поставить зависимости (uv + Python 3.13)
+make install
+
+# Поднять dev-БД, применить миграции и засидировать данные
+make bootstrap
+
+# Запустить API локально
+make dev
 ```
 
 Подробная документация: [`backend/README.md`](./backend/README.md)
@@ -97,7 +107,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ### Backend
 - FastAPI
 - SQLAlchemy
-- PostgreSQL / SQLite
+- PostgreSQL
 - REST API
 - Pydantic
 
@@ -109,7 +119,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ### Для локальной разработки
 - **Bun** >= 1.0.0 (для фронтенда)
-- **Python** >= 3.10 (для бекенда)
+- **Python** == 3.13 (для бекенда)
+- **uv** (менеджер окружения/пакетов для Python)
 - **PostgreSQL** >= 16 (для базы данных)
 - **Git**
 
