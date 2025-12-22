@@ -41,8 +41,6 @@ ENV/
 
 # Database
 *.db
-*.sqlite
-*.sqlite3
 
 # Testing
 .pytest_cache/

@@ -346,19 +346,12 @@ curl http://localhost:8000/api/v1/health
 
 ## 🗄️ База данных
 
-### SQLite (по умолчанию)
+### PostgreSQL
 
-Для разработки используется **SQLite**:
-```env
-DATABASE_URL="sqlite:///./wep_education.db"
-```
-
-### PostgreSQL (для продакшена)
-
-Для продакшена рекомендуется **PostgreSQL**:
+Используем **PostgreSQL**:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/wep_education"
+DATABASE_URL="postgresql+psycopg://wep_user:wep_password@127.0.0.1:5433/wep_education?gssencmode=disable"
 ```
 
 Драйвер `psycopg[binary]` уже прописан в `requirements.txt`.
