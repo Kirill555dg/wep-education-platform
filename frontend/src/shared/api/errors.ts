@@ -26,6 +26,10 @@ export function getErrorCode(err: unknown): string | null {
   return getErrorEnvelope(err)?.error?.code ?? null;
 }
 
+export function getRequestId(err: unknown): string | null {
+  return getErrorEnvelope(err)?.request_id ?? null;
+}
+
 export function getErrorMessage(err: unknown): string {
   const env = getErrorEnvelope(err);
   if (env?.error?.message) return env.error.message;
