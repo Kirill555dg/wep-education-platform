@@ -160,6 +160,11 @@ export function ClassroomChat(props: { classroomId: number }) {
         <div className="text-sm text-muted-foreground" data-testid="chat-status">
           chat: {wsState}
         </div>
+        <div className="text-xs text-muted-foreground">
+          <a className="underline" href={`/chat?classroomId=${classroomId}`}>
+            Открыть в чате
+          </a>
+        </div>
         {wsError ? (
           <div className="text-xs text-destructive" data-testid="chat-error">
             {wsError}

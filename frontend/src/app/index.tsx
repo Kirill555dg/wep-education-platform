@@ -9,6 +9,8 @@ import { ChatPage } from "@/pages/chat/ChatPage";
 import { TeacherClassroomPage } from "@/pages/teacher/TeacherClassroomPage";
 import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
 import { TeacherLessonPage } from "@/pages/teacher/TeacherLessonPage";
+import { TeacherProblemsPage } from "@/pages/teacher/TeacherProblemsPage";
+import { TeacherProblemEditorPage } from "@/pages/teacher/TeacherProblemEditorPage";
 import { StudentClassroomPage } from "@/pages/student/StudentClassroomPage";
 import { StudentHomePage } from "@/pages/student/StudentHomePage";
 import { StudentLessonPage } from "@/pages/student/StudentLessonPage";
@@ -29,6 +31,8 @@ function App() {
             <Route path="/teacher" element={<TeacherHomePage />} />
             <Route path="/teacher/classrooms/:classroomId" element={<TeacherClassroomPage />} />
             <Route path="/teacher/lessons/:lessonId" element={<TeacherLessonPage />} />
+            <Route path="/teacher/problems" element={<TeacherProblemsPage />} />
+            <Route path="/teacher/problems/:problemId" element={<TeacherProblemEditorPage />} />
           </Route>
 
           <Route element={<RequireRole role="student" />}>

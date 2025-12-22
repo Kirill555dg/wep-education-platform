@@ -9,6 +9,8 @@ export const routes = {
     classroom: (id: number | string) => `/teacher/classrooms/${id}`,
     lesson: (id: number | string) => `/teacher/lessons/${id}`,
     problems: "/teacher/problems",
+    problemNew: "/teacher/problems/new",
+    problem: (id: number | string) => `/teacher/problems/${id}`,
     stats: "/teacher/stats",
   },
 
