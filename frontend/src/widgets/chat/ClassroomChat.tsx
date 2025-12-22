@@ -29,6 +29,7 @@ export function ClassroomChat(props: { classroomId: number }) {
 
   const [wsState, setWsState] = useState<WsState>("connecting");
   const [wsError, setWsError] = useState<string | null>(null);
+  const [connAttempt, setConnAttempt] = useState(0);
 
   const [messages, setMessages] = useState<MessageResponse[]>([]);
   const [input, setInput] = useState("");
@@ -36,6 +37,9 @@ export function ClassroomChat(props: { classroomId: number }) {
 
   const wsRef = useRef<WebSocket | null>(null);
   const pingRef = useRef<number | null>(null);
+  const reconnectRef = useRef<number | null>(null);
+  const pollRef = useRef<number | null>(null);
+  const unmountedRef = useRef(false);
 
   const wsUrl = useMemo(() => {
     const token = localStorage.getItem("access_token") || "";
@@ -46,7 +50,16 @@ export function ClassroomChat(props: { classroomId: number }) {
   const loadTail = async () => {
     try {
       const page = await classroomsApi.listChatMessages(classroomId, { tail: true, limit: 50, skip: 0 });
-      setMessages(page.items);
+      setMessages((prev) => {
+        // Merge by id to avoid flicker when polling
+        const seen = new Set(prev.map((m) => m.id));
+        const merged = [...prev];
+        for (const m of page.items) {
+          if (!seen.has(m.id)) merged.push(m);
+        }
+        merged.sort((a, b) => a.id - b.id);
+        return merged;
+      });
     } catch (e) {
       setWsError(getErrorMessage(e));
     }
@@ -55,6 +68,34 @@ export function ClassroomChat(props: { classroomId: number }) {
   useEffect(() => {
     void loadTail();
   }, [classroomId]);
+
+  useEffect(() => {
+    unmountedRef.current = false;
+    return () => {
+      unmountedRef.current = true;
+    };
+  }, []);
+
+  // Polling fallback when WS is not open (also supports WS-disabled environments).
+  useEffect(() => {
+    if (pollRef.current) {
+      window.clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
+    if (wsState === "open") return;
+
+    pollRef.current = window.setInterval(() => {
+      void loadTail();
+    }, 5_000);
+
+    return () => {
+      if (pollRef.current) {
+        window.clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [wsState, classroomId]);
 
   useEffect(() => {
     if (typeof WebSocket === "undefined") {
@@ -70,6 +111,7 @@ export function ClassroomChat(props: { classroomId: number }) {
 
     ws.onopen = () => {
       setWsState("open");
+      setConnAttempt(0);
 
       // Keep presence alive (server also has keepalive, but ping helps detect dead connections).
       pingRef.current = window.setInterval(() => {
@@ -79,17 +121,33 @@ export function ClassroomChat(props: { classroomId: number }) {
       }, 15_000);
     };
 
+    const scheduleReconnect = () => {
+      if (unmountedRef.current) return;
+      if (reconnectRef.current) return;
+      const attempt = connAttempt + 1;
+      const base = 500;
+      const max = 10_000;
+      const delay = Math.min(max, base * Math.pow(2, Math.min(attempt, 6))) + Math.floor(Math.random() * 250);
+      reconnectRef.current = window.setTimeout(() => {
+        reconnectRef.current = null;
+        setConnAttempt((a) => a + 1);
+      }, delay);
+    };
+
     ws.onclose = () => {
       setWsState("closed");
       if (pingRef.current) {
         window.clearInterval(pingRef.current);
         pingRef.current = null;
       }
+      scheduleReconnect();
     };
 
     ws.onerror = () => {
       setWsState("error");
       setWsError("WebSocket error");
+      // onclose may not fire reliably after onerror in some browsers
+      scheduleReconnect();
     };
 
     ws.onmessage = (ev) => {
@@ -127,10 +185,14 @@ export function ClassroomChat(props: { classroomId: number }) {
         window.clearInterval(pingRef.current);
         pingRef.current = null;
       }
+      if (reconnectRef.current) {
+        window.clearTimeout(reconnectRef.current);
+        reconnectRef.current = null;
+      }
       wsRef.current = null;
       ws.close();
     };
-  }, [wsUrl]);
+  }, [wsUrl, connAttempt]);
 
   const send = async () => {
     const content = input.trim();
