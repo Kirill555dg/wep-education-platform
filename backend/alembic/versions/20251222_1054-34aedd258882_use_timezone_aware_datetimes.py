@@ -16,8 +16,29 @@ branch_labels: str | None = None
 depends_on: str | None = None
 
 
+def _get_column_data_type(
+    connection: sa.engine.Connection,
+    *,
+    table_name: str,
+    column_name: str,
+) -> str | None:
+    # Note: this checks only the current schema (public by default).
+    stmt = sa.text(
+        """
+        SELECT c.data_type
+        FROM information_schema.columns c
+        WHERE c.table_schema = current_schema()
+          AND c.table_name = :table_name
+          AND c.column_name = :column_name
+        """
+    )
+    value = connection.execute(stmt, {"table_name": table_name, "column_name": column_name}).scalar_one_or_none()
+    return value if value is None else str(value)
+
+
 def upgrade() -> None:
     """Upgrade schema."""
+    connection = op.get_bind()
     columns: list[tuple[str, str]] = [
         ("users", "created_at"),
         ("users", "updated_at"),
@@ -56,6 +77,11 @@ def upgrade() -> None:
     ]
 
     for table_name, column_name in columns:
+        data_type = _get_column_data_type(connection, table_name=table_name, column_name=column_name)
+        if data_type != "timestamp without time zone":
+            # Already timestamptz (or column missing), do not alter.
+            continue
+
         op.alter_column(
             table_name,
             column_name,
@@ -67,6 +93,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
+    connection = op.get_bind()
     columns: list[tuple[str, str]] = [
         ("users", "created_at"),
         ("users", "updated_at"),
@@ -105,6 +132,10 @@ def downgrade() -> None:
     ]
 
     for table_name, column_name in columns:
+        data_type = _get_column_data_type(connection, table_name=table_name, column_name=column_name)
+        if data_type != "timestamp with time zone":
+            continue
+
         op.alter_column(
             table_name,
             column_name,

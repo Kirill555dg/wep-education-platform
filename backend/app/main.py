@@ -108,8 +108,9 @@ async def on_startup() -> None:
     """
     Initialize database on application startup
     """
-    async with db_session.async_engine.begin() as connection:
-        await connection.run_sync(db_session.Base.metadata.create_all)
+    if core_config.settings.AUTO_CREATE_TABLES:
+        async with db_session.async_engine.begin() as connection:
+            await connection.run_sync(db_session.Base.metadata.create_all)
 
     logger.info(
         "app_started",
@@ -117,6 +118,7 @@ async def on_startup() -> None:
             "app_name": core_config.settings.APP_NAME,
             "debug": core_config.settings.DEBUG,
             "database_url": core_config.settings.DATABASE_URL,
+            "auto_create_tables": core_config.settings.AUTO_CREATE_TABLES,
         },
     )
 

@@ -16,6 +16,9 @@ class Settings(pydantic_settings.BaseSettings):
     # API
     API_V1_PREFIX: str = "/api/v1"
 
+    # Database / migrations
+    AUTO_CREATE_TABLES: bool = False
+
     # Pagination
     PAGINATION_DEFAULT_SKIP: int = 0
     PAGINATION_DEFAULT_LIMIT: int = 100

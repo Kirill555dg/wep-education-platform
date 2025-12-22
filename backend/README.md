@@ -289,10 +289,23 @@ make up
 
 ```bash
 # Из директории backend/
-uv run alembic upgrade head
+make migrate
 
 # Создать новую миграцию (при изменении моделей)
-uv run alembic revision --autogenerate -m "описание изменений"
+./.venv/bin/alembic revision --autogenerate -m "описание изменений"
+```
+
+#### 3.1. Сидирование dev-данных (опционально)
+
+```bash
+# 1 учитель + 2 класса + по 5 учеников + контент (уроки/материалы/дз/задачи/статистика)
+make seed-dev
+```
+
+#### 3.2. Полный пересоздание dev-БД (сброс volume + миграции + сиды)
+
+```bash
+make bootstrap
 ```
 
 #### 4. Запуск сервера
@@ -351,7 +364,7 @@ curl http://localhost:8000/api/v1/health
 Используем **PostgreSQL**:
 
 ```env
-DATABASE_URL="postgresql+psycopg://wep_user:wep_password@127.0.0.1:5433/wep_education?gssencmode=disable"
+DATABASE_URL="postgresql://wep_user:wep_password@127.0.0.1:5433/wep_education"
 ```
 
 Драйвер `psycopg[binary]` уже прописан в `requirements.txt`.
