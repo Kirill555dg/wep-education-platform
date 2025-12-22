@@ -3,13 +3,13 @@ Health check endpoints
 """
 
 import typing as tp
-from datetime import datetime
 
-from fastapi import APIRouter
+import datetime as dt
+import fastapi
 
-from app.core.config import settings
+from app.core import config as core_config
 
-router = APIRouter()
+router = fastapi.APIRouter()
 
 
 @router.get("/health")
@@ -22,9 +22,9 @@ def health_check() -> tp.Dict[str, tp.Any]:
     """
     return {
         "status": "healthy",
-        "app_name": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "timestamp": datetime.utcnow().isoformat(),
+        "app_name": core_config.settings.APP_NAME,
+        "version": core_config.settings.APP_VERSION,
+        "timestamp": dt.datetime.utcnow().isoformat(),
     }
 
 

@@ -2,20 +2,18 @@
 API v1 endpoints
 """
 
-from fastapi import APIRouter
+import fastapi
 
-from app.api.v1 import (
-    auth,
-    classrooms,
-    health,
-    homework,
-    lessons,
-    problems,
-    statistics,
-    testing,
-)
+from app.api.v1 import auth as auth
+from app.api.v1 import classrooms as classrooms
+from app.api.v1 import health as health
+from app.api.v1 import homework as homework
+from app.api.v1 import lessons as lessons
+from app.api.v1 import problems as problems
+from app.api.v1 import statistics as statistics
+from app.api.v1 import testing as testing
 
-api_router = APIRouter()
+api_router = fastapi.APIRouter()
 
 # Include route modules
 api_router.include_router(health.router, tags=["Health"])

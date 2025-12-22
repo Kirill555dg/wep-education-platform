@@ -3,19 +3,20 @@ Tests for ProblemService
 """
 
 import pytest
-from fastapi import HTTPException
 
-from app.repositories.homework_repository import ProblemRepository
-from app.schemas.homework import ProblemCreate, ProblemUpdate
-from app.services.problem_service import ProblemService
+import fastapi
+
+from app.repositories import homework_repository as homework_repository
+from app.schemas import homework as homework_schemas
+from app.services import problem_service as problem_service_module
 
 
 def test_create_problem(db_session):
     """Test creating a new problem"""
-    problem_repo = ProblemRepository(db_session)
-    problem_service = ProblemService(problem_repo)
+    problem_repo = homework_repository.ProblemRepository(db_session)
+    problem_service = problem_service_module.ProblemService(problem_repo)
 
-    problem_data = ProblemCreate(
+    problem_data = homework_schemas.ProblemCreate(
         title="Test Problem",
         description="This is a test problem",
         problem_type="multiple_choice",
@@ -35,12 +36,12 @@ def test_create_problem(db_session):
 
 def test_get_all_problems(db_session):
     """Test getting all problems"""
-    problem_repo = ProblemRepository(db_session)
-    problem_service = ProblemService(problem_repo)
+    problem_repo = homework_repository.ProblemRepository(db_session)
+    problem_service = problem_service_module.ProblemService(problem_repo)
 
     # Create multiple problems
     for i in range(3):
-        problem_data = ProblemCreate(
+        problem_data = homework_schemas.ProblemCreate(
             title=f"Problem {i + 1}",
             description=f"Description {i + 1}",
             problem_type="text",
@@ -55,11 +56,11 @@ def test_get_all_problems(db_session):
 
 def test_get_problem_by_id(db_session):
     """Test getting a problem by ID"""
-    problem_repo = ProblemRepository(db_session)
-    problem_service = ProblemService(problem_repo)
+    problem_repo = homework_repository.ProblemRepository(db_session)
+    problem_service = problem_service_module.ProblemService(problem_repo)
 
     # Create a problem
-    problem_data = ProblemCreate(
+    problem_data = homework_schemas.ProblemCreate(
         title="Find Me",
         description="Test problem for retrieval",
         problem_type="text",
@@ -76,10 +77,10 @@ def test_get_problem_by_id(db_session):
 
 def test_get_nonexistent_problem(db_session):
     """Test getting a problem that doesn't exist"""
-    problem_repo = ProblemRepository(db_session)
-    problem_service = ProblemService(problem_repo)
+    problem_repo = homework_repository.ProblemRepository(db_session)
+    problem_service = problem_service_module.ProblemService(problem_repo)
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(fastapi.HTTPException) as exc_info:
         problem_service.get_problem_by_id(99999)
 
     assert exc_info.value.status_code == 404
@@ -87,11 +88,11 @@ def test_get_nonexistent_problem(db_session):
 
 def test_update_problem(db_session):
     """Test updating a problem"""
-    problem_repo = ProblemRepository(db_session)
-    problem_service = ProblemService(problem_repo)
+    problem_repo = homework_repository.ProblemRepository(db_session)
+    problem_service = problem_service_module.ProblemService(problem_repo)
 
     # Create a problem
-    problem_data = ProblemCreate(
+    problem_data = homework_schemas.ProblemCreate(
         title="Original Title",
         description="Original description",
         problem_type="text",
@@ -100,7 +101,7 @@ def test_update_problem(db_session):
     created_problem = problem_service.create_problem(problem_data, teacher_id=1)
 
     # Update the problem
-    update_data = ProblemUpdate(title="Updated Title", description="Updated description")
+    update_data = homework_schemas.ProblemUpdate(title="Updated Title", description="Updated description")
     updated_problem = problem_service.update_problem(created_problem.id, update_data, teacher_id=1)
 
     assert updated_problem.title == "Updated Title"
@@ -111,11 +112,11 @@ def test_update_problem(db_session):
 
 def test_delete_problem(db_session):
     """Test deleting a problem"""
-    problem_repo = ProblemRepository(db_session)
-    problem_service = ProblemService(problem_repo)
+    problem_repo = homework_repository.ProblemRepository(db_session)
+    problem_service = problem_service_module.ProblemService(problem_repo)
 
     # Create a problem
-    problem_data = ProblemCreate(
+    problem_data = homework_schemas.ProblemCreate(
         title="To Be Deleted",
         description="This problem will be deleted",
         problem_type="text",
@@ -129,5 +130,5 @@ def test_delete_problem(db_session):
     assert result is True
 
     # Verify problem is deleted
-    with pytest.raises(HTTPException):
+    with pytest.raises(fastapi.HTTPException):
         problem_service.get_problem_by_id(created_problem.id)

@@ -4,13 +4,14 @@ Result service for aggregating student progress
 
 import typing as tp
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+import fastapi
+from fastapi import status as http_status
+from sqlalchemy import orm as orm
 
-from app.repositories.classroom_repository import StudentClassroomRepository
-from app.repositories.homework_repository import HomeworkRepository, StatisticsRepository
-from app.repositories.user_repository import StudentRepository
-from app.schemas.homework import StatisticsResponse
+from app.repositories import classroom_repository as classroom_repository
+from app.repositories import homework_repository as homework_repository
+from app.repositories import user_repository as user_repository
+from app.schemas import homework as homework_schemas
 
 
 class ResultService:
@@ -20,16 +21,16 @@ class ResultService:
     Handles progress tracking, statistics aggregation
     """
 
-    def __init__(self, db: Session):
+    def __init__(self, db: orm.Session):
         self.db = db
-        self.stats_repo = StatisticsRepository(db)
-        self.homework_repo = HomeworkRepository(db)
-        self.student_classroom_repo = StudentClassroomRepository(db)
-        self.student_repo = StudentRepository(db)
+        self.stats_repo = homework_repository.StatisticsRepository(db)
+        self.homework_repo = homework_repository.HomeworkRepository(db)
+        self.student_classroom_repo = classroom_repository.StudentClassroomRepository(db)
+        self.student_repo = user_repository.StudentRepository(db)
 
     def get_student_statistics(
         self, student_user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[StatisticsResponse]:
+    ) -> tp.List[homework_schemas.StatisticsResponse]:
         """
         Get all statistics for student
 
@@ -43,14 +44,17 @@ class ResultService:
         """
         student = self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Student not found",
+            )
 
         stats = self.stats_repo.get_by_student(student.id, skip, limit)
-        return [StatisticsResponse.model_validate(s) for s in stats]
+        return [homework_schemas.StatisticsResponse.model_validate(s) for s in stats]
 
     def get_homework_statistics(
         self, homework_id: int, teacher_user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[StatisticsResponse]:
+    ) -> tp.List[homework_schemas.StatisticsResponse]:
         """
         Get statistics for all students for a homework (teacher only)
 
@@ -70,7 +74,7 @@ class ResultService:
         # For now, returning all stats
 
         stats = self.stats_repo.get_by_homework(homework_id, skip, limit)
-        return [StatisticsResponse.model_validate(s) for s in stats]
+        return [homework_schemas.StatisticsResponse.model_validate(s) for s in stats]
 
     def get_student_progress(self, student_user_id: int) -> tp.Dict[str, tp.Any]:
         """
@@ -84,7 +88,10 @@ class ResultService:
         """
         student = self.student_repo.get_by_user_id(student_user_id)
         if not student:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Student not found",
+            )
 
         all_stats = self.stats_repo.get_by_student(student.id, skip=0, limit=1000)
 
@@ -111,7 +118,9 @@ class ResultService:
             "total_time_spent_minutes": sum(s.time_spent_minutes for s in all_stats),
         }
 
-    def get_classroom_progress(self, classroom_id: int, teacher_user_id: int) -> tp.Dict[str, tp.Any]:
+    def get_classroom_progress(
+        self, classroom_id: int, teacher_user_id: int
+    ) -> tp.Dict[str, tp.Any]:
         """
         Get progress summary for classroom (teacher only)
 

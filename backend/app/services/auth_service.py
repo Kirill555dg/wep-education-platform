@@ -4,17 +4,15 @@ Authentication service
 
 import typing as tp
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+import datetime as dt
 
-from app.core.security import create_access_token, get_password_hash, verify_password
-from app.repositories.user_repository import (
-    LoginDataRepository,
-    StudentRepository,
-    TeacherRepository,
-    UserRepository,
-)
-from app.schemas.users import LoginRequest, TokenResponse, UserCreate, UserResponse
+import fastapi
+from fastapi import status as http_status
+from sqlalchemy import orm as orm
+
+from app.core import security as core_security
+from app.repositories import user_repository as user_repository
+from app.schemas import users as user_schemas
 
 
 class AuthService:
@@ -24,14 +22,14 @@ class AuthService:
     Handles user registration, login, and role-based operations
     """
 
-    def __init__(self, db: Session):
+    def __init__(self, db: orm.Session):
         self.db = db
-        self.user_repo = UserRepository(db)
-        self.login_repo = LoginDataRepository(db)
-        self.teacher_repo = TeacherRepository(db)
-        self.student_repo = StudentRepository(db)
+        self.user_repo = user_repository.UserRepository(db)
+        self.login_repo = user_repository.LoginDataRepository(db)
+        self.teacher_repo = user_repository.TeacherRepository(db)
+        self.student_repo = user_repository.StudentRepository(db)
 
-    def register_user(self, user_data: UserCreate) -> UserResponse:
+    def register_user(self, user_data: user_schemas.UserCreate) -> user_schemas.UserResponse:
         """
         Register new user
 
@@ -44,29 +42,36 @@ class AuthService:
         Raises:
             HTTPException: If username or email already exists
         """
-        # Check if username exists
-        existing_user = self.user_repo.get_by_username(user_data.username)
-        if existing_user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
+        generated_username = user_data.username or user_data.email.split("@")[0]
 
         # Check if email exists
         existing_email = self.user_repo.get_by_email(user_data.email)
         if existing_email:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
 
         # Create user
         user = self.user_repo.create(
             {
-                "username": user_data.username,
+                "username": generated_username,
                 "email": user_data.email,
-                "full_name": user_data.full_name,
+                "first_name": user_data.first_name,
+                "last_name": user_data.last_name,
+                "middle_name": user_data.middle_name,
+                "full_name": user_data.full_name
+                or " ".join(
+                    part for part in [user_data.first_name, user_data.middle_name, user_data.last_name] if part
+                ),
                 "avatar_url": user_data.avatar_url,
                 "is_active": True,
+                "role": user_data.role.value,
             }
         )
 
         # Create login data
-        hashed_password = get_password_hash(user_data.password)
+        hashed_password = core_security.get_password_hash(user_data.password)
         self.login_repo.create_for_user(user.id, hashed_password)
 
         # Create BOTH teacher and student profiles
@@ -74,9 +79,25 @@ class AuthService:
         self.teacher_repo.create({"user_id": user.id})
         self.student_repo.create({"user_id": user.id})
 
-        return UserResponse.model_validate(user)
+        return user_schemas.UserResponse(
+            id=user.id,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            middle_name=user.middle_name,
+            role=user_schemas.UserRole(user.role),
+            username=user.username,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+            hashed_password=hashed_password,
+        )
 
-    def authenticate(self, login_data: LoginRequest) -> TokenResponse:
+    def authenticate(
+        self,
+        login_data: user_schemas.LoginRequest,
+    ) -> user_schemas.TokenResponse:
         """
         Authenticate user and return JWT token
 
@@ -92,34 +113,47 @@ class AuthService:
         # Find user by username or email
         user = self.user_repo.get_by_username_or_email(login_data.username_or_email)
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username/email or password",
-            )
+            return None
 
         # Check if user is active
         if not user.is_active:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is inactive")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="User account is inactive",
+            )
 
         # Get login data
         login_info = self.login_repo.get_by_user_id(user.id)
         if not login_info:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login data not found")
+            return None
 
         # Verify password
-        if not verify_password(login_data.password, login_info.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username/email or password",
-            )
+        if not core_security.verify_password(login_data.password, login_info.hashed_password):
+            return None
 
         # Update last login
-        self.login_repo.update(login_info.id, {"last_login": tp.cast(tp.Any, "NOW()")})
+        self.login_repo.update(login_info.id, {"last_login": dt.datetime.utcnow()})
 
         # Create access token
-        access_token = create_access_token(data={"sub": str(user.id)})
+        access_token = core_security.create_access_token(data={"sub": str(user.id)})
 
-        return TokenResponse(access_token=access_token, user=UserResponse.model_validate(user))
+        return user_schemas.TokenResponse(
+            access_token=access_token,
+            user=user_schemas.UserResponse(
+                id=user.id,
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                middle_name=user.middle_name,
+                role=user_schemas.UserRole(user.role),
+                username=user.username,
+                full_name=user.full_name,
+                is_active=user.is_active,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                hashed_password=login_info.hashed_password,
+            ),
+        )
 
     def get_user_role(self, user_id: int) -> tp.Optional[str]:
         """
@@ -141,7 +175,7 @@ class AuthService:
 
         return None
 
-    def get_current_user(self, user_id: int) -> UserResponse:
+    def get_current_user(self, user_id: int) -> user_schemas.UserResponse:
         """
         Get current authenticated user
 
@@ -156,6 +190,9 @@ class AuthService:
         """
         user = self.user_repo.get_by_id(user_id)
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
 
-        return UserResponse.model_validate(user)
+        return user_schemas.UserResponse.model_validate(user)

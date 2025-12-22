@@ -6,13 +6,13 @@ Create Date: 2025-12-07 22:08:26.052825
 
 """
 
-from typing import Sequence, Union
+import typing as tp
 
 # revision identifiers, used by Alembic.
 revision: str = "765d7038a0e6"
-down_revision: Union[str, Sequence[str], None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: tp.Union[str, tp.Sequence[str], None] = None
+branch_labels: tp.Union[str, tp.Sequence[str], None] = None
+depends_on: tp.Union[str, tp.Sequence[str], None] = None
 
 
 def upgrade() -> None:

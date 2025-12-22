@@ -4,17 +4,14 @@ Lesson service
 
 import typing as tp
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+import fastapi
+from fastapi import status as http_status
+from sqlalchemy import orm as orm
 
-from app.repositories.classroom_repository import ClassroomRepository
-from app.repositories.lesson_repository import (
-    LessonMaterialRepository,
-    LessonRepository,
-    TheoryMaterialRepository,
-)
-from app.repositories.user_repository import TeacherRepository
-from app.schemas.lessons import LessonCreate, LessonDetailResponse, LessonResponse, LessonUpdate
+from app.repositories import classroom_repository as classroom_repository
+from app.repositories import lesson_repository as lesson_repository
+from app.repositories import user_repository as user_repository
+from app.schemas import lessons as lesson_schemas
 
 
 class LessonService:
@@ -24,15 +21,19 @@ class LessonService:
     Handles lessons and their materials
     """
 
-    def __init__(self, db: Session):
+    def __init__(self, db: orm.Session):
         self.db = db
-        self.lesson_repo = LessonRepository(db)
-        self.lesson_material_repo = LessonMaterialRepository(db)
-        self.theory_repo = TheoryMaterialRepository(db)
-        self.classroom_repo = ClassroomRepository(db)
-        self.teacher_repo = TeacherRepository(db)
+        self.lesson_repo = lesson_repository.LessonRepository(db)
+        self.lesson_material_repo = lesson_repository.LessonMaterialRepository(db)
+        self.theory_repo = lesson_repository.TheoryMaterialRepository(db)
+        self.classroom_repo = classroom_repository.ClassroomRepository(db)
+        self.teacher_repo = user_repository.TeacherRepository(db)
 
-    def create_lesson(self, lesson_data: LessonCreate, teacher_user_id: int) -> LessonResponse:
+    def create_lesson(
+        self,
+        lesson_data: lesson_schemas.LessonCreate,
+        teacher_user_id: int,
+    ) -> lesson_schemas.LessonResponse:
         """
         Create new lesson
 
@@ -49,13 +50,16 @@ class LessonService:
         # Verify classroom exists
         classroom = self.classroom_repo.get_by_id(lesson_data.classroom_id)
         if not classroom:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Classroom not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Classroom not found",
+            )
 
         # Verify teacher owns classroom
         teacher = self.teacher_repo.get_by_user_id(teacher_user_id)
         if not teacher or classroom.teacher_id != teacher.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="Only classroom owner can create lessons",
             )
 
@@ -65,24 +69,29 @@ class LessonService:
 
         # Add theory materials
         for idx, material_id in enumerate(lesson_data.theory_material_ids):
-            self.lesson_material_repo.add_material_to_lesson(lesson.id, material_id, order_number=idx)
+            self.lesson_material_repo.add_material_to_lesson(
+                lesson.id, material_id, order_number=idx
+            )
 
-        return LessonResponse.model_validate(lesson)
+        return lesson_schemas.LessonResponse.model_validate(lesson)
 
-    def get_lesson(self, lesson_id: int) -> LessonDetailResponse:
+    def get_lesson(self, lesson_id: int) -> lesson_schemas.LessonDetailResponse:
         """Get lesson by ID"""
         lesson = self.lesson_repo.get_by_id(lesson_id)
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
 
-        response = LessonDetailResponse.model_validate(lesson)
+        response = lesson_schemas.LessonDetailResponse.model_validate(lesson)
         response.materials_count = len(self.lesson_material_repo.get_by_lesson(lesson_id))
         response.homeworks_count = self.lesson_repo.count_by_classroom(lesson.classroom_id)
         return response
 
     def get_classroom_lessons(
         self, classroom_id: int, user_id: int, skip: int = 0, limit: int = 100
-    ) -> tp.List[LessonResponse]:
+    ) -> tp.List[lesson_schemas.LessonResponse]:
         """
         Get lessons for classroom
 
@@ -99,43 +108,57 @@ class LessonService:
             # Students see only published
             lessons = self.lesson_repo.get_published(classroom_id, skip, limit)
 
-        return [LessonResponse.model_validate(lesson) for lesson in lessons]
+        return [lesson_schemas.LessonResponse.model_validate(lesson_item) for lesson_item in lessons]
 
-    def update_lesson(self, lesson_id: int, lesson_data: LessonUpdate, teacher_user_id: int) -> LessonResponse:
+    def update_lesson(
+        self,
+        lesson_id: int,
+        lesson_data: lesson_schemas.LessonUpdate,
+        teacher_user_id: int,
+    ) -> lesson_schemas.LessonResponse:
         """Update lesson (teacher only)"""
         lesson = self.lesson_repo.get_by_id(lesson_id)
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
 
         # Verify teacher owns classroom
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(teacher_user_id)
 
         if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="Only classroom owner can update lessons",
             )
 
         updated = self.lesson_repo.update(lesson_id, lesson_data.model_dump(exclude_unset=True))
         if not updated:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update lesson")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update lesson",
+            )
 
-        return LessonResponse.model_validate(updated)
+        return lesson_schemas.LessonResponse.model_validate(updated)
 
     def delete_lesson(self, lesson_id: int, teacher_user_id: int) -> bool:
         """Delete lesson (teacher only)"""
         lesson = self.lesson_repo.get_by_id(lesson_id)
         if not lesson:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lesson not found")
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Lesson not found",
+            )
 
         # Verify teacher owns classroom
         classroom = self.classroom_repo.get_by_id(lesson.classroom_id)
         teacher = self.teacher_repo.get_by_user_id(teacher_user_id)
 
         if not teacher or not classroom or classroom.teacher_id != teacher.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+            raise fastapi.HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="Only classroom owner can delete lessons",
             )
 

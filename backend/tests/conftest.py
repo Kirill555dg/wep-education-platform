@@ -4,7 +4,7 @@ import typing as tp
 
 import pytest
 import sqlalchemy as sa
-import sqlalchemy.orm as orm
+from sqlalchemy import orm as orm
 
 from app.db import session as db_session_module
 
