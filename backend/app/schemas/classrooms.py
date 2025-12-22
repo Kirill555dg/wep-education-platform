@@ -6,6 +6,8 @@ import datetime as dt
 
 import pydantic
 
+from app.schemas import communication as communication_schemas
+
 
 class ClassroomBase(pydantic.BaseModel):
     """Base classroom fields"""
@@ -54,6 +56,12 @@ class ClassroomDetailResponse(ClassroomResponse):
     # Can include teacher, students list, etc.
     pass
 
+
+class ClassroomStudentResponse(pydantic.BaseModel):
+    student_id: int
+    user: communication_schemas.UserPublic
+    enrolled_at: dt.datetime
+    grade_level: int | None
 
 # Invite schemas
 class InviteCreate(pydantic.BaseModel):

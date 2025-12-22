@@ -457,6 +457,13 @@ curl -X POST \
 - **GET** `/api/v1/auth/me/roles` → `{ active_role, enabled_roles }`
 - **POST** `/api/v1/auth/me/role` с телом `{ "role": "teacher" | "student" }`
 
+Важно: JWT содержит **active role**. После смены роли старый токен становится невалидным.
+
+Ожидаемое поведение фронта:
+
+- после `POST /api/v1/auth/me/role` сделать новый `POST /api/v1/auth/login`
+- если на любом запросе получен **401** с detail `Role changed, please re-authenticate` — показать пользователю предложение переавторизоваться
+
 ---
 
 ## 📄 Единый формат paginated list ответов

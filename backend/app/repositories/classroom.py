@@ -9,6 +9,7 @@ from sqlalchemy import orm as orm
 from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app.models import classes as classes_models
+from app.models import users as user_models
 from app.repositories import base as base_repository
 
 
@@ -120,6 +121,25 @@ class StudentClassroomRepository(base_repository.BaseRepository[classes_models.S
         )
         items = await self._scalars_all(stmt)
         return tp.cast(list[classes_models.StudentClassroom], items)
+
+    async def get_students_with_user_by_classroom(
+        self, classroom_id: int, skip: int = 0, limit: int = 100
+    ) -> list[tuple[classes_models.StudentClassroom, user_models.Student, user_models.User]]:
+        # Single query to avoid N+1: memberships -> students -> users.
+        stmt = (
+            sa.select(classes_models.StudentClassroom, user_models.Student, user_models.User)
+            .join(user_models.Student, user_models.Student.id == classes_models.StudentClassroom.student_id)
+            .join(user_models.User, user_models.User.id == user_models.Student.user_id)
+            .where(
+                classes_models.StudentClassroom.classroom_id == classroom_id,
+                classes_models.StudentClassroom.is_active,
+            )
+            .order_by(classes_models.StudentClassroom.enrolled_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        rows = list((await self.db.execute(stmt)).all())
+        return tp.cast(list[tuple[classes_models.StudentClassroom, user_models.Student, user_models.User]], rows)
 
     async def get_membership(
         self, student_id: int, classroom_id: int

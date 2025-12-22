@@ -2,8 +2,6 @@
 Classroom service
 """
 
-import typing as tp
-
 import nanoid
 from sqlalchemy.ext import asyncio as sa_asyncio
 
@@ -11,6 +9,7 @@ from app.domain import errors as domain_errors
 from app.core import pagination as core_pagination
 from app.repositories import classroom as classroom_repository
 from app.repositories import user as user_repository
+from app.schemas import communication as communication_schemas
 from app.schemas import classrooms as classroom_schemas
 from app.services import access_control as access_control
 
@@ -208,7 +207,7 @@ class ClassroomService:
         teacher_user_id: int,
         skip: int = core_pagination.DEFAULT_SKIP,
         limit: int = core_pagination.DEFAULT_LIMIT,
-    ) -> list[dict[str, tp.Any]]:
+    ) -> list[classroom_schemas.ClassroomStudentResponse]:
         """
         Get list of students in classroom (teacher only)
 
@@ -240,19 +239,35 @@ class ClassroomService:
         )
 
         # Get students
-        memberships = await self.student_classroom_repo.get_by_classroom(classroom_id, skip, limit)
+        rows = await self.student_classroom_repo.get_students_with_user_by_classroom(
+            classroom_id, skip, limit
+        )
 
-        students_data = []
-        for membership in memberships:
-            student = await self.student_repo.get_with_user(membership.student_id)
-            if student:
-                students_data.append(
-                    {
-                        "student_id": student.id,
-                        "user": student.user,
-                        "enrolled_at": membership.enrolled_at,
-                        "grade_level": student.grade_level,
-                    }
+        students: list[classroom_schemas.ClassroomStudentResponse] = []
+        for membership, student, user in rows:
+            students.append(
+                classroom_schemas.ClassroomStudentResponse(
+                    student_id=int(student.id),
+                    user=communication_schemas.UserPublic.model_validate(user),
+                    enrolled_at=membership.enrolled_at,
+                    grade_level=student.grade_level,
                 )
+            )
 
-        return students_data
+        return students
+
+    async def count_classroom_students(self, classroom_id: int, teacher_user_id: int) -> int:
+        classroom = access_control.require_classroom(
+            await self.classroom_repo.get_by_id(classroom_id),
+            detail="Classroom not found",
+        )
+        teacher = access_control.require_teacher_profile(
+            await self.teacher_repo.get_by_user_id(teacher_user_id),
+            detail="Only classroom owner can view students",
+        )
+        access_control.require_teacher_owns_classroom(
+            teacher=teacher,
+            classroom=classroom,
+            detail="Only classroom owner can view students",
+        )
+        return await self.student_classroom_repo.count_students_in_classroom(classroom_id)

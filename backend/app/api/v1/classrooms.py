@@ -120,7 +120,10 @@ async def join_classroom(
     return await classroom_service.join_classroom(join_data, current_user.id)
 
 
-@router.get("/{classroom_id}/students")
+@router.get(
+    "/{classroom_id}/students",
+    response_model=pagination_schemas.Page[classroom_schemas.ClassroomStudentResponse],
+)
 async def get_classroom_students(
     classroom_id: int,
     pagination: api_pagination.Pagination = fastapi.Depends(api_pagination.get_pagination),
@@ -134,9 +137,11 @@ async def get_classroom_students(
 
     Returns student information with enrollment dates
     """
-    return await classroom_service.get_classroom_students(
+    items = await classroom_service.get_classroom_students(
         classroom_id, current_user.id, pagination.skip, pagination.limit
     )
+    total = await classroom_service.count_classroom_students(classroom_id, current_user.id)
+    return pagination_schemas.Page(items=items, total=total, skip=pagination.skip, limit=pagination.limit)
 
 
 @router.get(
