@@ -380,6 +380,7 @@ curl -H "Authorization: Bearer <token>" "http://localhost:8000/api/v1/theory/sub
 
 - **GET** `/api/v1/classrooms/{classroom_id}/chat/messages`
 - **POST** `/api/v1/classrooms/{classroom_id}/chat/messages`
+- **WS** `/api/v1/classrooms/{classroom_id}/chat/ws?token=<jwt>`
 
 Пример:
 
@@ -392,6 +393,23 @@ curl -X POST \
   -d '{"content":"Hello!"}' \
   "http://localhost:8000/api/v1/classrooms/1/chat/messages"
 ```
+
+WS контракт (client -> server):
+
+- `{ "type": "ping" }`
+- `{ "type": "message", "content": "Hello!" }`
+- `{ "type": "typing", "is_typing": true }`
+
+WS события (server -> client):
+
+- `ready` (+ snapshot):
+  - `{ "type": "ready", "classroom_id": 1, "presence": {"online_user_ids": [..]}, "typing": {"user_ids": [..]} }`
+- `message`:
+  - `{ "type": "message", "payload": { ...MessageResponse... } }`
+- `presence`:
+  - `{ "type": "presence", "payload": { "user_id": 123, "status": "online|offline" } }`
+- `typing`:
+  - `{ "type": "typing", "payload": { "user_id": 123, "is_typing": true } }`
 
 ---
 

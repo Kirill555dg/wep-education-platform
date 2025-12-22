@@ -48,6 +48,9 @@ class Settings(pydantic_settings.BaseSettings):
     # For WebSocket chat fanout in multi-instance deployments.
     # Example: "redis://redis:6379/0" (docker-compose) or "redis://127.0.0.1:6379/0" (local)
     REDIS_URL: str | None = None
+    CHAT_PRESENCE_TTL_SECONDS: int = 60
+    CHAT_PRESENCE_REFRESH_SECONDS: int = 20
+    CHAT_TYPING_TTL_SECONDS: int = 6
 
     model_config = pydantic_settings.SettingsConfigDict(
         env_file=".env",

@@ -12,6 +12,7 @@ from fastapi import exceptions as fastapi_exceptions
 from fastapi import responses as fastapi_responses
 from fastapi import status as http_status
 from fastapi.middleware import cors as fastapi_cors
+import redis.asyncio as redis_asyncio
 
 from app.api import errors as api_errors
 from app.api.middleware import request_id as request_id_middleware
@@ -125,9 +126,8 @@ async def on_startup() -> None:
     app.state.chat_broker = None
 
     if core_config.settings.REDIS_URL:
-        import redis.asyncio as redis_asyncio
-
         redis_client = redis_asyncio.from_url(core_config.settings.REDIS_URL)
+        await redis_client.ping()
         app.state.redis = redis_client
         app.state.chat_broker = redis_pubsub_module.RedisPubSubBroker(
             redis_client,
