@@ -12,6 +12,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { ClassroomHomeworkTrendChart, type ClassroomHomeworkTrendPoint } from "@/widgets/statistics/ClassroomHomeworkTrendChart";
+import { ClassroomHeatTable } from "@/widgets/statistics/ClassroomHeatTable";
 import { HomeworkStatusDonut } from "@/widgets/statistics/HomeworkStatusDonut";
 import { HomeworkScoresBarChart, type HomeworkScorePoint } from "@/widgets/statistics/HomeworkScoresBarChart";
 import { TeacherStudentRankingChart, type TeacherStudentRankingPoint } from "@/widgets/statistics/TeacherStudentRankingChart";
@@ -98,6 +99,33 @@ export function TeacherClassroomStatsPage() {
     },
     enabled: (homeworksQuery.data?.length ?? 0) > 0,
   });
+
+  const heatHomeworks = useMemo(() => {
+    const items = (homeworksQuery.data ?? []).slice();
+    items.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+    return items.slice(0, 12).map((h) => ({ id: h.id, title: h.title }));
+  }, [homeworksQuery.data]);
+
+  const heatStudents = useMemo(() => {
+    return (studentsQuery.data?.items ?? []).map((s) => ({ student_id: s.student_id, name: s.user.full_name }));
+  }, [studentsQuery.data]);
+
+  const heatCells = useMemo(() => {
+    const cells: Record<string, Pick<StatisticsResponse, "status" | "score" | "max_score" | "submitted_at">> = {};
+    const rows = studentAggQuery.data ?? [];
+    const allowedHomeworkIds = new Set(heatHomeworks.map((h) => h.id));
+    for (const r of rows) {
+      if (!allowedHomeworkIds.has(r.homework_id)) continue;
+      const key = `${r.student_id}:${r.homework_id}`;
+      cells[key] = {
+        status: r.status,
+        score: r.score,
+        max_score: r.max_score,
+        submitted_at: r.submitted_at,
+      };
+    }
+    return cells;
+  }, [studentAggQuery.data, heatHomeworks]);
 
   const aggregatedStudents: StudentAggregateRow[] = useMemo(() => {
     const rows = studentAggQuery.data ?? [];
@@ -289,6 +317,23 @@ export function TeacherClassroomStatsPage() {
         <CardContent>
           {studentAggQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
           <ClassroomHomeworkTrendChart data={trendChart} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Матрица прогресса</CardTitle>
+          <CardDescription>
+            Ученики × ДЗ (показываем последние {heatHomeworks.length} ДЗ). Клик по ученику — drill-down, клик по ДЗ — страница ДЗ.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {studentAggQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+          {heatStudents.length === 0 || heatHomeworks.length === 0 ? (
+            <div className="text-sm text-muted-foreground">Нет данных для матрицы</div>
+          ) : (
+            <ClassroomHeatTable classroomId={classroomId} students={heatStudents} homeworks={heatHomeworks} cells={heatCells} />
+          )}
         </CardContent>
       </Card>
 
