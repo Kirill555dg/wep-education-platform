@@ -12,6 +12,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
 import { HomeworkStatusDonut } from "@/widgets/statistics/HomeworkStatusDonut";
+import { HomeworkScoresBarChart, type HomeworkScorePoint } from "@/widgets/statistics/HomeworkScoresBarChart";
 import type { StatisticsResponse } from "@/shared/api/generated";
 
 export function TeacherHomeworkPage() {
@@ -131,6 +132,17 @@ export function TeacherHomeworkPage() {
     [studentNameByStudentId, lessonQuery.data?.classroom_id]
   );
 
+  const scoreChart: HomeworkScorePoint[] = useMemo(() => {
+    const items = statsQuery.data?.items ?? [];
+    const points = items.map((r) => {
+      const name = studentNameByStudentId.get(r.student_id) ?? `student#${r.student_id}`;
+      const pct = r.max_score > 0 ? Math.round(((r.score ?? 0) / r.max_score) * 100) : 0;
+      return { name: name.split(" ")[0] ?? name, value: pct };
+    });
+    points.sort((a, b) => b.value - a.value);
+    return points.slice(0, 15);
+  }, [statsQuery.data, studentNameByStudentId]);
+
   return (
     <div className="grid gap-6">
       <div className="flex items-center justify-between">
@@ -220,7 +232,16 @@ export function TeacherHomeworkPage() {
           ) : null}
           {statsQuery.data ? (
             <>
-              <HomeworkStatusDonut stats={statsQuery.data.items} />
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div>
+                  <div className="text-sm font-medium mb-2">Распределение статусов</div>
+                  <HomeworkStatusDonut stats={statsQuery.data.items} />
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">Топ по баллам (в %)</div>
+                  <HomeworkScoresBarChart data={scoreChart} />
+                </div>
+              </div>
               <DataTable data={statsQuery.data.items} columns={columns} />
             </>
           ) : null}

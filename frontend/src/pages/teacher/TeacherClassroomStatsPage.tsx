@@ -13,6 +13,7 @@ import { ErrorState } from "@/shared/ui/error-state";
 import { Input } from "@/shared/ui/input";
 import { ClassroomHomeworkTrendChart, type ClassroomHomeworkTrendPoint } from "@/widgets/statistics/ClassroomHomeworkTrendChart";
 import { HomeworkStatusDonut } from "@/widgets/statistics/HomeworkStatusDonut";
+import { HomeworkScoresBarChart, type HomeworkScorePoint } from "@/widgets/statistics/HomeworkScoresBarChart";
 import { TeacherStudentRankingChart, type TeacherStudentRankingPoint } from "@/widgets/statistics/TeacherStudentRankingChart";
 import type { StatisticsResponse } from "@/shared/api/generated";
 
@@ -208,6 +209,18 @@ export function TeacherClassroomStatsPage() {
     [studentMap]
   );
 
+  const homeworkScoreChart: HomeworkScorePoint[] = useMemo(() => {
+    const items = homeworkStatsQuery.data?.items ?? [];
+    const pts = items.map((r) => {
+      const info = studentMap.get(r.student_id);
+      const name = info?.name ?? `student#${r.student_id}`;
+      const pct = r.max_score > 0 ? Math.round(((r.score ?? 0) / r.max_score) * 100) : 0;
+      return { name: name.split(" ")[0] ?? name, value: pct };
+    });
+    pts.sort((a, b) => b.value - a.value);
+    return pts.slice(0, 15);
+  }, [homeworkStatsQuery.data, studentMap]);
+
   const homeworkList = homeworksQuery.data ?? [];
 
   return (
@@ -353,6 +366,10 @@ export function TeacherClassroomStatsPage() {
                 <div>
                   <div className="text-sm font-medium mb-2">Распределение статусов</div>
                   <HomeworkStatusDonut stats={homeworkStatsQuery.data.items} />
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">Топ по баллам (в %)</div>
+                  <HomeworkScoresBarChart data={homeworkScoreChart} />
                 </div>
               </div>
               <DataTable data={homeworkStatsQuery.data.items} columns={homeworkStatsColumns} />
