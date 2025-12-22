@@ -141,10 +141,13 @@ def setup_logging() -> None:
         level = logging.DEBUG if settings.DEBUG else logging.INFO
 
     use_json = settings.LOG_JSON if settings.LOG_JSON is not None else (not settings.DEBUG)
-    use_color_default = settings.DEBUG and sys.stderr.isatty()
+
+    # Use stderr for logs (common convention) and colorize only when tty.
+    stream = sys.stderr
+    use_color_default = settings.DEBUG and stream.isatty()
     use_color = settings.LOG_COLOR if settings.LOG_COLOR is not None else use_color_default
 
-    handler = logging.StreamHandler(stream=sys.stdout)
+    handler = logging.StreamHandler(stream=stream)
     handler.addFilter(RequestIdFilter())
     handler.setFormatter(JsonFormatter() if use_json else KeyValueFormatter(color=use_color))
 

@@ -33,8 +33,8 @@ up:
 	@echo ""
 	@echo "📍 Access points:"
 	@echo "   Frontend:  http://localhost"
-	@echo "   Backend:   http://localhost:8000"
-	@echo "   API Docs:  http://localhost:8000/api/docs"
+	@echo "   Backend:   http://localhost:8023"
+	@echo "   API Docs:  http://localhost:8023/api/docs"
 
 # Start only database
 up-db:
@@ -114,6 +114,6 @@ shell-db:
 # Health check
 health:
 	@echo "🏥 Checking service health..."
-	@curl -f http://localhost:8000/api/v1/health || echo "Backend not responding"
+	@curl -f http://localhost:8023/api/v1/health || echo "Backend not responding"
 	@curl -f http://localhost/ || echo "Frontend not responding"
 

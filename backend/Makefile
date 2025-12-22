@@ -4,15 +4,15 @@ VENV ?= .venv
 PYTHON_BIN ?= $(VENV)/bin/python
 APP_MODULE ?= app.main:app
 HOST ?= 0.0.0.0
-PORT ?= 8000
+PORT ?= 8023
 DB_COMPOSE_FILE ?= ../database/docker-compose.yml
 POSTGRES_PORT ?= 5433
 POSTGRES_USER ?= wep_user
 POSTGRES_PASSWORD ?= wep_password
 POSTGRES_DB ?= wep_education
-OPENAPI_OUT ?= ../frontend/src/api/openapi.json
+OPENAPI_OUT ?= ../frontend/src/shared/api/openapi.json
 
-.PHONY: install sync lint format type test check run dev clean migrate seed-dev db-up db-down db-reset db-wait bootstrap openapi-export
+.PHONY: install sync lint format type test check run dev clean migrate seed-dev db-up db-down db-reset db-wait bootstrap openapi-export redis-up redis-down redis-logs
 
 install:
 	$(UV) venv --python $(PYTHON)
@@ -36,10 +36,10 @@ test:
 check: lint type test
 
 run:
-	$(PYTHON_BIN) -m uvicorn $(APP_MODULE) --host $(HOST) --port $(PORT)
+	$(PYTHON_BIN) -m app.scripts.run_server --host $(HOST) --port $(PORT)
 
 dev:
-	$(PYTHON_BIN) -m uvicorn $(APP_MODULE) --reload --host $(HOST) --port $(PORT)
+	$(PYTHON_BIN) -m app.scripts.run_server --reload --host $(HOST) --port $(PORT)
 
 migrate:
 	$(PYTHON_BIN) -m alembic upgrade head
@@ -71,6 +71,25 @@ db-wait:
 	echo "PostgreSQL is ready"
 
 bootstrap: db-reset db-wait migrate seed-dev
+
+# Redis (local, outside docker-compose)
+REDIS_CONTAINER ?= wep_redis_local
+REDIS_PORT ?= 6379
+REDIS_IMAGE ?= redis:7-alpine
+
+redis-up:
+	@echo "Starting Redis on localhost:$(REDIS_PORT) (container: $(REDIS_CONTAINER))..."
+	@docker rm -f "$(REDIS_CONTAINER)" >/dev/null 2>&1 || true
+	@docker run -d --restart unless-stopped --name "$(REDIS_CONTAINER)" -p "$(REDIS_PORT):6379" "$(REDIS_IMAGE)" >/dev/null
+	@echo "Redis is up"
+
+redis-down:
+	@echo "Stopping Redis container $(REDIS_CONTAINER)..."
+	@docker rm -f "$(REDIS_CONTAINER)" >/dev/null 2>&1 || true
+	@echo "Redis is down"
+
+redis-logs:
+	@docker logs -f "$(REDIS_CONTAINER)"
 
 clean:
 	rm -rf $(VENV)

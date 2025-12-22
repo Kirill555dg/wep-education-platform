@@ -44,8 +44,8 @@ docker-compose ps
 
 **Доступ к сервисам:**
 - 🌐 **Frontend**: http://localhost
-- 🚀 **Backend API**: http://localhost:8000
-- 📖 **API Docs (Swagger)**: http://localhost:8000/api/docs
+- 🚀 **Backend API**: http://localhost:8023
+- 📖 **API Docs (Swagger)**: http://localhost:8023/api/docs
 - 🗄️ **pgAdmin** (опционально): http://localhost:5050
 
 **Полезные команды:**
@@ -194,7 +194,7 @@ git checkout -b feature/название-функции
 ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
 │   Frontend  │      │   Backend   │      │  PostgreSQL │
 │   (React)   │◄────►│  (FastAPI)  │◄────►│     DB      │
-│   Port 80   │      │  Port 8000  │      │  Port 5432  │
+│   Port 80   │      │  Port 8023  │      │  Port 5432  │
 └─────────────┘      └─────────────┘      └─────────────┘
      │                     │                     │
      └─────────────────────┴─────────────────────┘
@@ -230,7 +230,7 @@ PGADMIN_PASSWORD=admin
 ### Порты
 
 - **80** — Frontend (Nginx)
-- **8000** — Backend API
+- **8023** — Backend API
 - **5432** — PostgreSQL
 - **5050** — pgAdmin (опционально, только с `--profile tools`)
 

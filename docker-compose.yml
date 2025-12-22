@@ -68,7 +68,7 @@ services:
       # CORS
       BACKEND_CORS_ORIGINS: '["http://localhost:3000","http://localhost:5173","http://localhost"]'
     ports:
-      - "8000:8000"
+      - "8023:8023"
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,7 +83,7 @@ services:
         echo 'Running migrations...' &&
         alembic upgrade head &&
         echo 'Starting application...' &&
-        uvicorn app.main:app --host 0.0.0.0 --port 8000
+        uvicorn app.main:app --host 0.0.0.0 --port 8023
       "
 
   # Frontend (React + Vite)

@@ -243,9 +243,9 @@ docker-compose up -d
 ```
 
 **Приложение будет доступно:**
-- 🚀 API: http://localhost:8000
-- 📖 Swagger UI: http://localhost:8000/api/docs
-- 📘 ReDoc: http://localhost:8000/api/redoc
+- 🚀 API: http://localhost:8023
+- 📖 Swagger UI: http://localhost:8023/api/docs
+- 📘 ReDoc: http://localhost:8023/api/redoc
 - 🌐 Frontend: http://localhost
 
 **Полезные команды:**
@@ -327,12 +327,12 @@ make dev
 - `make check` — линт + типы + тесты
 - `make run` — uvicorn без `--reload`
 - `make sync` — синхронизация зависимостей из `requirements.txt`
-- `make openapi-export` — экспорт OpenAPI в `../frontend/src/api/openapi.json`
+- `make openapi-export` — экспорт OpenAPI в `../frontend/src/shared/api/openapi.json`
 
 **Приложение будет доступно:**
-- API: http://localhost:8000
-- Документация (Swagger): http://localhost:8000/api/docs
-- Документация (ReDoc): http://localhost:8000/api/redoc
+- API: http://localhost:8023
+- Документация (Swagger): http://localhost:8023/api/docs
+- Документация (ReDoc): http://localhost:8023/api/redoc
 
 ---
 
@@ -346,7 +346,7 @@ make dev
 ### Пример запроса:
 
 ```bash
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8023/api/v1/health
 ```
 
 **Ответ**:
@@ -375,7 +375,7 @@ curl http://localhost:8000/api/v1/health
 Пример:
 
 ```bash
-curl -H "Authorization: Bearer <token>" "http://localhost:8000/api/v1/theory/subjects?skip=0&limit=100"
+curl -H "Authorization: Bearer <token>" "http://localhost:8023/api/v1/theory/subjects?skip=0&limit=100"
 ```
 
 ---
@@ -389,13 +389,13 @@ curl -H "Authorization: Bearer <token>" "http://localhost:8000/api/v1/theory/sub
 Пример:
 
 ```bash
-curl -H "Authorization: Bearer <token>" "http://localhost:8000/api/v1/classrooms/1/chat/messages?skip=0&limit=100"
+curl -H "Authorization: Bearer <token>" "http://localhost:8023/api/v1/classrooms/1/chat/messages?skip=0&limit=100"
 
 curl -X POST \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"content":"Hello!"}' \
-  "http://localhost:8000/api/v1/classrooms/1/chat/messages"
+  "http://localhost:8023/api/v1/classrooms/1/chat/messages"
 ```
 
 WS контракт (client -> server):
@@ -432,7 +432,7 @@ make dev
 2) Получи креды + invite codes + ids (только в DEBUG):
 
 ```bash
-curl "http://localhost:8000/api/v1/testing/dev-seed-info"
+curl "http://localhost:8023/api/v1/testing/dev-seed-info"
 ```
 
 3) Сгенерируй OpenAPI и клиента (bun):
@@ -446,7 +446,7 @@ bun install
 bun run api:regen
 ```
 
-OpenAPI также доступен напрямую: `http://localhost:8000/api/openapi.json`.
+OpenAPI также доступен напрямую: `http://localhost:8023/api/openapi.json`.
 
 4) Логин (получи JWT):
 
@@ -454,12 +454,12 @@ OpenAPI также доступен напрямую: `http://localhost:8000/api
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"username_or_email":"teacher@wep.dev","password":"TeacherPass123!"}' \
-  "http://localhost:8000/api/v1/auth/login"
+  "http://localhost:8023/api/v1/auth/login"
 ```
 
 5) Подключись к WS чату:
 
-`ws://localhost:8000/api/v1/classrooms/<id>/chat/ws?token=<jwt>`
+`ws://localhost:8023/api/v1/classrooms/<id>/chat/ws?token=<jwt>`
 
 ---
 

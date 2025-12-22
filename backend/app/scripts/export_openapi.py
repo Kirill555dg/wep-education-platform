@@ -2,7 +2,7 @@
 Export OpenAPI schema to a JSON file.
 
 Usage:
-  python -m app.scripts.export_openapi --out ../frontend/src/api/openapi.json
+  python -m app.scripts.export_openapi --out ../frontend/src/shared/api/openapi.json
 """
 
 import argparse
