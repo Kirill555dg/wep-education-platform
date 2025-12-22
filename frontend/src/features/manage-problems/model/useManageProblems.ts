@@ -3,7 +3,7 @@
  * Hook for creating and managing problems (teacher only)
  */
 import { useState } from "react";
-import { problemsApi, type ProblemFull, type ProblemCreateDTO } from "@/shared/api";
+import { problemsApi, type ProblemFull, type ProblemCreateDTO, type ProblemUpdateDTO } from "@/shared/api";
 
 export function useManageProblems() {
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export function useManageProblems() {
     }
   };
 
-  const updateProblem = async (problemId: number, data: Partial<ProblemCreateDTO>): Promise<ProblemFull> => {
+  const updateProblem = async (problemId: number, data: ProblemUpdateDTO): Promise<ProblemFull> => {
     setLoading(true);
     setError(null);
 

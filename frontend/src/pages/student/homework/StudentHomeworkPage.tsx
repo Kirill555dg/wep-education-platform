@@ -179,9 +179,7 @@ export default function StudentHomeworkPage() {
                       </div>
                     )}
                   </CardTitle>
-                  <CardDescription>
-                    Максимальный балл: {problem.max_score || 10}
-                  </CardDescription>
+                  <CardDescription> </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="prose max-w-none">

@@ -1,23 +1,22 @@
 /**
  * Lesson API client
  */
-import { axiosInstance } from "./axios";
-import type {
-  Lesson,
-  LessonDetail,
-  LessonCreateDTO,
-  LessonUpdateDTO,
-} from "./types";
+import "./openapi";
 
-const LESSONS_PREFIX = "/api/v1/lessons";
+import {
+  LessonsService,
+  type LessonCreate,
+  type LessonDetailResponse,
+  type LessonResponse,
+  type LessonUpdate,
+} from "@/api/client";
 
 export const lessonsApi = {
   /**
    * Create new lesson (teachers only)
    */
-  create: async (data: LessonCreateDTO): Promise<Lesson> => {
-    const response = await axiosInstance.post<Lesson>(LESSONS_PREFIX, data);
-    return response.data;
+  create: async (data: LessonCreate): Promise<LessonResponse> => {
+    return await LessonsService.createLessonApiV1LessonsPost(data);
   },
 
   /**
@@ -28,45 +27,34 @@ export const lessonsApi = {
   getByClassroom: async (
     classroomId: number,
     params?: { skip?: number; limit?: number }
-  ): Promise<Lesson[]> => {
-    const response = await axiosInstance.get<Lesson[]>(
-      `${LESSONS_PREFIX}/classroom/${classroomId}`,
-      {
-        params: {
-          skip: params?.skip ?? 0,
-          limit: params?.limit ?? 100,
-        },
-      }
+  ): Promise<LessonResponse[]> => {
+    const page = await LessonsService.getClassroomLessonsApiV1LessonsClassroomClassroomIdGet(
+      classroomId,
+      params?.skip ?? 0,
+      params?.limit ?? 100
     );
-    return response.data;
+    return page.items;
   },
 
   /**
    * Get lesson details by ID
    */
-  getById: async (lessonId: number): Promise<LessonDetail> => {
-    const response = await axiosInstance.get<LessonDetail>(
-      `${LESSONS_PREFIX}/${lessonId}`
-    );
-    return response.data;
+  getById: async (lessonId: number): Promise<LessonDetailResponse> => {
+    return await LessonsService.getLessonApiV1LessonsLessonIdGet(lessonId);
   },
 
   /**
    * Update lesson (teachers only, owner only)
    */
-  update: async (lessonId: number, data: LessonUpdateDTO): Promise<Lesson> => {
-    const response = await axiosInstance.patch<Lesson>(
-      `${LESSONS_PREFIX}/${lessonId}`,
-      data
-    );
-    return response.data;
+  update: async (lessonId: number, data: LessonUpdate): Promise<LessonResponse> => {
+    return await LessonsService.updateLessonApiV1LessonsLessonIdPatch(lessonId, data);
   },
 
   /**
    * Delete lesson (teachers only, owner only)
    */
   delete: async (lessonId: number): Promise<void> => {
-    await axiosInstance.delete(`${LESSONS_PREFIX}/${lessonId}`);
+    await LessonsService.deleteLessonApiV1LessonsLessonIdDelete(lessonId);
   },
 };
 

@@ -2,10 +2,17 @@
  * Hook for fetching teacher statistics
  */
 import { useState, useEffect } from "react";
-import { statisticsApi, type ClassroomStatistics } from "@/shared/api";
+import { statisticsApi } from "@/shared/api";
+
+type ClassroomProgress = {
+  total_students: number;
+  total_homeworks_assigned: number;
+  completed_homeworks: number;
+  average_completion_rate: number;
+};
 
 export function useTeacherStatistics(classroomId?: number) {
-  const [statistics, setStatistics] = useState<ClassroomStatistics[]>([]);
+  const [statistics, setStatistics] = useState<ClassroomProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +23,7 @@ export function useTeacherStatistics(classroomId?: number) {
 
       try {
         if (classroomId) {
-          const stats = await statisticsApi.getClassroomStats(classroomId);
+          const stats = await statisticsApi.getClassroomProgress(classroomId);
           setStatistics([stats]);
         } else {
           // TODO: Get all classrooms stats

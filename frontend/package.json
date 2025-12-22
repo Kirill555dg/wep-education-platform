@@ -9,7 +9,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "start-server-and-test dev http://localhost:5173 'cypress run'",
-    "cypress": "cypress open"
+    "cypress": "cypress open",
+    "sync-openapi": "mkdir -p ./src/api && curl -fsSL \"${BACKEND_URL:-http://localhost:8000}/api/openapi.json\" --output ./src/api/openapi.json",
+    "generate-client": "openapi --input ./src/api/openapi.json --output ./src/api/client --client axios",
+    "api:regen": "bun run sync-openapi && bun run generate-client"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -50,6 +53,7 @@
     "autoprefixer": "^10.4.21",
     "cypress": "^14.3.3",
     "jsdom": "^26.1.0",
+    "openapi-typescript-codegen": "^0.29.0",
     "postcss": "^8.5.3",
     "start-server-and-test": "^2.0.12",
     "tailwindcss": "^3.4.17",
@@ -67,5 +71,5 @@
     "globals": true,
     "environment": "jsdom"
   },
-  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+  "packageManager": "bun@1.2.21"
 }

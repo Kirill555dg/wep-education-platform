@@ -1,62 +1,54 @@
 import type { AuthApi } from "./api";
 import type { User } from "@/entities/user/model/types";
 import type { LoginData, RegisterData } from "@/features/auth/model/schema";
-import { authApi as backendAuthApi } from "@/shared/api";
+import { authApi as backendAuthApi, UserRole } from "@/shared/api";
+
+function toEntityRole(role: UserRole): User["role"] {
+  return role === UserRole.TEACHER ? "teacher" : "student";
+}
 
 /**
  * Real API implementation using backend API client
  */
 export const authApiReal: AuthApi = {
   async login(data: LoginData): Promise<User> {
-    // Map frontend LoginData to backend LoginRequestDTO
     const response = await backendAuthApi.login({
       username_or_email: data.email,
       password: data.password,
     });
 
-    // Map backend User to frontend User
+    const u = response.user;
     return {
-      id: response.user.id,
-      username: response.user.username,
-      email: response.user.email,
-      firstName: response.user.full_name.split(" ")[0] || "",
-      lastName: response.user.full_name.split(" ")[1] || "",
-      middleName: response.user.full_name.split(" ")[2] || "",
-      dateOfBirth: "",
-      gender: "male", // Default, should be fetched from backend if needed
-      role: "student", // Will be determined from role endpoint
-      avatarUrl: response.user.avatar_url || "",
-      description: "",
+      id: u.id,
+      firstName: u.first_name,
+      lastName: u.last_name,
+      middleName: u.middle_name ?? undefined,
+      email: u.email,
+      role: toEntityRole(u.role),
     };
   },
 
   async register(data: RegisterData): Promise<User> {
-    // Map frontend RegisterData to backend UserCreateDTO
-    const fullName = [data.lastName, data.firstName, data.middleName]
-      .filter(Boolean)
-      .join(" ");
-
     const response = await backendAuthApi.register({
-      username: data.email.split("@")[0], // Generate username from email
       email: data.email,
       password: data.password,
-      full_name: fullName,
-      is_teacher: data.role === "teacher",
+      first_name: data.firstName,
+      last_name: data.lastName,
+      middle_name: data.middleName || null,
+      role: data.role === "teacher" ? UserRole.TEACHER : UserRole.STUDENT,
     });
 
-    // Map backend User to frontend User
+    const u = response;
     return {
-      id: response.id,
-      username: response.username,
-      email: response.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      middleName: data.middleName || "",
-      dateOfBirth: data.dateOfBirth || "",
+      id: u.id,
+      firstName: u.first_name,
+      lastName: u.last_name,
+      middleName: u.middle_name ?? undefined,
+      email: u.email,
+      role: toEntityRole(u.role),
       gender: data.gender,
-      role: data.role,
-      avatarUrl: response.avatar_url || "",
-      description: data.description || "",
+      birthDate: data.dateOfBirth,
+      about: data.description,
     };
   },
 
@@ -73,21 +65,14 @@ export const authApiReal: AuthApi = {
       }
 
       const backendUser = await backendAuthApi.getCurrentUser();
-      const roleResponse = await backendAuthApi.getCurrentUserRole();
 
-      // Map backend User to frontend User
       return {
         id: backendUser.id,
-        username: backendUser.username,
+        firstName: backendUser.first_name,
+        lastName: backendUser.last_name,
+        middleName: backendUser.middle_name ?? undefined,
         email: backendUser.email,
-        firstName: backendUser.full_name.split(" ")[0] || "",
-        lastName: backendUser.full_name.split(" ")[1] || "",
-        middleName: backendUser.full_name.split(" ")[2] || "",
-        dateOfBirth: "",
-        gender: "male", // Should be stored in backend if needed
-        role: roleResponse.role,
-        avatarUrl: backendUser.avatar_url || "",
-        description: "",
+        role: toEntityRole(backendUser.role),
       };
     } catch {
       return null;

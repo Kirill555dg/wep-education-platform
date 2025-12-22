@@ -1,54 +1,49 @@
 /**
  * Homework API client
  */
-import { axiosInstance } from "./axios";
-import type {
-  Homework,
-  HomeworkDetail,
-  HomeworkCreateDTO,
-  HomeworkUpdateDTO,
-  Problem,
-  ProblemFull,
-  AnswerSubmitDTO,
-  Statistics,
-} from "./types";
+import "./openapi";
 
-const HOMEWORK_PREFIX = "/api/v1/homework";
-const TESTING_PREFIX = "/api/v1/testing";
+import {
+  HomeworkService,
+  TestingService,
+  type AnswerSubmit,
+  type HomeworkCreate,
+  type HomeworkDetailResponse,
+  type HomeworkResponse,
+  type HomeworkUpdate,
+  type ProblemFullResponse,
+  type ProblemResponse,
+  type StatisticsResponse,
+} from "@/api/client";
 
 export const homeworkApi = {
   /**
    * Create new homework (teachers only)
    */
-  create: async (data: HomeworkCreateDTO): Promise<Homework> => {
-    const response = await axiosInstance.post<Homework>(HOMEWORK_PREFIX, data);
-    return response.data;
+  create: async (data: HomeworkCreate): Promise<HomeworkResponse> => {
+    return await HomeworkService.createHomeworkApiV1HomeworkPost(data);
   },
 
   /**
    * Get homework by ID
    */
-  getById: async (homeworkId: number): Promise<HomeworkDetail> => {
-    const response = await axiosInstance.get<HomeworkDetail>(
-      `${HOMEWORK_PREFIX}/${homeworkId}`
-    );
-    return response.data;
+  getById: async (homeworkId: number): Promise<HomeworkDetailResponse> => {
+    return await HomeworkService.getHomeworkApiV1HomeworkHomeworkIdGet(homeworkId);
   },
 
   /**
    * Get all homework for a lesson
    */
-  getByLesson: async (lessonId: number, params?: { skip?: number; limit?: number }): Promise<Homework[]> => {
-    const response = await axiosInstance.get<Homework[]>(
-      `${HOMEWORK_PREFIX}/lesson/${lessonId}`,
-      {
-        params: {
-          skip: params?.skip ?? 0,
-          limit: params?.limit ?? 100,
-        },
-      }
+  getByLesson: async (
+    lessonId: number,
+    params?: { skip?: number; limit?: number }
+  ): Promise<HomeworkResponse[]> => {
+    const page = await HomeworkService.getLessonHomeworkApiV1HomeworkLessonLessonIdGet(
+      lessonId,
+      params?.skip ?? 0,
+      params?.limit ?? 100
     );
-    return response.data;
+    return page.items;
   },
 
   /**
@@ -56,53 +51,38 @@ export const homeworkApi = {
    * Teachers see problems with correct answers
    * Students see problems without correct answers
    */
-  getProblems: async (homeworkId: number): Promise<(Problem | ProblemFull)[]> => {
-    const response = await axiosInstance.get<(Problem | ProblemFull)[]>(
-      `${HOMEWORK_PREFIX}/${homeworkId}/problems`
-    );
-    return response.data;
+  getProblems: async (
+    homeworkId: number
+  ): Promise<Array<ProblemResponse | ProblemFullResponse>> => {
+    return await HomeworkService.getHomeworkProblemsApiV1HomeworkHomeworkIdProblemsGet(homeworkId);
   },
 
   /**
    * Update homework (teachers only, owner only)
    */
-  update: async (homeworkId: number, data: HomeworkUpdateDTO): Promise<Homework> => {
-    const response = await axiosInstance.patch<Homework>(
-      `${HOMEWORK_PREFIX}/${homeworkId}`,
-      data
-    );
-    return response.data;
+  update: async (homeworkId: number, data: HomeworkUpdate): Promise<HomeworkResponse> => {
+    return await HomeworkService.updateHomeworkApiV1HomeworkHomeworkIdPatch(homeworkId, data);
   },
 
   /**
    * Submit answer for a problem (students only)
    */
-  submitAnswer: async (data: AnswerSubmitDTO): Promise<Statistics> => {
-    const response = await axiosInstance.post<Statistics>(
-      `${TESTING_PREFIX}/submit-answer`,
-      data
-    );
-    return response.data;
+  submitAnswer: async (data: AnswerSubmit): Promise<StatisticsResponse> => {
+    return await TestingService.submitAnswerApiV1TestingSubmitAnswerPost(data);
   },
 
   /**
    * Submit homework for final grading (students only)
    */
-  submitHomework: async (homeworkId: number): Promise<Statistics> => {
-    const response = await axiosInstance.post<Statistics>(
-      `${TESTING_PREFIX}/homework/${homeworkId}/submit`
-    );
-    return response.data;
+  submitHomework: async (homeworkId: number): Promise<StatisticsResponse> => {
+    return await TestingService.submitHomeworkApiV1TestingHomeworkHomeworkIdSubmitPost(homeworkId);
   },
 
   /**
    * Get current status/progress for homework (students only)
    */
-  getStatus: async (homeworkId: number): Promise<Statistics> => {
-    const response = await axiosInstance.get<Statistics>(
-      `${TESTING_PREFIX}/homework/${homeworkId}/status`
-    );
-    return response.data;
+  getStatus: async (homeworkId: number): Promise<StatisticsResponse> => {
+    return await TestingService.getHomeworkStatusApiV1TestingHomeworkHomeworkIdStatusGet(homeworkId);
   },
 };
 

@@ -14,19 +14,16 @@ export const profileApiReal: ProfileApi = {
     // For now, we can only fetch the current profile
     const backendUser = await authApi.getCurrentUser();
     
-    // Map backend User to frontend User
     return {
       id: backendUser.id,
-      username: backendUser.username,
+      firstName: backendUser.first_name,
+      lastName: backendUser.last_name,
+      middleName: backendUser.middle_name ?? undefined,
       email: backendUser.email,
-      firstName: backendUser.full_name.split(" ")[0] || "",
-      lastName: backendUser.full_name.split(" ")[1] || "",
-      middleName: backendUser.full_name.split(" ")[2] || "",
-      dateOfBirth: data.dateOfBirth || "",
-      gender: data.gender || "male",
-      role: data.role || "student",
-      avatarUrl: backendUser.avatar_url || "",
-      description: data.description || "",
+      role: backendUser.role,
+      gender: data.gender,
+      birthDate: data.birthDate,
+      about: data.about,
     };
   },
 };

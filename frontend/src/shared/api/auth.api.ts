@@ -1,42 +1,38 @@
 /**
  * Authentication API client
  */
-import { axiosInstance } from "./axios";
-import type {
-  UserCreateDTO,
-  LoginRequestDTO,
-  TokenResponse,
-  User,
-  UserRoleResponse,
-} from "./types";
+import "./openapi";
 
-const AUTH_PREFIX = "/api/v1/auth";
+import {
+  AuthenticationService,
+  type LoginRequest,
+  type RoleSwitchRequest,
+  type TokenResponse,
+  type UserCreate,
+  type UserResponse,
+  type UserRolesResponse,
+} from "@/api/client";
 
 export const authApi = {
   /**
    * Register new user (student or teacher)
    */
-  register: async (data: UserCreateDTO): Promise<User> => {
-    const response = await axiosInstance.post<User>(`${AUTH_PREFIX}/register`, data);
-    return response.data;
+  register: async (data: UserCreate): Promise<UserResponse> => {
+    return await AuthenticationService.registerApiV1AuthRegisterPost(data);
   },
 
   /**
    * Login and get JWT token
    */
-  login: async (credentials: LoginRequestDTO): Promise<TokenResponse> => {
-    const response = await axiosInstance.post<TokenResponse>(
-      `${AUTH_PREFIX}/login`,
-      credentials
-    );
-    
-    // Save token to localStorage
-    if (response.data.access_token) {
-      localStorage.setItem("access_token", response.data.access_token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+  login: async (credentials: LoginRequest): Promise<TokenResponse> => {
+    const resp = await AuthenticationService.loginApiV1AuthLoginPost(credentials);
+
+    if (resp.access_token) {
+      localStorage.setItem("access_token", resp.access_token);
+      localStorage.setItem("user", JSON.stringify(resp.user));
     }
-    
-    return response.data;
+
+    return resp;
   },
 
   /**
@@ -50,17 +46,24 @@ export const authApi = {
   /**
    * Get current authenticated user profile
    */
-  getCurrentUser: async (): Promise<User> => {
-    const response = await axiosInstance.get<User>(`${AUTH_PREFIX}/me`);
-    return response.data;
+  getCurrentUser: async (): Promise<UserResponse> => {
+    return await AuthenticationService.getCurrentUserProfileApiV1AuthMeGet();
   },
 
   /**
    * Get current user's role
    */
-  getCurrentUserRole: async (): Promise<UserRoleResponse> => {
-    const response = await axiosInstance.get<UserRoleResponse>(`${AUTH_PREFIX}/me/role`);
-    return response.data;
+  getCurrentUserRole: async (): Promise<{ role: string | null }> => {
+    const resp = await AuthenticationService.getCurrentUserRoleApiV1AuthMeRoleGet();
+    return { role: (resp.role as string | null) ?? null };
+  },
+
+  getCurrentUserRoles: async (): Promise<UserRolesResponse> => {
+    return await AuthenticationService.getCurrentUserRolesApiV1AuthMeRolesGet();
+  },
+
+  switchMyRole: async (payload: RoleSwitchRequest): Promise<UserRolesResponse> => {
+    return await AuthenticationService.switchMyRoleApiV1AuthMeRolePost(payload);
   },
 
   /**
@@ -73,11 +76,11 @@ export const authApi = {
   /**
    * Get stored user from localStorage
    */
-  getStoredUser: (): User | null => {
+  getStoredUser: (): UserResponse | null => {
     const userStr = localStorage.getItem("user");
     if (!userStr) return null;
     try {
-      return JSON.parse(userStr) as User;
+      return JSON.parse(userStr) as UserResponse;
     } catch {
       return null;
     }

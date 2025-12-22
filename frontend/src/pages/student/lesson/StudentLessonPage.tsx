@@ -7,7 +7,7 @@ import { MainLayout } from "@/widgets/layout/MainLayout";
 import { lessonsApi, homeworkApi, type LessonDetail, type Homework } from "@/shared/api";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { ArrowLeft, FileText, CheckCircle, Clock, XCircle } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { useToast } from "@/shared/hooks/use-toast";
 
 export default function StudentLessonPage() {
@@ -64,28 +64,6 @@ export default function StudentLessonPage() {
     );
   }
 
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case "in_progress":
-        return <Clock className="w-5 h-5 text-orange-600" />;
-      default:
-        return <XCircle className="w-5 h-5 text-gray-400" />;
-    }
-  };
-
-  const getStatusText = (status?: string) => {
-    switch (status) {
-      case "completed":
-        return "Выполнено";
-      case "in_progress":
-        return "В процессе";
-      default:
-        return "Не начато";
-    }
-  };
-
   return (
     <MainLayout title={lesson.title} footer="full">
       <div className="container mx-auto p-6 space-y-6">
@@ -134,12 +112,6 @@ export default function StudentLessonPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <span>{homework.title}</span>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(homework.status)}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          {getStatusText(homework.status)}
-                        </span>
-                      </div>
                     </CardTitle>
                     {homework.description && (
                       <CardDescription>{homework.description}</CardDescription>
@@ -148,11 +120,6 @@ export default function StudentLessonPage() {
                   <CardContent>
                     <div className="flex gap-4 text-sm text-muted-foreground">
                       <span>Задач: {homework.problems_count || 0}</span>
-                      {homework.score !== undefined && (
-                        <span className="text-green-600 font-medium">
-                          Набрано баллов: {homework.score}
-                        </span>
-                      )}
                     </div>
                   </CardContent>
                 </Card>

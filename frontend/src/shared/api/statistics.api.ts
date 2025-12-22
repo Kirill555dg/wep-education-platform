@@ -1,37 +1,30 @@
 /**
  * Statistics API client
  */
-import { axiosInstance } from "./axios";
-import type {
-  Statistics,
-  StudentProgress,
-  ClassroomProgress,
-} from "./types";
+import "./openapi";
 
-const STATISTICS_PREFIX = "/api/v1/statistics";
+import {
+  StatisticsService,
+  type StatisticsResponse,
+} from "@/api/client";
 
 export const statisticsApi = {
   /**
    * Get all statistics for current student
    */
-  getMy: async (params?: { skip?: number; limit?: number }): Promise<Statistics[]> => {
-    const response = await axiosInstance.get<Statistics[]>(`${STATISTICS_PREFIX}/me`, {
-      params: {
-        skip: params?.skip ?? 0,
-        limit: params?.limit ?? 100,
-      },
-    });
-    return response.data;
+  getMy: async (params?: { skip?: number; limit?: number }): Promise<StatisticsResponse[]> => {
+    const page = await StatisticsService.getMyStatisticsApiV1StatisticsMeGet(
+      params?.skip ?? 0,
+      params?.limit ?? 100
+    );
+    return page.items;
   },
 
   /**
    * Get overall progress for current student
    */
-  getMyProgress: async (): Promise<StudentProgress> => {
-    const response = await axiosInstance.get<StudentProgress>(
-      `${STATISTICS_PREFIX}/me/progress`
-    );
-    return response.data;
+  getMyProgress: async () => {
+    return await StatisticsService.getMyProgressApiV1StatisticsMeProgressGet();
   },
 
   /**
@@ -40,27 +33,20 @@ export const statisticsApi = {
   getHomeworkStats: async (
     homeworkId: number,
     params?: { skip?: number; limit?: number }
-  ): Promise<Statistics[]> => {
-    const response = await axiosInstance.get<Statistics[]>(
-      `${STATISTICS_PREFIX}/homework/${homeworkId}`,
-      {
-        params: {
-          skip: params?.skip ?? 0,
-          limit: params?.limit ?? 100,
-        },
-      }
+  ): Promise<StatisticsResponse[]> => {
+    const page = await StatisticsService.getHomeworkStatisticsApiV1StatisticsHomeworkHomeworkIdGet(
+      homeworkId,
+      params?.skip ?? 0,
+      params?.limit ?? 100
     );
-    return response.data;
+    return page.items;
   },
 
   /**
    * Get overall progress for a classroom (teachers only)
    */
-  getClassroomProgress: async (classroomId: number): Promise<ClassroomProgress> => {
-    const response = await axiosInstance.get<ClassroomProgress>(
-      `${STATISTICS_PREFIX}/classroom/${classroomId}/progress`
-    );
-    return response.data;
+  getClassroomProgress: async (classroomId: number) => {
+    return await StatisticsService.getClassroomProgressApiV1StatisticsClassroomClassroomIdProgressGet(classroomId);
   },
 
   /**
@@ -69,17 +55,13 @@ export const statisticsApi = {
   getStudentStats: async (
     studentUserId: number,
     params?: { skip?: number; limit?: number }
-  ): Promise<Statistics[]> => {
-    const response = await axiosInstance.get<Statistics[]>(
-      `${STATISTICS_PREFIX}/student/${studentUserId}`,
-      {
-        params: {
-          skip: params?.skip ?? 0,
-          limit: params?.limit ?? 100,
-        },
-      }
+  ): Promise<StatisticsResponse[]> => {
+    const page = await StatisticsService.getStudentStatisticsByTeacherApiV1StatisticsStudentStudentUserIdGet(
+      studentUserId,
+      params?.skip ?? 0,
+      params?.limit ?? 100
     );
-    return response.data;
+    return page.items;
   },
 };
 

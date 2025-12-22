@@ -27,10 +27,13 @@ export const ClassBootstrapper = () => {
             id: classroom.id,
             name: classroom.name,
             subject: classroom.subject,
-            teacher: "Преподаватель", // Will be fetched separately if needed
-            students: classroom.students_count,
+            description: classroom.description ?? "",
+            schedule: "",
+            classroom: classroom.name,
             entryCode: classroom.invite_code || "",
-            imageUrl: `/class/${classroom.subject.toLowerCase()}.jpg`,
+            teacherId: classroom.teacher_id,
+            activeAssignments: 0,
+            image: `/class/${classroom.subject.toLowerCase()}.jpg`,
           }));
           
           resetClasses(classItems);
