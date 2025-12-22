@@ -102,20 +102,20 @@ export function StudentHomePage() {
         <CardContent>
           <form onSubmit={join} className="grid gap-2" data-testid="join-form">
             <div className="flex gap-2">
-              <Input
-                placeholder="invite code"
+          <Input
+            placeholder="invite code"
                 {...joinForm.register("invite_code")}
-                data-testid="join-invite-code"
+            data-testid="join-invite-code"
                 autoCapitalize="off"
                 autoCorrect="off"
-              />
+          />
               <Button
                 type="submit"
                 disabled={!inviteCode.trim() || !joinForm.formState.isValid || joinForm.formState.isSubmitting}
                 data-testid="join-submit"
               >
                 {joinForm.formState.isSubmitting ? "..." : "Вступить"}
-              </Button>
+          </Button>
             </div>
             {joinForm.formState.errors.invite_code ? (
               <p className="text-sm text-destructive" data-testid="join-error">
