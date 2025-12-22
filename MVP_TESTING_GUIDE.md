@@ -361,8 +361,8 @@ bun run dev
 
 ### Порты:
 - **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:8000
-- **Backend Docs:** http://localhost:8000/docs
+- **Backend API:** http://localhost:8023
+- **Backend Docs:** http://localhost:8023/api/docs
 - **PostgreSQL:** localhost:5433
 
 ### Логи:

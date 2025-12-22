@@ -10,7 +10,7 @@
     "typecheck": "bunx --bun tsc --noEmit",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "test:e2e": "bunx start-server-and-test \"bun run dev\" http://localhost:5173 \"bunx cypress run\"",
+    "test:e2e": "CYPRESS_BACKEND_URL=http://127.0.0.1:8023 bunx start-server-and-test \"bun run dev\" http://localhost:5173 \"bunx cypress run\"",
     "cypress": "bunx cypress open",
     "sync-openapi": "cd ../backend && make openapi-export",
     "generate-client": "openapi --input ./src/shared/api/openapi.json --output ./src/shared/api/generated --client axios",

@@ -21,7 +21,7 @@ uvicorn app.main:app --reload
 cd frontend
 # Создайте .env если еще не создан
 echo "VITE_USE_REAL_API=true" > .env
-echo "VITE_API_URL=http://localhost:8000" >> .env
+echo "VITE_API_URL=http://127.0.0.1:8023" >> .env
 
 # Запустите frontend
 bun run dev
@@ -109,7 +109,7 @@ bun run dev
 
 ### Через Swagger UI (Backend)
 
-1. Откройте http://localhost:8000/api/docs
+1. Откройте http://localhost:8023/api/docs
 2. Авторизуйтесь через кнопку "Authorize" (используйте JWT токен из localStorage)
 3. Проверьте эндпоинты:
    - `GET /api/v1/statistics/homework/{homework_id}` — статистика по ДЗ
