@@ -12,8 +12,10 @@ package "Client" as client {
 
 package "Server (Backend API)" as server {
   package "Transport layer" as transport {
-    component "API Controller\n(FastAPI routers + dependencies)" as API <<component>>
-    component "Realtime endpoints\n(WebSocket handlers)" as WS <<component>>
+    component "FastAPI Application\n(routers + dependencies + WS)" as API <<component>>
+
+    () "REST API\n(/api/v1)" as IRest <<interface>>
+    () "WebSocket Chat\n(/api/v1/.../chat/ws)" as IWs <<interface>>
   }
 
   package "Service layer" as services {
@@ -27,8 +29,18 @@ package "Server (Backend API)" as server {
     component "TheoryService" as THEORY <<component>>
     component "ChatService\n(HTTP chat history)" as CHAT <<component>>
 
-    component "Access control helpers\n(services/access_control.py)" as ACL <<component>>
+    component "Access control helpers\n(pure access checks)" as ACL <<component>>
     component "Realtime chat runtime\n(manager + broker)" as REALTIME <<component>>
+
+    () "IAuth" as IAuth <<interface>>
+    () "IClassroom" as IClassroom <<interface>>
+    () "ILesson" as ILesson <<interface>>
+    () "IHomework" as IHomework <<interface>>
+    () "IProblem" as IProblem <<interface>>
+    () "ITesting" as ITesting <<interface>>
+    () "IResults" as IResults <<interface>>
+    () "ITheory" as ITheory <<interface>>
+    () "IChat" as IChat <<interface>>
   }
 
   package "Data access layer" as dal {
@@ -42,23 +54,39 @@ package "Storage" as storage {
   component "Redis\n(Pub/Sub + ephemeral presence)" as REDIS <<component>>
 }
 
-' Client ↔ Server
-GUI --> API : HTTP/REST (JSON)
-GUI <--> WS : WebSocket (chat)
+' External interfaces provided by FastAPI Application
+API -- IRest
+API -- IWs
 
-' Transport → Services (FastAPI Depends + DTO mapping)
-API --> AUTH
-API --> CLASSROOM
-API --> LESSON
-API --> HOMEWORK
-API --> PROBLEM
-API --> TESTING
-API --> STATS
-API --> THEORY
-API --> CHAT
+' Client ↔ Server (by interfaces)
+GUI --> IRest : HTTP/REST (JSON)
+GUI <--> IWs : WebSocket (events)
 
-WS --> REALTIME
-WS --> CHAT : persist history (fallback)
+' Transport → Service interfaces
+API -- IAuth
+API -- IClassroom
+API -- ILesson
+API -- IHomework
+API -- IProblem
+API -- ITesting
+API -- IResults
+API -- ITheory
+API -- IChat
+
+' Service interfaces → implementations
+IAuth -- AUTH
+IClassroom -- CLASSROOM
+ILesson -- LESSON
+IHomework -- HOMEWORK
+IProblem -- PROBLEM
+ITesting -- TESTING
+IResults -- STATS
+ITheory -- THEORY
+IChat -- CHAT
+
+' WS handlers (part of FastAPI app) use realtime runtime and persist history via chat service
+API --> REALTIME : WS delivery/presence
+API --> CHAT : persist history (fallback)
 
 ' Services → shared access rules (used only where imported in code)
 CLASSROOM --> ACL
@@ -79,12 +107,17 @@ CHAT --> REPOS
 
 REPOS --> SESSION : uses
 API --> SESSION : get_db()
-WS --> SESSION : get_db()
 
 SESSION --> DB : SQL
 
 ' Realtime infrastructure
 REALTIME <--> REDIS : Pub/Sub + presence/typing
+
+note right of ACL
+  Used to keep authorization rules consistent.
+  Does not query storage directly; it validates
+  using already-loaded domain objects.
+end note
 
 @enduml
 
