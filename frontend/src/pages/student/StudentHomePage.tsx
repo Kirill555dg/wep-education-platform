@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { classroomsApi, getErrorMessage, getRequestId, statisticsApi } from "@/shared/api";
+import { classroomsApi, getErrorMessage, getRequestId } from "@/shared/api";
+import { useMyClassroomsQuery } from "@/entities/classroom/api/queries";
+import { classroomQueryKeys } from "@/entities/classroom/api/queryKeys";
+import { useMyProgressQuery } from "@/entities/statistics/api/queries";
+import { statisticsQueryKeys } from "@/entities/statistics/api/queryKeys";
 import { routes } from "@/shared/config/routes";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/ui/button";
@@ -26,18 +31,7 @@ export function StudentHomePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<Array<{ id: number; name: string; subject: string }>>([]);
-  const [progress, setProgress] = useState<{
-    total_homeworks: number;
-    completed: number;
-    in_progress: number;
-    not_started: number;
-    average_score_percentage: number;
-    total_attempts: number;
-    total_time_spent_minutes: number;
-  } | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const joinForm = useForm<JoinFormValues>({
     resolver: zodResolver(joinSchema),
@@ -47,43 +41,37 @@ export function StudentHomePage() {
 
   const inviteCode = useMemo(() => joinForm.watch("invite_code"), [joinForm]);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await classroomsApi.listMine();
-      setItems(page.items.map((c) => ({ id: c.id, name: c.name, subject: c.subject })));
+  const queryClient = useQueryClient();
+  const listParams = useMemo(() => ({ skip: 0, limit: 100 }), []);
+  const classroomsQuery = useMyClassroomsQuery(listParams);
+  const progressQuery = useMyProgressQuery();
 
-      const p = await statisticsApi.myProgress();
-      setProgress(p);
-    } catch (e) {
-      setError(getErrorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  const join = joinForm.handleSubmit(async (values) => {
-    setError(null);
-    try {
-      const joined = await classroomsApi.join({ invite_code: values.invite_code.trim() });
+  const joinMutation = useMutation({
+    mutationFn: async (inviteCode: string) => await classroomsApi.join({ invite_code: inviteCode }),
+    onSuccess: async (joined) => {
+      setJoinError(null);
       joinForm.reset({ invite_code: "" });
-      setItems((prev) => [{ id: joined.id, name: joined.name, subject: joined.subject }, ...prev]);
       toast({ title: "Вы вступили в класс", description: joined.name });
-      // Go straight into the classroom.
+      await queryClient.invalidateQueries({ queryKey: classroomQueryKeys.myRoot() });
+      await queryClient.invalidateQueries({ queryKey: statisticsQueryKeys.myProgress() });
       navigate(routes.student.classroom(joined.id), { replace: true });
-    } catch (e) {
+    },
+    onError: (e) => {
       const msg = getErrorMessage(e);
       const requestId = getRequestId(e);
       const extra = requestId ? ` (request_id: ${requestId})` : "";
-      setError(`${msg}${extra}`);
+      setJoinError(`${msg}${extra}`);
       toast({ title: "Не удалось вступить", description: `${msg}${extra}`, variant: "destructive" });
-    }
+    },
   });
+
+  const join = joinForm.handleSubmit(async (values) => {
+    setJoinError(null);
+    joinMutation.mutate(values.invite_code.trim());
+  });
+
+  const items = (classroomsQuery.data?.items ?? []).map((c) => ({ id: c.id, name: c.name, subject: c.subject }));
+  const progress = progressQuery.data ?? null;
 
   return (
     <div className="grid gap-6">
@@ -102,20 +90,20 @@ export function StudentHomePage() {
         <CardContent>
           <form onSubmit={join} className="grid gap-2" data-testid="join-form">
             <div className="flex gap-2">
-          <Input
-            placeholder="invite code"
+              <Input
+                placeholder="invite code"
                 {...joinForm.register("invite_code")}
-            data-testid="join-invite-code"
+                data-testid="join-invite-code"
                 autoCapitalize="off"
                 autoCorrect="off"
-          />
+              />
               <Button
                 type="submit"
-                disabled={!inviteCode.trim() || !joinForm.formState.isValid || joinForm.formState.isSubmitting}
+                disabled={!inviteCode.trim() || !joinForm.formState.isValid || joinMutation.isLoading}
                 data-testid="join-submit"
               >
-                {joinForm.formState.isSubmitting ? "..." : "Вступить"}
-          </Button>
+                {joinMutation.isLoading ? "..." : "Вступить"}
+              </Button>
             </div>
             {joinForm.formState.errors.invite_code ? (
               <p className="text-sm text-destructive" data-testid="join-error">
@@ -132,7 +120,11 @@ export function StudentHomePage() {
           <CardDescription>Агрегированная статистика (из backend)</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2 text-sm">
-          {!progress ? (
+          {progressQuery.isLoading ? (
+            <div className="text-muted-foreground">Загрузка...</div>
+          ) : progressQuery.error ? (
+            <div className="text-destructive">{getErrorMessage(progressQuery.error)}</div>
+          ) : !progress ? (
             <div className="text-muted-foreground">Нет данных</div>
           ) : (
             <>
@@ -148,8 +140,9 @@ export function StudentHomePage() {
         </CardContent>
       </Card>
 
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
-      {loading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+      {joinError ? <div className="text-sm text-destructive">{joinError}</div> : null}
+      {classroomsQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+      {classroomsQuery.error ? <div className="text-sm text-destructive">{getErrorMessage(classroomsQuery.error)}</div> : null}
 
       <div className="grid gap-3 md:grid-cols-2">
         {items.map((c) => (

@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { classroomsApi, getErrorMessage } from "@/shared/api";
+import { useClassroomQuery } from "@/entities/classroom/api/queries";
+import { classroomQueryKeys } from "@/entities/classroom/api/queryKeys";
 import { routes } from "@/shared/config/routes";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/ui/button";
@@ -15,9 +18,7 @@ export function TeacherClassroomSettingsPage() {
   const params = useParams();
   const classroomId = Number(params.classroomId);
 
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
@@ -27,55 +28,53 @@ export function TeacherClassroomSettingsPage() {
   const [isActive, setIsActive] = useState(true);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
 
+  if (!Number.isFinite(classroomId)) {
+    navigate(routes.teacher.home, { replace: true });
+    return null;
+  }
+
+  const queryClient = useQueryClient();
+  const classroomQuery = useClassroomQuery(classroomId);
+  const initializedRef = useRef(false);
+
   useEffect(() => {
-    if (!Number.isFinite(classroomId)) {
-      navigate(routes.teacher.home, { replace: true });
-      return;
-    }
+    const c = classroomQuery.data;
+    if (!c) return;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const c = await classroomsApi.get(classroomId);
-        setName(c.name);
-        setSubject(c.subject);
-        setDescription(c.description ?? "");
-        setGradeLevel(c.grade_level != null ? String(c.grade_level) : "");
-        setMaxStudents(c.max_students != null ? String(c.max_students) : "");
-        setIsActive(Boolean(c.is_active));
-        setInviteCode(c.invite_code ?? null);
-      } catch (e) {
-        setError(getErrorMessage(e));
-      } finally {
-        setLoading(false);
-      }
-    };
+    setName(c.name);
+    setSubject(c.subject);
+    setDescription(c.description ?? "");
+    setGradeLevel(c.grade_level != null ? String(c.grade_level) : "");
+    setMaxStudents(c.max_students != null ? String(c.max_students) : "");
+    setIsActive(Boolean(c.is_active));
+    setInviteCode(c.invite_code ?? null);
+  }, [classroomQuery.data]);
 
-    void load();
-  }, [classroomId, navigate]);
-
-  const onSave = async () => {
-    setSaving(true);
-    setError(null);
-    try {
-      const updated = await classroomsApi.update(classroomId, {
+  const saveMutation = useMutation({
+    mutationFn: async () =>
+      await classroomsApi.update(classroomId, {
         name: name || null,
         subject: subject || null,
         description: description || null,
         grade_level: gradeLevel ? Number(gradeLevel) : null,
         max_students: maxStudents ? Number(maxStudents) : null,
         is_active: isActive,
-      });
+      }),
+    onSuccess: async (updated) => {
+      setError(null);
+      setInviteCode(updated.invite_code ?? null);
       toast({ title: "Сохранено", description: updated.name });
-    } catch (e) {
+      await queryClient.invalidateQueries({ queryKey: classroomQueryKeys.byId(classroomId) });
+      await queryClient.invalidateQueries({ queryKey: classroomQueryKeys.myRoot() });
+    },
+    onError: (e) => {
       const msg = getErrorMessage(e);
       setError(msg);
       toast({ title: "Ошибка", description: msg, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+  });
 
   const onCopyInvite = async () => {
     if (!inviteCode) return;
@@ -87,7 +86,8 @@ export function TeacherClassroomSettingsPage() {
     }
   };
 
-  if (loading) return <div className="text-sm text-muted-foreground">Загрузка...</div>;
+  if (classroomQuery.isLoading) return <div className="text-sm text-muted-foreground">Загрузка...</div>;
+  if (classroomQuery.error) return <div className="text-sm text-destructive">{getErrorMessage(classroomQuery.error)}</div>;
 
   return (
     <div className="grid gap-6">
@@ -145,8 +145,8 @@ export function TeacherClassroomSettingsPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => void onSave()} disabled={saving}>
-              {saving ? "Сохранение..." : "Сохранить"}
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isLoading}>
+              {saveMutation.isLoading ? "Сохранение..." : "Сохранить"}
             </Button>
           </div>
         </CardContent>

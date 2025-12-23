@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getErrorMessage, lessonsApi } from "@/shared/api";
 import { useClassroomLessonsQuery, useClassroomQuery, useClassroomStudentsCountQuery } from "@/entities/classroom/api/queries";
+import { classroomQueryKeys } from "@/entities/classroom/api/queryKeys";
 import { routes } from "@/shared/config/routes";
 import { toast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/ui/button";
@@ -46,7 +47,7 @@ export function TeacherClassroomPage() {
       toast({ title: "Урок создан" });
       setLessonTitle("");
       setCreateOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ["classroom", "lessons", classroomId] });
+      await queryClient.invalidateQueries({ queryKey: classroomQueryKeys.lessons(classroomId) });
     },
     onError: (e) => toast({ title: "Ошибка", description: getErrorMessage(e), variant: "destructive" }),
   });

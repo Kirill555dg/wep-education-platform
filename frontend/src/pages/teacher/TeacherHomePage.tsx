@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { classroomsApi, getErrorMessage } from "@/shared/api";
 import { useMyClassroomsQuery } from "@/entities/classroom/api/queries";
+import { classroomQueryKeys } from "@/entities/classroom/api/queryKeys";
 import { routes } from "@/shared/config/routes";
 import { toast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/ui/button";
@@ -27,7 +28,7 @@ export function TeacherHomePage() {
       setCreateOpen(false);
       setName("");
       setSubject("");
-      await queryClient.invalidateQueries({ queryKey: ["classroom", "my"] });
+      await queryClient.invalidateQueries({ queryKey: classroomQueryKeys.myRoot() });
     },
     onError: (e) => {
       toast({ title: "Ошибка", description: getErrorMessage(e), variant: "destructive" });

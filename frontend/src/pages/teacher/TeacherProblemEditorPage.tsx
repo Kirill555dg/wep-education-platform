@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { getErrorMessage, problemsApi } from "@/shared/api";
+import { useProblem } from "@/entities/problem/api/queries";
+import { problemQueryKeys } from "@/entities/problem/api/queryKeys";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -31,9 +34,6 @@ export function TeacherProblemEditorPage() {
   const isNew = problemIdParam === "new" || !problemIdParam;
   const problemId = Number(problemIdParam);
 
-  const [loading, setLoading] = useState(!isNew);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -52,60 +52,68 @@ export function TeacherProblemEditorPage() {
     if (isNew) return;
     if (!Number.isFinite(problemId)) {
       navigate(routes.teacher.problems, { replace: true });
-      return;
     }
+  }, [isNew, navigate, problemId]);
 
-    const load = async () => {
-      setLoading(true);
-      setLoadError(null);
-      try {
-        const p = await problemsApi.get(problemId);
-        form.reset({
-          title: p.title,
-          description: p.description,
-          problem_type: p.problem_type,
-          correct_answer: p.correct_answer ?? "",
-          explanation: p.explanation,
-          hints: p.hints ?? null,
-        });
-      } catch (e) {
-        setLoadError(getErrorMessage(e));
-      } finally {
-        setLoading(false);
-      }
-    };
+  const problemQuery = useProblem(problemId);
 
-    void load();
-  }, [form, isNew, navigate, problemId]);
+  useEffect(() => {
+    if (isNew) return;
+    if (!problemQuery.data) return;
+    const p = problemQuery.data;
+    form.reset({
+      title: p.title,
+      description: p.description,
+      problem_type: p.problem_type,
+      correct_answer: p.correct_answer ?? "",
+      explanation: p.explanation,
+      hints: p.hints ?? null,
+    });
+  }, [form, isNew, problemQuery.data]);
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    try {
-      if (isNew) {
-        const created = await problemsApi.create({
-          title: values.title,
-          description: values.description,
-          problem_type: values.problem_type,
-          correct_answer: values.correct_answer || null,
-          explanation: values.explanation ?? null,
-          hints: values.hints ?? null,
-        });
-        toast({ title: "Задача создана", description: created.title });
-        navigate(`/teacher/problems/${created.id}`, { replace: true });
-        return;
-      }
-
-      const updated = await problemsApi.update(problemId, {
+  const queryClient = useQueryClient();
+  const createMutation = useMutation({
+    mutationFn: async (values: FormValues) =>
+      await problemsApi.create({
         title: values.title,
         description: values.description,
         problem_type: values.problem_type,
         correct_answer: values.correct_answer || null,
         explanation: values.explanation ?? null,
         hints: values.hints ?? null,
-      });
+      }),
+    onSuccess: async (created) => {
+      toast({ title: "Задача создана", description: created.title });
+      await queryClient.invalidateQueries({ queryKey: problemQueryKeys.all });
+      navigate(routes.teacher.problem(created.id), { replace: true });
+    },
+    onError: (e) => toast({ title: "Ошибка", description: getErrorMessage(e), variant: "destructive" }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: FormValues) =>
+      await problemsApi.update(problemId, {
+        title: values.title,
+        description: values.description,
+        problem_type: values.problem_type,
+        correct_answer: values.correct_answer || null,
+        explanation: values.explanation ?? null,
+        hints: values.hints ?? null,
+      }),
+    onSuccess: async (updated) => {
       toast({ title: "Сохранено", description: updated.title });
-    } catch (e) {
-      toast({ title: "Ошибка", description: getErrorMessage(e), variant: "destructive" });
+      await queryClient.invalidateQueries({ queryKey: problemQueryKeys.byId(problemId) });
+      await queryClient.invalidateQueries({ queryKey: problemQueryKeys.all });
+    },
+    onError: (e) => toast({ title: "Ошибка", description: getErrorMessage(e), variant: "destructive" }),
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    if (isNew) {
+      createMutation.mutate(values);
+      return;
     }
+    updateMutation.mutate(values);
   });
 
   return (
@@ -120,8 +128,8 @@ export function TeacherProblemEditorPage() {
         </Button>
       </div>
 
-      {loading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
-      {loadError ? <div className="text-sm text-destructive">{loadError}</div> : null}
+      {!isNew && problemQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+      {!isNew && problemQuery.error ? <div className="text-sm text-destructive">{getErrorMessage(problemQuery.error)}</div> : null}
 
       <Card>
         <CardHeader>
@@ -171,8 +179,8 @@ export function TeacherProblemEditorPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Сохранение..." : "Сохранить"}
+              <Button type="submit" disabled={createMutation.isLoading || updateMutation.isLoading}>
+                {createMutation.isLoading || updateMutation.isLoading ? "Сохранение..." : "Сохранить"}
               </Button>
               {isNew ? (
                 <Button asChild variant="secondary" type="button">

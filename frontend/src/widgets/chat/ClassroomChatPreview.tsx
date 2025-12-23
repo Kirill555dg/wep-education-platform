@@ -1,44 +1,25 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { classroomsApi, getErrorMessage } from "@/shared/api";
+import { getErrorMessage } from "@/shared/api";
+import { useChatTailMessagesQuery } from "@/entities/chat/api/queries";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
-import type { MessageResponse } from "@/shared/api/generated";
 
 export function ClassroomChatPreview(props: { classroomId: number }) {
   const { classroomId } = props;
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<MessageResponse[]>([]);
-
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await classroomsApi.listChatMessages(classroomId, { tail: true, limit: 5, skip: 0 });
-      setMessages(page.items);
-    } catch (e) {
-      setError(getErrorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void load();
-  }, [classroomId]);
+  const messagesQuery = useChatTailMessagesQuery(classroomId, { limit: 5 });
+  const messages = messagesQuery.data?.items ?? [];
 
   return (
     <div className="grid gap-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">{loading ? "Загрузка..." : "Последние сообщения"}</div>
+        <div className="text-sm text-muted-foreground">{messagesQuery.isLoading ? "Загрузка..." : "Последние сообщения"}</div>
         <Button asChild variant="outline" size="sm">
           <Link to={`${routes.chat}?classroomId=${classroomId}`}>Открыть чат</Link>
         </Button>
       </div>
 
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
+      {messagesQuery.error ? <div className="text-sm text-destructive">{getErrorMessage(messagesQuery.error)}</div> : null}
 
       <div className="border rounded-md p-3 bg-muted/20">
         {messages.length === 0 ? <div className="text-sm text-muted-foreground">Нет сообщений</div> : null}

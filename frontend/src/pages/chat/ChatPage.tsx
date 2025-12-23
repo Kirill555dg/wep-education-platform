@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { classroomsApi, getErrorMessage } from "@/shared/api";
+import { getErrorMessage } from "@/shared/api";
+import { useMyClassroomsQuery } from "@/entities/classroom/api/queries";
 import { routes } from "@/shared/config/routes";
 import { useSessionStore } from "@/entities/session/model/store";
 import { Button } from "@/shared/ui/button";
@@ -18,35 +19,18 @@ export function ChatPage() {
   const [params, setParams] = useSearchParams();
   const selectedId = Number(params.get("classroomId") || "");
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<ClassroomListItem[]>([]);
-
+  const classroomsQuery = useMyClassroomsQuery({ skip: 0, limit: 100 });
+  const items = useMemo(
+    () => (classroomsQuery.data?.items ?? []).map((c) => ({ id: c.id, name: c.name, subject: c.subject })),
+    [classroomsQuery.data]
+  );
   const selected = useMemo(() => items.find((c) => c.id === selectedId) || null, [items, selectedId]);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await classroomsApi.listMine();
-      const rows = page.items.map((c) => ({ id: c.id, name: c.name, subject: c.subject }));
-      setItems(rows);
-
-      // Auto-select first classroom if none selected.
-      if (!Number.isFinite(selectedId) && rows.length > 0) {
-        setParams({ classroomId: String(rows[0].id) }, { replace: true });
-      }
-    } catch (e) {
-      setError(getErrorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (Number.isFinite(selectedId)) return;
+    if (items.length === 0) return;
+    setParams({ classroomId: String(items[0].id) }, { replace: true });
+  }, [items, selectedId, setParams]);
 
   const selectClassroom = (id: number) => {
     setParams({ classroomId: String(id) }, { replace: true });
@@ -59,12 +43,14 @@ export function ChatPage() {
         <CardDescription>Выберите класс для чата</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-2">
-        {loading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
-        {error ? <ErrorState message={error} onRetry={() => void load()} /> : null}
-        {!loading && !error && items.length === 0 ? (
+        {classroomsQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+        {classroomsQuery.error ? (
+          <ErrorState message={getErrorMessage(classroomsQuery.error)} onRetry={() => void classroomsQuery.refetch()} />
+        ) : null}
+        {!classroomsQuery.isLoading && !classroomsQuery.error && items.length === 0 ? (
           <EmptyState title="Нет классов" description="Создайте класс (teacher) или вступите по коду (student)." />
         ) : null}
-        {!loading && !error
+        {!classroomsQuery.isLoading && !classroomsQuery.error
           ? items.map((c) => (
               <button
                 key={c.id}
