@@ -1,650 +1,366 @@
-# 🎓 Web Education Platform — Backend API
+### Backend WEP LMS — архитектурный обзор (component view)
 
-Backend для образовательной веб-платформы, построенный на **FastAPI** с использованием многослойной архитектуры.
-
-## 🏗️ Архитектура
-
-Проект следует **многослойной архитектуре** с четким разделением ответственности:
-
-```
-backend/
-├── app/
-│   ├── main.py              # Точка входа FastAPI приложения
-│   │
-│   ├── api/                 # Слой контроллеров (API endpoints)
-│   │   └── v1/             # API версии 1
-│   │       ├── health.py   # Health check endpoints
-│   │       └── ...         # Другие endpoint модули
-│   │
-│   ├── services/            # Слой бизнес-логики (Service Layer)
-│   │   └── ...             # Сервисы обработки бизнес-правил
-│   │
-│   ├── repositories/        # Слой доступа к данным (Repository Pattern)
-│   │   └── ...             # Репозитории для работы с БД
-│   │
-│   ├── models/              # ORM модели (SQLAlchemy)
-│   │   └── ...             # Модели базы данных
-│   │
-│   ├── schemas/             # Pydantic схемы (DTO)
-│   │   └── ...             # Схемы валидации и сериализации
-│   │
-│   ├── core/                # Конфигурация приложения
-│   │   ├── config.py       # Настройки (через Pydantic Settings)
-│   │   └── ...             # Другие общие модули
-│   │
-│   └── db/                  # Настройка базы данных
-│       └── session.py      # Сессии SQLAlchemy, Base
-│
-├── pyproject.toml           # Зависимости проекта
-├── .env.example             # Пример переменных окружения
-├── .gitignore               # Git ignore
-└── README.md                # Этот файл
-```
+Этот документ описывает **backend-проект** как архитектурный компонент системы WEP LMS: его назначение, состав логических подсистем, границы ответственности и интерфейсы взаимодействия.  
+Фокус — **компонентная модель** (то, что позволяет восстановить UML-диаграмму компонентов). Инструкций по запуску намеренно нет.
 
 ---
 
-## 📚 Описание слоев
+### 1) Назначение backend в системе LMS
 
-### 1. **API Layer** (`app/api/`)
+Backend — это **серверный доменный компонент** LMS, который:
 
-**Назначение**: Обработка HTTP-запросов, валидация входных данных, формирование ответов.
+- **экспонирует публичный контракт** системы (REST API + WebSocket для чата),
+- **реализует бизнес-правила** учебной платформы (роль, доступ, публикация, статусы, расчёт прогресса),
+- **обеспечивает целостность данных** через транзакции и согласованный доступ к БД,
+- **формирует DTO-контракты** (Pydantic-схемы) и стабильный формат ошибок/пагинации,
+- **служит источником OpenAPI контракта**, по которому фронтенд генерирует типизированного клиента.
 
-**Ответственность**:
-- Определение endpoint'ов (маршрутов)
-- Валидация запросов через Pydantic схемы
-- Вызов сервисного слоя
-- Обработка исключений и формирование HTTP-ответов
-
-**Пример**:
-```python
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.db.session import get_db
-from app.services.user_service import UserService
-from app.schemas.user import UserCreate, UserResponse
-
-router = APIRouter()
-
-@router.post("/users", response_model=UserResponse)
-def create_user(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
-    service = UserService(db)
-    return service.create_user(user_data)
-```
+Backend не является “приложением с UI”; он — **сервис предметной области LMS**.
 
 ---
 
-### 2. **Service Layer** (`app/services/`)
+### 2) Границы backend (scope) и внешние зависимости
 
-**Назначение**: Бизнес-логика приложения.
+#### 2.1 Внешние интерфейсы (контракты)
 
-**Ответственность**:
-- Реализация бизнес-правил
-- Координация между репозиториями
-- Обработка транзакций
-- Валидация на уровне бизнес-логики
+- **HTTP/REST**: `/api/v1/*` (версионированный публичный API).
+- **WebSocket**: чат класса `/api/v1/classrooms/{id}/chat/ws` (реалтайм события и доставка сообщений).
+- **OpenAPI**: `/api/openapi.json` (контракт; также экспортируется скриптом `app/scripts/export_openapi.py` для фронтенда).
 
-**Пример**:
-```python
-from sqlalchemy.orm import Session
-from app.repositories import user as user_repository
-from app.schemas import users as user_schemas
+#### 2.2 Внешние зависимости (external components)
 
-class UserService:
-    def __init__(self, db: Session):
-        self.repository = user_repository.UserRepository(db)
-    
-    def create_user(self, user_data: user_schemas.UserCreate):
-        # Бизнес-логика: проверка уникальности email
-        existing = self.repository.get_by_email(user_data.email)
-        if existing:
-            raise ValueError("User with this email already exists")
-        
-        # Создание пользователя
-        return self.repository.create(user_data)
-```
+- **PostgreSQL**: основное хранилище данных и источник истины по доменной модели.
+- **Redis (опционально)**: fanout WebSocket-сообщений между несколькими инстансами backend (Pub/Sub), а также хранение/обновление presence/typing TTL (в рамках realtime-подсистемы).
 
-**Правила**:
-- ❌ Сервисы НЕ должны знать о HTTP, request/response
-- ✅ Сервисы работают с доменными объектами и схемами
-- ✅ Один сервис = одна бизнес-сущность или процесс
+#### 2.3 Что backend НЕ делает (out of scope)
+
+- **Не рендерит UI и не отвечает за UX**: навигация, состояние интерфейса, кэширование в браузере, графики/таблицы, пустые состояния — ответственность фронтенда.
+- **Не управляет клиентскими стратегиями real-time**: reconnect/backoff/polling fallback — ответственность фронтенда (backend предоставляет WS/HTTP контракты).
+- **Не является “аналитической платформой”**: не строит сложные BI-отчёты, не хранит “витрины” и не выполняет тяжёлую агрегацию вне доменно оправданных summary-метрик.
+- **Не выполняет фоновые вычисления/очереди**: нет отдельного job-runner/worker/очередей сообщений (в текущей архитектуре).
+- **Не является файловым хранилищем**: может хранить метаданные, но “объектное хранилище/ CDN / antivirus” как подсистема — вне текущих границ.
+
+#### 2.4 Делегирование ответственности
+
+- **Фронтенду**: представление данных (таблицы, графики), клиентская валидация форм, удобные сценарии выполнения ДЗ, локальные черновики, маршрутизация/guards, UX ошибок.
+- **Базе данных**: физическая целостность (FK/unique/index), оптимизация запросов и планы выполнения, хранение исторических фактов.
+- **Redis (если включён)**: кросс-инстанс доставка событий чата (Pub/Sub), TTL-структуры presence/typing.
 
 ---
 
-### 3. **Repository Layer** (`app/repositories/`)
+### 3) Высокоуровневая карта компонентов backend (UML-friendly)
 
-**Назначение**: Абстракция работы с базой данных.
+Ниже — “component map” (что рисовать на UML компонентной диаграмме и как это соотносится с кодом).
 
-**Ответственность**:
-- CRUD операции
-- Сложные запросы к БД
-- Инкапсуляция деталей работы с SQLAlchemy
+- **API Host (FastAPI Application)** — `app/main.py`
+  - включает middleware (CORS, request_id),
+  - регистрирует exception handlers,
+  - подключает роутер v1.
 
-**Пример**:
-```python
-from sqlalchemy.orm import Session
-from app.models.user import User
-from app.schemas.user import UserCreate
+- **API Layer (REST controllers)** — `app/api/v1/*.py`
+  - `auth`, `classrooms`, `lessons`, `homework`, `problems`, `testing`, `statistics`, `theory`, `health`.
 
-class UserRepository:
-    def __init__(self, db: Session):
-        self.db = db
-    
-    def get_by_id(self, user_id: int) -> User | None:
-        return self.db.query(User).filter(User.id == user_id).first()
-    
-    def get_by_email(self, email: str) -> User | None:
-        return self.db.query(User).filter(User.email == email).first()
-    
-    def create(self, user_data: UserCreate) -> User:
-        user = User(**user_data.dict())
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-        return user
-```
+- **Dependency Injection / AuthZ dependencies** — `app/api/dependencies.py`
+  - извлечение JWT контекста (user_id, role),
+  - загрузка текущего пользователя,
+  - роль-ориентированные зависимости (teacher/student),
+  - провайдеры сервисов (AuthService, ClassroomService и т.д.).
 
-**Правила**:
-- ❌ Репозитории НЕ содержат бизнес-логику
-- ✅ Репозитории работают только с ORM моделями
-- ✅ Один репозиторий = одна таблица/сущность
+- **Service Layer (business logic)** — `app/services/*.py`
+  - оркестрация use-cases (создание/обновление, проверка доступа, расчёт статусов/прогресса).
 
----
+- **Data Access Layer (repositories)** — `app/repositories/*.py`
+  - SQLAlchemy запросы, CRUD, агрегаты, join’ы.
 
-### 4. **Models** (`app/models/`)
+- **Persistence Model (ORM)** — `app/models/*.py`
+  - SQLAlchemy модели (таблицы, связи, индексы/constraints).
 
-**Назначение**: ORM модели SQLAlchemy.
+- **DTO/Contracts (Pydantic schemas)** — `app/schemas/*.py`
+  - request/response DTO, pagination Page[T], error envelope schema.
 
-**Ответственность**:
-- Определение структуры таблиц БД
-- Связи между таблицами (relationships)
-- Индексы, ограничения
+- **Realtime Subsystem (WS + presence + pub/sub)** — `app/realtime/*.py`
+  - `ConnectionManager` (WS connections per classroom),
+  - `RedisPubSubBroker` (fanout across instances),
+  - `presence` / `auth` (валидация WS токенов, presence/typing).
 
-**Пример**:
-```python
-from sqlalchemy import Column, Integer, String, Boolean
-from app.db.session import Base
-
-class User(Base):
-    __tablename__ = "users"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
-```
+- **Infrastructure / Cross-cutting** — `app/core/*`, `app/db/*`, `app/api/*`
+  - конфигурация, логирование, request context, security (JWT + Argon2), pagination defaults, OpenAPI patching.
 
 ---
 
-### 5. **Schemas** (`app/schemas/`)
+### 4) Компоненты по слоям: роль, ответственность, данные, взаимодействия
 
-**Назначение**: Pydantic схемы для валидации и сериализации данных (DTO - Data Transfer Objects).
+#### 4.1 API слой (контроллеры)
 
-**Ответственность**:
-- Валидация входных данных
-- Сериализация выходных данных
-- Документация API (автоматическая через OpenAPI)
+- **Роль**: публичный входной слой — маршрутизация HTTP/WS запросов, адаптация внешнего мира к use-cases.
+- **Зона ответственности**:
+  - принимают запросы (HTTP),
+  - валидируют входные DTO (`app/schemas/*`),
+  - получают зависимости через DI (`app/api/dependencies.py`),
+  - вызывают соответствующие сервисы,
+  - возвращают DTO-ответы,
+  - не содержат бизнес-правил (кроме простого ветвления на уровне “какой сервис вызвать”).
+- **Типы данных**:
+  - вход: Pydantic request-схемы (`UserCreate`, `HomeworkCreate`, `AnswerSubmit`, ...),
+  - выход: response-схемы (`ClassroomResponse`, `HomeworkDetailResponse`, `StatisticsResponse`, `Page[T]`, ...),
+  - ошибки: envelope `ErrorResponse` (`app/schemas/errors.py`).
+- **Точки взаимодействия**:
+  - с DI: `get_current_user/get_current_teacher/get_current_student`,
+  - с Service Layer: `app/services/*`,
+  - с Realtime (для WS): `app/realtime/*` (через `app.state.*` и прямые вызовы).
 
-**Пример**:
-```python
-from pydantic import BaseModel, EmailStr
-
-class UserBase(BaseModel):
-    email: EmailStr
-    username: str
-
-class UserCreate(UserBase):
-    password: str
-
-class UserResponse(UserBase):
-    id: int
-    is_active: bool
-    
-    class Config:
-        from_attributes = True  # для SQLAlchemy моделей
-```
-
-**Типы схем**:
-- `*Base` — базовые поля
-- `*Create` — для создания (POST)
-- `*Update` — для обновления (PUT/PATCH)
-- `*Response` — для ответов API
-- `*InDB` — внутреннее представление с хэшами паролей и т.д.
+Привязка к коду:
+- Роутер v1: `app/api/v1/__init__.py`
+- Контроллеры: `app/api/v1/*.py`
 
 ---
 
-## 🛠 Технологии
+#### 4.2 Слой бизнес-логики (Service Layer)
 
-- **FastAPI** — современный веб-фреймворк для Python
-- **SQLAlchemy** — ORM для работы с базами данных
-- **Pydantic v2 + pydantic-settings** — валидация данных и конфигурация через `.env`
-- **Uvicorn** — ASGI-сервер
-- **Alembic** — миграции базы данных
-- **Python-JOSE** — JWT токены
-- **Argon2 (argon2-cffi)** — хеширование паролей
-- **Ruff** — линтинг и форматирование
-- **mypy** — статическая проверка типов
-- **uv** — быстрый менеджер окружений и зависимостей
+**Общее назначение**: сервисы реализуют use-cases LMS, обеспечивая консистентность доменных правил и прав доступа.
 
----
+##### 4.2.1 Auth / Identity
 
-## 🚀 Быстрый старт
+- **Компонент**: `AuthService` (`app/services/auth.py`)
+- **Роль**: регистрация/логин, управление активной ролью (teacher/student), выдача JWT.
+- **Данные**:
+  - `User`, `LoginData`, `Teacher`, `Student` (`app/models/users.py`)
+  - DTO: `UserCreate`, `LoginRequest`, `TokenResponse`, `UserRolesResponse` (`app/schemas/users.py`)
+- **Взаимодействия**:
+  - `core/security.py` (Argon2 hashing, JWT encode/decode),
+  - `repositories/user.py` (UserRepository, LoginDataRepository, TeacherRepository, StudentRepository),
+  - API endpoints: `app/api/v1/auth.py`.
 
-### 🐳 Docker (Рекомендуется)
+##### 4.2.2 Classroom Management
 
-**Запуск всей системы (backend + frontend + database):**
+- **Компонент**: `ClassroomService` (`app/services/classroom.py`)
+- **Роль**: создание/обновление классов, управление инвайт-кодом, присоединение ученика, список учеников класса.
+- **Данные**:
+  - `Classroom`, `StudentClassroom`, `Invite` (`app/models/classes.py`)
+  - DTO: `ClassroomCreate/Update/Response`, `JoinClassroomRequest`, `ClassroomStudentResponse` (`app/schemas/classrooms.py`)
+- **Взаимодействия**:
+  - `services/access_control.py` (проверки ownership/доступа),
+  - `repositories/classroom.py`, `repositories/user.py`,
+  - API endpoints: `app/api/v1/classrooms.py` (REST + WS-чат как часть контекста класса).
 
-```bash
-# Из корня репозитория
-docker-compose up -d
-```
+##### 4.2.3 Lessons & Content Binding
 
-**Приложение будет доступно:**
-- 🚀 API: http://localhost:8023
-- 📖 Swagger UI: http://localhost:8023/api/docs
-- 📘 ReDoc: http://localhost:8023/api/redoc
-- 🌐 Frontend: http://localhost
+- **Компонент**: `LessonService`, `TheoryService` (`app/services/lesson.py`, `app/services/theory.py`)
+- **Роль**:
+  - уроки: публикация, список уроков по классу, привязка к классу,
+  - теория: предметы/разделы/материалы и связь материалов с уроками (`LessonMaterial`).
+- **Данные**:
+  - `Lesson`, `LessonMaterial` (`app/models/lessons.py`),
+  - `TheoryMaterial` и иерархия теории (`app/models/theory.py`),
+  - DTO: `LessonCreate/Update/Response`, theory DTO (`app/schemas/lessons.py`, `app/schemas/theory.py`).
+- **Взаимодействия**:
+  - репозитории уроков/теории,
+  - access control (teacher owns classroom),
+  - API endpoints: `app/api/v1/lessons.py`, `app/api/v1/theory.py`.
 
-**Полезные команды:**
-```bash
-# Просмотр логов backend
-docker-compose logs -f backend
+##### 4.2.4 Homework & Problem Library
 
-# Перезапуск backend после изменений
-docker-compose up -d --build backend
+- **Компоненты**: `HomeworkService`, `ProblemService` (`app/services/homework.py`, `app/services/problem.py`)
+- **Роль**:
+  - сборка ДЗ из задач (problem_ids + points + order),
+  - управление публикацией ДЗ,
+  - выдача задач для ДЗ: teacher видит “полные” данные, student — “без ответов”.
+- **Данные**:
+  - `Homework`, `HomeworkProblem`, `Problem` (`app/models/homework.py`, `app/models/problems.py`)
+  - DTO: `HomeworkCreate/Update/Response`, `ProblemResponse/ProblemFullResponse` (`app/schemas/homework.py`, `app/schemas/problems.py`)
+- **Взаимодействия**:
+  - репозитории: `repositories/homework.py`, `repositories/lesson.py`, `repositories/classroom.py`,
+  - access control: teacher owns classroom, student access зависит от `is_published`,
+  - API endpoints: `app/api/v1/homework.py`, `app/api/v1/problems.py`.
 
-# Остановка
-docker-compose down
-```
+##### 4.2.5 Testing / Auto-checking
 
-### 💻 Локальная разработка
+- **Компонент**: `TestingService` (`app/services/testing.py`)
+- **Роль**: приём ответов ученика, базовая автопроверка, обновление статистики попыток.
+- **Данные**:
+  - `Statistics` (`app/models/homework.py`) как “срез состояния выполнения ДЗ студентом”,
+  - вход: `AnswerSubmit`, выход: `StatisticsResponse` (`app/schemas/homework.py`).
+- **Взаимодействия**:
+  - `StatisticsRepository`, `HomeworkProblemRepository`, `ProblemRepository`,
+  - API endpoints: `app/api/v1/testing.py`.
 
-#### 1. Установка зависимостей (Python 3.13, uv)
+##### 4.2.6 Results / Progress / Statistics
 
-```bash
-# Из директории backend/
-make install
-```
+- **Компонент**: `ResultService` (`app/services/result.py`)
+- **Роль**: агрегирование прогресса ученика и сводных метрик (student progress, classroom progress), выдача попыток/статусов.
+- **Данные**:
+  - `Statistics` как факт попыток/статусов,
+  - DTO: `StudentProgressResponse`, `ClassroomProgressResponse`, `StatisticsResponse`, `Page[T]`.
+- **Взаимодействия**:
+  - `StatisticsRepository` (в т.ч. агрегаты одной SQL-командой),
+  - API endpoints: `app/api/v1/statistics.py`.
 
-#### 2. Настройка окружения
+##### 4.2.7 Chat (domain + persistence)
 
-Скопируйте `.env.example` в `.env` и настройте переменные:
-
-```bash
-cp .env.example .env
-```
-
-**Важно**: Для локальной разработки убедитесь, что PostgreSQL запущен.
-
-Самый простой вариант — использовать цели `Makefile` (они поднимают PostgreSQL из `../database/docker-compose.yml`
-на хост-порту `5433`):
-
-```bash
-# Из директории backend/
-make db-up
-make db-wait
-```
-
-#### 3. Запуск миграций
-
-```bash
-# Из директории backend/
-make migrate
-
-# Создать новую миграцию (при изменении моделей)
-./.venv/bin/alembic revision --autogenerate -m "описание изменений"
-```
-
-#### 3.1. Сидирование dev-данных (опционально)
-
-```bash
-# 1 учитель + 2 класса + по 5 учеников + контент (уроки/материалы/дз/задачи/статистика)
-make seed-dev
-```
-
-#### 3.2. Полный пересоздание dev-БД (сброс volume + миграции + сиды)
-
-```bash
-make bootstrap
-```
-
-#### 4. Запуск сервера
-
-```bash
-# Из директории backend/
-make dev
-```
-
-#### Полезные команды
-
-- `make lint` — Ruff (линтер)
-- `make format` — Ruff (форматирование)
-- `make type` — mypy (проверка типов)
-- `make test` — pytest
-- `make check` — линт + типы + тесты
-- `make run` — uvicorn без `--reload`
-- `make sync` — синхронизация зависимостей из `requirements.txt`
-- `make openapi-export` — экспорт OpenAPI в `../frontend/src/shared/api/openapi.json`
-
-**Приложение будет доступно:**
-- API: http://localhost:8023
-- Документация (Swagger): http://localhost:8023/api/docs
-- Документация (ReDoc): http://localhost:8023/api/redoc
+- **Компонент**: `ChatService` (`app/services/chat.py`)
+- **Роль**: гарантировать чат на класс (создание при необходимости), контроль доступа, хранение/выдача сообщений.
+- **Данные**:
+  - `Chat`, `Message` (`app/models/communication.py`)
+  - DTO: `MessageCreate`, `MessageResponse`, `UserPublic` (`app/schemas/communication.py`)
+- **Взаимодействия**:
+  - `repositories/communication.py` (MessageRepository, ChatRepository),
+  - `repositories/classroom.py` (membership проверки),
+  - API endpoints: `app/api/v1/classrooms.py` (HTTP list/post + WS endpoint).
 
 ---
 
-## 📡 API Endpoints
+#### 4.3 Слой доступа к данным (Repository Layer)
 
-### Health Check
+- **Роль**: абстракция доступа к PostgreSQL, изоляция SQLAlchemy/SQL деталей от business logic.
+- **Зона ответственности**:
+  - CRUD, фильтрации, join’ы, агрегаты,
+  - транзакционные границы в текущей реализации часто совпадают с repository методом (commit/refresh внутри BaseRepository).
+- **Типы данных**:
+  - вход: примитивы/идентификаторы/параметры пагинации,
+  - выход: ORM модели (`app/models/*`).
+- **Точки взаимодействия**:
+  - вызываются сервисами (`app/services/*`),
+  - используют `AsyncSession` (`app/db/session.py`),
+  - отражают структуру таблиц и связей (`app/models/*`).
 
-- **GET** `/api/v1/health` — проверка состояния приложения
-- **GET** `/api/v1/ping` — простой ping-pong
-
-### Пример запроса:
-
-```bash
-curl http://localhost:8023/api/v1/health
-```
-
-**Ответ**:
-```json
-{
-  "status": "healthy",
-  "app_name": "Web Education Platform API",
-  "version": "1.0.0",
-  "timestamp": "2024-01-01T12:00:00"
-}
-```
+Привязка к коду:
+- `BaseRepository` — `app/repositories/base.py` (общие операции).
+- Доменные репозитории — `app/repositories/{user,classroom,lesson,homework,communication}.py`.
 
 ---
 
-## 📚 Theory (контент)
+#### 4.4 Модель данных (ORM) и DTO
 
-Базовые эндпоинты для фронта (subjects → sections → subsections → materials):
+##### ORM модель (Persistence Model)
 
-- **GET** `/api/v1/theory/subjects`
-- **GET** `/api/v1/theory/subjects/{subject_id}`
-- **GET** `/api/v1/theory/subjects/{subject_id}/sections`
-- **GET** `/api/v1/theory/sections/{section_id}/subsections`
-- **GET** `/api/v1/theory/subsections/{subsection_id}/materials`
-- **GET** `/api/v1/theory/materials/{material_id}`
+- **Роль**: формальная модель таблиц/связей, которая определяет “физическую” структуру данных.
+- **Ключевые сущности** (примерный состав для UML):
+  - Identity: `User`, `LoginData`, `Teacher`, `Student`
+  - Academic: `Classroom`, `StudentClassroom`, `Lesson`, `LessonMaterial`
+  - Content: `Problem`, `Homework`, `HomeworkProblem`, `TheoryMaterial` (+ иерархия теории)
+  - Communication: `Chat`, `Message`
+  - Analytics: `Statistics`
+- **Точки взаимодействия**:
+  - репозитории (SQLAlchemy запросы),
+  - миграции Alembic (эволюция схемы).
 
-Пример:
+##### DTO / Schemas (Contracts)
 
-```bash
-curl -H "Authorization: Bearer <token>" "http://localhost:8023/api/v1/theory/subjects?skip=0&limit=100"
-```
-
----
-
-## 💬 Classroom chat
-
-- **GET** `/api/v1/classrooms/{classroom_id}/chat/messages`
-- **POST** `/api/v1/classrooms/{classroom_id}/chat/messages`
-- **WS** `/api/v1/classrooms/{classroom_id}/chat/ws?token=<jwt>`
-
-Пример:
-
-```bash
-curl -H "Authorization: Bearer <token>" "http://localhost:8023/api/v1/classrooms/1/chat/messages?skip=0&limit=100"
-
-curl -X POST \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Hello!"}' \
-  "http://localhost:8023/api/v1/classrooms/1/chat/messages"
-```
-
-WS контракт (client -> server):
-
-- `{ "type": "ping" }`
-- `{ "type": "message", "content": "Hello!" }`
-- `{ "type": "typing", "is_typing": true }`
-
-WS события (server -> client):
-
-- `ready` (+ snapshot):
-  - `{ "type": "ready", "classroom_id": 1, "presence": {"online_user_ids": [..]}, "typing": {"user_ids": [..]}, "request_id": "<ws_request_id>" }`
-- `message`:
-  - `{ "type": "message", "payload": { ...MessageResponse... } }`
-- `presence`:
-  - `{ "type": "presence", "payload": { "user_id": 123, "status": "online|offline" } }`
-- `typing`:
-  - `{ "type": "typing", "payload": { "user_id": 123, "is_typing": true } }`
-- `error`:
-  - `{ "type": "error", "error": { "code": "bad_request|validation_error|role_changed|token_missing_role", "message": "...", "meta": {} }, "request_id": "<ws_request_id>" }`
+- **Роль**: стабильный контракт на границе API и внутри сервисов (request/response модели).
+- **Зона ответственности**:
+  - входная валидация (FastAPI + Pydantic),
+  - сериализация ответов (ORM -> DTO).
+- **Точки взаимодействия**:
+  - API слой использует схемы как публичный контракт,
+  - сервисы формируют/возвращают DTO, но не зависят от HTTP.
 
 ---
 
-## 🚀 Быстрый старт для фронта (dev)
+#### 4.5 Инфраструктурные модули (cross-cutting / platform)
 
-1) Подними инфраструктуру и сида:
+##### 4.5.1 Конфигурация и окружение
 
-```bash
-cd backend
-make bootstrap
-make dev
-```
+- **Компонент**: `app/core/config.py`
+- **Роль**: единственный источник конфигурации (DB URL, CORS, JWT, pagination limits, realtime settings).
+- **Взаимодействия**:
+  - `db/session.py` (создание engine),
+  - `main.py` (CORS/middleware, поведение debug),
+  - security/logging.
 
-2) Получи креды + invite codes + ids (только в DEBUG):
+##### 4.5.2 Security
 
-```bash
-curl "http://localhost:8023/api/v1/testing/dev-seed-info"
-```
+- **Компонент**: `app/core/security.py`
+- **Роль**: Argon2id hashing + JWT (в токене содержится `sub` и `role`).
+- **Взаимодействия**:
+  - `api/dependencies.py` декодирует токен и проверяет `role` (сценарий `role_changed`).
 
-3) Сгенерируй OpenAPI и клиента (bun):
+##### 4.5.3 Единый request_id и формат ошибок
 
-```bash
-cd ../frontend
-bun install
+- **Request ID middleware**: `app/api/middleware/request_id.py`
+  - читает/генерирует `X-Request-ID`, кладёт в `ContextVar`, возвращает в response header.
+- **Error mapping**: `app/api/errors.py` + `app/domain/errors.py`
+  - доменные ошибки сервисов конвертируются в стабильный HTTP envelope:
+    - `{ error: { code, message, meta }, request_id }`.
+- **OpenAPI patch**: `app/api/openapi.py`
+  - включает `ErrorResponse` в компоненты схемы и добавляет стандартные error responses ко всем операциям (важно для генерации клиента).
 
-# 1) Скачать OpenAPI из запущенного бекенда
-# 2) Сгенерировать axios-клиент в ./src/api/client
-bun run api:regen
-```
+##### 4.5.4 Pagination policy
 
-OpenAPI также доступен напрямую: `http://localhost:8023/api/openapi.json`.
+- **Компоненты**: `app/core/pagination.py`, `app/api/pagination.py`
+- **Роль**: единые defaults/лимиты и валидация `skip/limit` на уровне API (`limit <= MAX_LIMIT`, сейчас это 100).
+- **Взаимодействия**:
+  - используется всеми list endpoints (`Page[T]`).
 
-4) Логин (получи JWT):
+##### 4.5.5 Realtime (WS + Redis fanout)
 
-```bash
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"username_or_email":"teacher@wep.dev","password":"TeacherPass123!"}' \
-  "http://localhost:8023/api/v1/auth/login"
-```
+- **Компоненты**:
+  - `ConnectionManager` (`app/realtime/connection_manager.py`) — удерживает WS соединения по classroom_id и делает broadcast.
+  - `RedisPubSubBroker` (`app/realtime/redis_pubsub.py`) — публикация и подписка на каналы `chat.classroom.{id}` для multi-instance.
+  - `presence` / `auth` (`app/realtime/presence.py`, `app/realtime/auth.py`) — механика presence/typing и авторизации WS.
+- **Точки взаимодействия**:
+  - инициализация в `app/main.py` (startup/shutdown),
+  - WS endpoint в `app/api/v1/classrooms.py`.
 
-5) Подключись к WS чату:
+##### 4.5.6 Скрипты платформы
 
-`ws://localhost:8023/api/v1/classrooms/<id>/chat/ws?token=<jwt>`
-
----
-
-## 🧑‍🏫🧑‍🎓 Роли: active vs enabled
-
-В системе есть два понятия:
-
-- **active_role**: текущая активная роль, которая используется для авторизации (`teacher` или `student`).
-- **enabled_roles**: какие роли “включены” для аккаунта (наличием профиля teacher/student).
-
-При регистрации пользователь выбирает **одну** роль — создаётся только соответствующий профиль.
-Вторую роль можно “включить” и сделать активной через эндпоинт переключения:
-
-- **GET** `/api/v1/auth/me/roles` → `{ active_role, enabled_roles }`
-- **POST** `/api/v1/auth/me/role` с телом `{ "role": "teacher" | "student" }`
-
-Важно: JWT содержит **active role**. После смены роли старый токен становится невалидным.
-
-Ожидаемое поведение фронта:
-
-- после `POST /api/v1/auth/me/role` сделать новый `POST /api/v1/auth/login`
-- если на любом запросе получен **401** с `error.code="role_changed"` — показать пользователю предложение переавторизоваться
+- **Компонент**: `app/scripts/export_openapi.py`
+- **Роль**: “официальный” путь экспорта OpenAPI контракта в артефакт для фронтенда (контракт-центричное взаимодействие).
 
 ---
 
-## 📄 Единый формат paginated list ответов
+### 5) Ключевые потоки взаимодействия (сценарии на уровне компонентов)
 
-Все list-эндпоинты с пагинацией возвращают:
+#### 5.1 Аутентификация и роль
 
-```json
-{
-  "items": [],
-  "total": 0,
-  "skip": 0,
-  "limit": 100
-}
-```
+- Frontend вызывает `auth` endpoint → получает JWT.
+- Все защищённые endpoints используют `get_current_user`:
+  - декодирует JWT,
+  - проверяет пользователя в БД,
+  - сверяет `token.role` с `user.role` (иначе `role_changed`).
 
----
+**Архитектурный смысл**: роль — часть токена; смена роли требует обновления токена на фронтенде.
 
-## ❗️ Единый контракт ошибок (HTTP)
+#### 5.2 “Учитель создаёт ДЗ из базы задач”
 
-Любая ошибка HTTP возвращается в формате:
+- API: `POST /homework` → Service `HomeworkService.create_homework`:
+  - проверяет lesson/classroom ownership,
+  - создаёт Homework,
+  - создаёт HomeworkProblem связи с points/order.
+- Репозитории фиксируют изменения в БД (commit), возвращают ORM модели → DTO.
 
-```json
-{
-  "error": {
-    "code": "string",
-    "message": "string",
-    "meta": {}
-  },
-  "request_id": "string"
-}
-```
+#### 5.3 “Ученик решает ДЗ”
 
-Примеры:
+- API: `GET /homework/{id}` + `GET /homework/{id}/problems`
+  - `HomeworkService` скрывает correct_answer для student.
+- API: `POST /testing/submit-answer`
+  - `TestingService` валидирует принадлежность problem ↔ homework, обновляет `Statistics`.
+- API: `POST /testing/homework/{id}/submit`
+  - статус `submitted` (итоговая фиксация).
 
-- **401** при смене роли:
+#### 5.4 “Статистика”
 
-```json
-{
-  "error": {
-    "code": "role_changed",
-    "message": "Role changed, please re-authenticate"
-  },
-  "request_id": "..."
-}
-```
+- Student: `GET /statistics/me`, `GET /statistics/me/progress`
+- Teacher: `GET /statistics/homework/{homework_id}`, `GET /statistics/classroom/{classroom_id}/progress`, `GET /statistics/student/{student_user_id}`
 
-- **422** валидация:
+Сервис `ResultService` агрегирует summary, `StatisticsRepository` делает агрегаты одной SQL-командой.
 
-```json
-{
-  "error": {
-    "code": "validation_error",
-    "message": "Validation error",
-    "meta": {
-      "errors": []
-    }
-  },
-  "request_id": "..."
-}
-```
+#### 5.5 Чат класса (HTTP + WS)
+
+- HTTP:
+  - `ChatService` гарантирует доступ и хранение сообщений (`MessageRepository`).
+- WS:
+  - `ConnectionManager` держит соединения,
+  - при наличии Redis — `RedisPubSubBroker` масштабирует broadcast на несколько инстансов.
 
 ---
 
-## 🗄️ База данных
+### 6) Резюме для UML-диаграммы компонентов
 
-### PostgreSQL
+Если рисовать UML component diagram, минимальный набор компонентов и связей:
 
-Используем **PostgreSQL**:
+- **Frontend UI** ⇄ (**REST API** / **WS Chat Gateway**) → **Service Layer** → **Repository Layer** → **PostgreSQL**
+- **WS Chat Gateway** ⇄ **Realtime Subsystem** → (**Redis Pub/Sub**, опционально) → **WS Broadcast**
+- **Service Layer** → **Core/Security/Config/Logging** (cross-cutting)
+- **Backend** → **OpenAPI Provider** (контракт для генерации клиента фронтенда)
 
-```env
-DATABASE_URL="postgresql://wep_user:wep_password@127.0.0.1:5433/wep_education"
-```
-
-Драйвер `psycopg[binary]` уже прописан в `requirements.txt`.
-
----
-
-## 🧪 Тестирование
-
-```bash
-# Запуск тестов
-make test
-
-# Полный прогон качества
-make check
-```
-
----
-
-## 🔧 Инструменты разработки
-
-Используем единый набор команд через `make` (см. раздел "Локальная разработка"). Линтинг выполняет только Ruff, типы проверяет mypy с конфигом `backend/mypy.ini`.
-
----
-
-## 📝 Принципы разработки
-
-### 1. Dependency Injection
-
-Используйте FastAPI Depends для внедрения зависимостей:
-
-```python
-from fastapi import Depends
-from sqlalchemy.orm import Session
-from app.db.session import get_db
-
-@router.get("/users")
-def get_users(db: Session = Depends(get_db)):
-    ...
-```
-
-### 2. Разделение ответственности
-
-- **Контроллеры** (API) → HTTP-логика
-- **Сервисы** → Бизнес-логика
-- **Репозитории** → Работа с БД
-- **Модели** → Структура данных
-- **Схемы** → Валидация и сериализация
-
-### 3. Типизация
-
-Используйте типы Python везде:
-
-```python
-import typing as tp
-from sqlalchemy.orm import Session
-
-def get_user(user_id: int, db: Session) -> User | None:
-    ...
-```
-
-### 4. Обработка ошибок
-
-Используйте HTTPException для API ошибок:
-
-```python
-from fastapi import HTTPException, status
-
-if not user:
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="User not found"
-    )
-```
-
----
-
-## 🔐 Безопасность
-
-- **Хеширование паролей**: используйте `passlib` с bcrypt
-- **JWT токены**: для аутентификации
-- **CORS**: настроен для фронтенда
-- **Environment variables**: все секреты в `.env`
-
----
-
-## 📄 License
-
-MIT
-
----
-
-**Разработка: МИРЭА — РТУ**  
-**Проект: Курсовая работа ACSA**
 
