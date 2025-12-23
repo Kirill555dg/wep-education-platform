@@ -19,10 +19,10 @@ WEP LMS — веб‑система для организации учебног
 
 Система состоит из следующих ключевых компонентов:
 
-- **Клиентская часть (Web Client / Frontend)**
+- **Клиентская часть (Web Client / Frontend SPA)**
 - **Серверная часть (Backend API / Domain Service)**
-- **База данных (Relational Database)**
-- **Внешние зависимости (опциональные инфраструктурные сервисы)**
+- **База данных (PostgreSQL / Relational Database)**
+- **Внешние зависимости (опциональные инфраструктурные сервисы, напр. Redis для realtime)**
 
 ---
 
@@ -37,9 +37,9 @@ WEP LMS — веб‑система для организации учебног
   - управление клиентским состоянием (сессия, локальные черновики) и кэширование данных;
   - realtime UX для чата (подключение, отображение сообщений, fallback-поведение на клиенте).
 - **Интерфейсы взаимодействия**:
-  - **REST/HTTP(S)**: запросы к backend API (JSON DTO);
-  - **WebSocket**: realtime‑канал чата (события сообщений/присутствия);
-  - **OpenAPI контракт**: frontend потребляет спецификацию API (для типизированной интеграции).
+  - **REST/HTTP(S)**: запросы к backend API (JSON DTO).
+  - **WebSocket**: realtime‑канал чата (события сообщений/присутствия).
+  - **Формальная спецификация API (OpenAPI)**: используется как контракт интеграции (описание типов/операций).
 
 #### 3.2 Серверная часть (Backend API / Domain Service)
 
@@ -47,15 +47,15 @@ WEP LMS — веб‑система для организации учебног
 - **Основные функции**:
   - проверка прав доступа и ролей, обеспечение доменных инвариантов;
   - реализация use‑cases: классы, уроки, ДЗ, задачи, попытки, прогресс, чат;
-  - публикация стабильного контракта API (REST + WS), единых форматов ошибок и пагинации;
+  - публикация стабильного контракта API (REST + WS), единых форматов ошибок и пагинации (на уровне протокольной политики);
   - интеграция с хранилищем данных (транзакции, согласованный доступ к БД).
 - **Интерфейсы взаимодействия**:
   - **REST/HTTP(S)**: публичные endpoints для UI;
   - **WebSocket**: канал чата для клиентов;
   - **SQL**: доступ к данным в БД (backend → DB);
-  - **Pub/Sub (опционально)**: fanout realtime‑событий между инстансами backend (backend → external broker).
+  - **Pub/Sub (опционально, Redis)**: fanout realtime‑событий между инстансами backend (backend ↔ broker).
 
-#### 3.3 База данных (Relational Database)
+#### 3.3 База данных (PostgreSQL / Relational Database)
 
 - **Роль в системе**: персистентный источник истины по доменной модели LMS.
 - **Основные функции**:
@@ -66,11 +66,11 @@ WEP LMS — веб‑система для организации учебног
 
 #### 3.4 Внешние зависимости (если есть)
 
-- **Realtime broker (опционально)**:
+- **Realtime broker (опционально, Redis Pub/Sub)**:
   - **Роль**: масштабирование realtime (чат) при нескольких инстансах backend.
-  - **Интерфейс**: Pub/Sub протокол (backend ↔ broker).
+  - **Интерфейс**: Pub/Sub (backend ↔ Redis).
 - **Reverse proxy / static hosting (инфраструктурный компонент, опционально)**:
-  - **Роль**: доставка статических файлов фронтенда и проксирование запросов к backend.
+  - **Роль**: доставка статических файлов фронтенда и проксирование запросов к backend API единым ingress.
   - **Интерфейсы**: HTTP(S) ingress.
 
 ---
@@ -93,8 +93,8 @@ WEP LMS — веб‑система для организации учебног
   - команды и запросы в виде JSON DTO (например: создать класс/урок/ДЗ, отправить ответ, получить статистику).
 - **REST (Backend → Frontend)**:
   - доменные данные в виде JSON DTO;
-  - для списков — paginated‑ответы (`items/total/skip/limit`);
-  - для ошибок — единый envelope с диагностическим идентификатором запроса (`request_id`).
+  - для списков — paginated‑ответы (offset/limit + total count как политика контракта);
+  - для ошибок — структурированный error‑ответ с **correlation id** для трассировки (диагностика).
 - **WebSocket (Frontend ↔ Backend)**:
   - события чата (новое сообщение, статус присутствия, typing‑состояние).
 - **Backend ↔ Database**:
@@ -115,24 +115,24 @@ WEP LMS — веб‑система для организации учебног
 
 Ниже формулировки, которые можно напрямую переносить на UML component diagram:
 
-- **Web Client** — клиентский компонент, реализующий сценарии teacher/student и визуализацию данных.  
+- **Web Client (Frontend SPA)** — клиентский компонент, реализующий сценарии teacher/student и визуализацию данных.  
   Зависит от: **Backend API** по REST/HTTP(S) и WebSocket.
 
 - **Backend API (Domain Service)** — серверный компонент, реализующий бизнес‑правила LMS и публикующий контракт API.  
-  Зависит от: **Relational Database** (SQL) и опционально от **Realtime Broker** (Pub/Sub).
+  Зависит от: **PostgreSQL Database** (SQL) и опционально от **Redis Pub/Sub Broker**.
 
-- **Relational Database** — компонент хранения доменных данных и фактов.  
+- **PostgreSQL Database** — компонент хранения доменных данных и фактов.  
   Используется только **Backend API**.
 
-- **Realtime Broker (optional)** — компонент инфраструктуры для fanout realtime‑событий между инстансами Backend API.  
+- **Redis Pub/Sub Broker (optional)** — компонент инфраструктуры для fanout realtime‑событий между инстансами Backend API.  
   Используется только **Backend API**.
 
 Каналы связи:
 
 - `Web Client → Backend API`: REST/HTTP(S), JSON DTO
 - `Web Client ↔ Backend API`: WebSocket events (chat)
-- `Backend API ↔ Relational Database`: SQL
-- `Backend API ↔ Realtime Broker (optional)`: Pub/Sub
+- `Backend API ↔ PostgreSQL Database`: SQL
+- `Backend API ↔ Redis Pub/Sub Broker (optional)`: Pub/Sub
 
 ---
 
