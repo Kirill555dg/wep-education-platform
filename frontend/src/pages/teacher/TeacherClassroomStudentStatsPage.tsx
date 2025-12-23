@@ -25,7 +25,7 @@ export function TeacherClassroomStudentStatsPage() {
 
   const studentsQuery = useQuery({
     queryKey: ["stats", "teacher", "classroom", classroomId, "students"],
-    queryFn: async () => await classroomsApi.listStudents(classroomId, { skip: 0, limit: 100 }),
+    queryFn: async () => await classroomsApi.listStudentsAll(classroomId),
     enabled: Number.isFinite(classroomId) && classroomId > 0,
   });
 
@@ -47,7 +47,7 @@ export function TeacherClassroomStudentStatsPage() {
 
   const studentStatsQuery = useQuery({
     queryKey: ["stats", "teacher", "student", studentInfo?.userId],
-    queryFn: async () => await statisticsApi.studentStatsByTeacher(studentInfo!.userId, { skip: 0, limit: 100 }),
+    queryFn: async () => await statisticsApi.studentStatsByTeacherAll(studentInfo!.userId),
     enabled: Boolean(studentInfo?.userId),
   });
 

@@ -5,8 +5,9 @@ import {
   type ClassroomProgressResponse,
   type Page_StatisticsResponse_,
   type StudentProgressResponse,
+  type StatisticsResponse,
 } from "@/shared/api/generated";
-import { clampLimit, clampSkip } from "@/shared/api/pagination";
+import { clampLimit, clampSkip, fetchAllPages } from "@/shared/api/pagination";
 
 export const statisticsApi = {
   async listMine(params: { skip?: number; limit?: number } = {}): Promise<Page_StatisticsResponse_> {
@@ -30,6 +31,15 @@ export const statisticsApi = {
     );
   },
 
+  async homeworkStatsAll(
+    homeworkId: number,
+    opts: { maxItems?: number } = {}
+  ): Promise<{ items: StatisticsResponse[]; total: number; truncated: boolean }> {
+    return await fetchAllPages(async ({ skip, limit }) => await statisticsApi.homeworkStats(homeworkId, { skip, limit }), {
+      maxItems: opts.maxItems,
+    });
+  },
+
   // Teacher: stats for a specific student across homeworks (filtering by classroom is done client-side)
   async studentStatsByTeacher(
     studentUserId: number,
@@ -39,6 +49,16 @@ export const statisticsApi = {
       studentUserId,
       clampSkip(params.skip),
       clampLimit(params.limit)
+    );
+  },
+
+  async studentStatsByTeacherAll(
+    studentUserId: number,
+    opts: { maxItems?: number } = {}
+  ): Promise<{ items: StatisticsResponse[]; total: number; truncated: boolean }> {
+    return await fetchAllPages(
+      async ({ skip, limit }) => await statisticsApi.studentStatsByTeacher(studentUserId, { skip, limit }),
+      { maxItems: opts.maxItems }
     );
   },
 } as const;

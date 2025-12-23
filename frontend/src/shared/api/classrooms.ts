@@ -13,7 +13,7 @@ import {
   type Page_ClassroomStudentResponse_,
   type Page_MessageResponse_,
 } from "@/shared/api/generated";
-import { clampLimit, clampSkip } from "@/shared/api/pagination";
+import { clampLimit, clampSkip, fetchAllPages } from "@/shared/api/pagination";
 
 export const classroomsApi = {
   async listMine(params: { skip?: number; limit?: number } = {}): Promise<Page_ClassroomResponse_> {
@@ -44,6 +44,16 @@ export const classroomsApi = {
       classroomId,
       clampSkip(params.skip),
       clampLimit(params.limit)
+    );
+  },
+
+  async listStudentsAll(
+    classroomId: number,
+    opts: { maxItems?: number } = {}
+  ): Promise<{ items: ClassroomStudentResponse[]; total: number; truncated: boolean }> {
+    return await fetchAllPages(
+      async ({ skip, limit }) => await classroomsApi.listStudents(classroomId, { skip, limit }),
+      { maxItems: opts.maxItems }
     );
   },
 

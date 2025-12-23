@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
@@ -17,6 +17,7 @@ import { HomeworkStatusDonut } from "@/widgets/statistics/HomeworkStatusDonut";
 import { HomeworkScoresBarChart, type HomeworkScorePoint } from "@/widgets/statistics/HomeworkScoresBarChart";
 import { TeacherStudentRankingChart, type TeacherStudentRankingPoint } from "@/widgets/statistics/TeacherStudentRankingChart";
 import type { StatisticsResponse } from "@/shared/api/generated";
+import { mapWithConcurrency } from "@/shared/lib/promisePool";
 
 type StudentAggregateRow = {
   student_id: number;
@@ -37,6 +38,7 @@ export function TeacherClassroomStatsPage() {
   const params = useParams();
   const classroomId = Number(params.classroomId);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [heatCount, setHeatCount] = useState(12);
 
   const classroomQuery = useQuery({
     queryKey: ["stats", "teacher", "classroom", classroomId, "meta"],
@@ -52,7 +54,7 @@ export function TeacherClassroomStatsPage() {
 
   const studentsQuery = useQuery({
     queryKey: ["stats", "teacher", "classroom", classroomId, "students"],
-    queryFn: async () => await classroomsApi.listStudents(classroomId, { skip: 0, limit: 100 }),
+    queryFn: async () => await classroomsApi.listStudentsAll(classroomId),
     enabled: Number.isFinite(classroomId) && classroomId > 0,
   });
 
@@ -75,7 +77,7 @@ export function TeacherClassroomStatsPage() {
 
   const homeworkStatsQuery = useQuery({
     queryKey: ["stats", "teacher", "homework", homeworkId],
-    queryFn: async () => await statisticsApi.homeworkStats(homeworkId as number, { skip: 0, limit: 100 }),
+    queryFn: async () => await statisticsApi.homeworkStatsAll(homeworkId as number),
     enabled: homeworkId != null,
   });
 
@@ -93,7 +95,7 @@ export function TeacherClassroomStatsPage() {
     queryKey: ["stats", "teacher", "classroom", classroomId, "student-aggregate"],
     queryFn: async () => {
       const homeworks = homeworksQuery.data ?? [];
-      const pages = await Promise.all(homeworks.map(async (h) => await statisticsApi.homeworkStats(h.id, { skip: 0, limit: 100 })));
+      const pages = await mapWithConcurrency(homeworks, 5, async (h) => await statisticsApi.homeworkStatsAll(h.id));
       const rows = pages.flatMap((p) => p.items);
       return rows;
     },
@@ -103,8 +105,8 @@ export function TeacherClassroomStatsPage() {
   const heatHomeworks = useMemo(() => {
     const items = (homeworksQuery.data ?? []).slice();
     items.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
-    return items.slice(0, 12).map((h) => ({ id: h.id, title: h.title }));
-  }, [homeworksQuery.data]);
+    return items.slice(0, heatCount).map((h) => ({ id: h.id, title: h.title }));
+  }, [homeworksQuery.data, heatCount]);
 
   const heatStudents = useMemo(() => {
     return (studentsQuery.data?.items ?? []).map((s) => ({ student_id: s.student_id, name: s.user.full_name }));
@@ -329,6 +331,17 @@ export function TeacherClassroomStatsPage() {
         </CardHeader>
         <CardContent>
           {studentAggQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" variant={heatCount === 12 ? "secondary" : "outline"} onClick={() => setHeatCount(12)}>
+              12 ДЗ
+            </Button>
+            <Button type="button" size="sm" variant={heatCount === 24 ? "secondary" : "outline"} onClick={() => setHeatCount(24)}>
+              24 ДЗ
+            </Button>
+            <Button type="button" size="sm" variant={heatCount === 36 ? "secondary" : "outline"} onClick={() => setHeatCount(36)}>
+              36 ДЗ
+            </Button>
+          </div>
           {heatStudents.length === 0 || heatHomeworks.length === 0 ? (
             <div className="text-sm text-muted-foreground">Нет данных для матрицы</div>
           ) : (

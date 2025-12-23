@@ -45,7 +45,7 @@ export function TeacherHomeworkPage() {
 
   const studentsQuery = useQuery({
     queryKey: ["teacher", "classroom", lessonQuery.data?.classroom_id, "students"],
-    queryFn: async () => await classroomsApi.listStudents(lessonQuery.data!.classroom_id, { skip: 0, limit: 100 }),
+    queryFn: async () => await classroomsApi.listStudentsAll(lessonQuery.data!.classroom_id),
     enabled: Boolean(lessonQuery.data?.classroom_id),
   });
 
