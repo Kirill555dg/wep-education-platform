@@ -46,6 +46,14 @@ package "Server (Backend API)" as server {
   package "Data access layer" as dal {
     component "SQLAlchemy AsyncSession\n(db/session.py)" as SESSION <<component>>
     component "Repositories\n(app/repositories/*)" as REPOS <<component>>
+
+    () "IUserRepository" as IUserRepo <<interface>>
+    () "IClassroomRepository" as IClassroomRepo <<interface>>
+    () "ILessonRepository" as ILessonRepo <<interface>>
+    () "IHomeworkRepository" as IHomeworkRepo <<interface>>
+    () "IProblemRepository" as IProblemRepo <<interface>>
+    () "IStatisticsRepository" as IStatsRepo <<interface>>
+    () "IChatRepository" as IChatRepo <<interface>>
   }
 }
 
@@ -94,16 +102,39 @@ LESSON --> ACL
 HOMEWORK --> ACL
 CHAT --> ACL
 
-' Services → DAL
-AUTH --> REPOS
-CLASSROOM --> REPOS
-LESSON --> REPOS
-HOMEWORK --> REPOS
-PROBLEM --> REPOS
-TESTING --> REPOS
-STATS --> REPOS
-THEORY --> REPOS
-CHAT --> REPOS
+' Services → Repository interfaces (contracts)
+AUTH --> IUserRepo
+CLASSROOM --> IClassroomRepo
+CLASSROOM --> IUserRepo
+LESSON --> ILessonRepo
+LESSON --> IClassroomRepo
+HOMEWORK --> IHomeworkRepo
+HOMEWORK --> IProblemRepo
+HOMEWORK --> ILessonRepo
+HOMEWORK --> IClassroomRepo
+HOMEWORK --> IUserRepo
+PROBLEM --> IProblemRepo
+TESTING --> IHomeworkRepo
+TESTING --> IProblemRepo
+TESTING --> IStatsRepo
+TESTING --> IUserRepo
+STATS --> IStatsRepo
+STATS --> IHomeworkRepo
+STATS --> IClassroomRepo
+STATS --> IUserRepo
+THEORY --> ILessonRepo
+CHAT --> IChatRepo
+CHAT --> IClassroomRepo
+CHAT --> IUserRepo
+
+' Repository interfaces are implemented by the Repositories component
+REPOS -- IUserRepo
+REPOS -- IClassroomRepo
+REPOS -- ILessonRepo
+REPOS -- IHomeworkRepo
+REPOS -- IProblemRepo
+REPOS -- IStatsRepo
+REPOS -- IChatRepo
 
 REPOS --> SESSION : uses
 API --> SESSION : get_db()
