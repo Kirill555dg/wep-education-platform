@@ -14,7 +14,6 @@ from app.db import session as db_session
 from app.models import users as user_models
 from app.repositories import homework as homework_repo
 from app.repositories import user as user_repo
-from app.realtime import connection_manager as realtime_manager_module
 from app.services import auth as auth_service
 from app.services import classroom as classroom_service
 from app.services import homework as homework_service
@@ -171,33 +170,6 @@ async def get_current_student(
         )
 
     return current_user
-
-
-# Realtime (WebSocket chat) runtime dependency
-@dc.dataclass(frozen=True, slots=True)
-class ChatRuntime:
-    manager: realtime_manager_module.ConnectionManager
-    broker: object
-    store: object
-
-
-def get_chat_runtime(websocket: fastapi.WebSocket) -> ChatRuntime:
-    """
-    Return chat runtime objects (manager/broker/presence store) initialized at app startup.
-
-    Note: Unlike DB sessions, Redis clients/brokers are application-scoped and should not be
-    created per-request; this dependency only provides access to already-initialized objects.
-    """
-    state = websocket.app.state
-    manager = getattr(state, "chat_connection_manager", None)
-    broker = getattr(state, "chat_broker", None)
-    store = getattr(state, "chat_presence_store", None)
-    if manager is None or broker is None or store is None:
-        raise fastapi.HTTPException(
-            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail={"code": "realtime_not_configured", "message": "Realtime runtime is not configured"},
-        )
-    return ChatRuntime(manager=manager, broker=broker, store=store)
 
 
 # Service dependencies

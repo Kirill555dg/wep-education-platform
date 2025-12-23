@@ -18,9 +18,6 @@ from app.api import v1 as api_v1
 from app.core import config as core_config
 from app.core import logging_config as logging_config
 from app.realtime import connection_manager as connection_manager_module
-from app.realtime import local_broker as local_broker_module
-from app.realtime import presence_memory as presence_memory_module
-from app.realtime import presence as presence_module
 from app.realtime import redis_pubsub as redis_pubsub_module
 
 # Configure logging as early as possible.
@@ -91,17 +88,10 @@ async def on_startup() -> None:
         },
     )
 
-    # Realtime chat:
-    # - Always configured for single-instance usage (in-memory broker + in-memory presence).
-    # - Redis is optional and enables multi-instance fanout + Redis-backed presence/typing TTL.
+    # Realtime: WebSocket chat fanout (multi-instance) via Redis Pub/Sub.
     app.state.chat_connection_manager = connection_manager_module.ConnectionManager()
     app.state.redis = None
-
-    app.state.chat_broker = local_broker_module.LocalBroker(manager=app.state.chat_connection_manager)
-    app.state.chat_presence_store = presence_memory_module.InMemoryChatEphemeralStore(
-        presence_ttl_seconds=core_config.settings.CHAT_PRESENCE_TTL_SECONDS,
-        typing_ttl_seconds=core_config.settings.CHAT_TYPING_TTL_SECONDS,
-    )
+    app.state.chat_broker = None
 
     if core_config.settings.REDIS_URL:
         redis_client = redis_asyncio.from_url(core_config.settings.REDIS_URL)
@@ -110,11 +100,6 @@ async def on_startup() -> None:
         app.state.chat_broker = redis_pubsub_module.RedisPubSubBroker(
             redis_client,
             manager=app.state.chat_connection_manager,
-        )
-        app.state.chat_presence_store = presence_module.ChatEphemeralStore(
-            redis_client,
-            presence_ttl_seconds=core_config.settings.CHAT_PRESENCE_TTL_SECONDS,
-            typing_ttl_seconds=core_config.settings.CHAT_TYPING_TTL_SECONDS,
         )
         logger.info("redis_ready", extra={"redis_url": core_config.settings.REDIS_URL})
 

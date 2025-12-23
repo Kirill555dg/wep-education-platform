@@ -19,6 +19,7 @@ from app.domain import errors as domain_errors
 from app.core import config as core_config
 from app.models import users as user_models
 from app.realtime import auth as realtime_auth
+from app.realtime import presence as realtime_presence
 from app.schemas import communication as communication_schemas
 from app.schemas import classrooms as classroom_schemas
 from app.schemas import pagination as pagination_schemas
@@ -186,7 +187,6 @@ async def classroom_chat_ws(
     websocket: fastapi.WebSocket,
     classroom_id: int,
     db: sa_asyncio.AsyncSession = fastapi.Depends(db_session.get_db),
-    runtime: deps.ChatRuntime = fastapi.Depends(deps.get_chat_runtime),
 ):
     """
     Realtime classroom chat via WebSocket.
@@ -204,8 +204,15 @@ async def classroom_chat_ws(
         error: dict[str, object] = {"code": code, "message": message, "meta": meta or {}}
         await websocket.send_json({"type": "error", "error": error, "request_id": ws_request_id})
 
-    manager = runtime.manager
-    broker = runtime.broker
+    manager = getattr(websocket.app.state, "chat_connection_manager", None)
+    broker = getattr(websocket.app.state, "chat_broker", None)
+    redis_client = getattr(websocket.app.state, "redis", None)
+
+    if manager is None or broker is None or redis_client is None:
+        await websocket.accept()
+        await _send_ws_error(code="realtime_not_configured", message="Realtime broker is not configured")
+        await websocket.close(code=1011)
+        return
 
     try:
         user = await realtime_auth.require_current_user(websocket, db)
@@ -217,7 +224,11 @@ async def classroom_chat_ws(
         await websocket.close(code=1008)
         return
 
-    store = runtime.store
+    store = realtime_presence.ChatEphemeralStore(
+        redis_client,
+        presence_ttl_seconds=core_config.settings.CHAT_PRESENCE_TTL_SECONDS,
+        typing_ttl_seconds=core_config.settings.CHAT_TYPING_TTL_SECONDS,
+    )
 
     await websocket.accept()
     await manager.connect(classroom_id, websocket)
