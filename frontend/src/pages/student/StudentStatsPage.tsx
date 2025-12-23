@@ -1,21 +1,14 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 
-import { statisticsApi } from "@/shared/api";
+import { getErrorMessage } from "@/shared/api";
+import { useMyProgressQuery, useMyStatisticsListQuery } from "@/entities/statistics/api/queries";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { ErrorState } from "@/shared/ui/error-state";
 import { StudentProgressChart } from "@/widgets/statistics/StudentProgressChart";
 
 export function StudentStatsPage() {
-  const progressQuery = useQuery({
-    queryKey: ["stats", "student", "progress"],
-    queryFn: async () => await statisticsApi.myProgress(),
-  });
-
-  const listQuery = useQuery({
-    queryKey: ["stats", "student", "list"],
-    queryFn: async () => await statisticsApi.listMine({ skip: 0, limit: 100 }),
-  });
+  const progressQuery = useMyProgressQuery();
+  const listQuery = useMyStatisticsListQuery({ skip: 0, limit: 100 });
 
   const items = useMemo(() => listQuery.data?.items ?? [], [listQuery.data]);
 
@@ -27,7 +20,7 @@ export function StudentStatsPage() {
       </div>
 
       {progressQuery.error ? (
-        <ErrorState message={String((progressQuery.error as Error)?.message || progressQuery.error)} onRetry={() => progressQuery.refetch()} />
+        <ErrorState message={getErrorMessage(progressQuery.error)} onRetry={() => progressQuery.refetch()} />
       ) : null}
 
       <Card>
@@ -59,7 +52,7 @@ export function StudentStatsPage() {
       </Card>
 
       {listQuery.error ? (
-        <ErrorState message={String((listQuery.error as Error)?.message || listQuery.error)} onRetry={() => listQuery.refetch()} />
+        <ErrorState message={getErrorMessage(listQuery.error)} onRetry={() => listQuery.refetch()} />
       ) : null}
 
       <Card>

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 
-import { getErrorMessage, homeworkApi } from "@/shared/api";
+import { getErrorMessage } from "@/shared/api";
+import { useHomeworkProblemsQuery, useHomeworkQuery } from "@/entities/homework/api/queries";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { HomeworkPlayer } from "@/features/homework/player/ui/HomeworkPlayer";
@@ -11,17 +11,8 @@ export function StudentHomeworkPage() {
   const params = useParams();
   const homeworkId = Number(params.homeworkId);
 
-  const hwQuery = useQuery({
-    queryKey: ["student", "homework", homeworkId],
-    queryFn: async () => await homeworkApi.get(homeworkId),
-    enabled: Number.isFinite(homeworkId),
-  });
-
-  const problemsQuery = useQuery({
-    queryKey: ["student", "homework", homeworkId, "problems"],
-    queryFn: async () => await homeworkApi.getProblems(homeworkId),
-    enabled: Number.isFinite(homeworkId),
-  });
+  const hwQuery = useHomeworkQuery(homeworkId);
+  const problemsQuery = useHomeworkProblemsQuery(homeworkId);
 
   if (!Number.isFinite(homeworkId)) {
     navigate(routes.student.home, { replace: true });

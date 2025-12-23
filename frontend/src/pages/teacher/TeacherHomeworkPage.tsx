@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { classroomsApi, getErrorMessage, homeworkApi, lessonsApi, statisticsApi } from "@/shared/api";
+import { useHomeworkProblemsQuery, useHomeworkQuery } from "@/entities/homework/api/queries";
+import { homeworkQueryKeys } from "@/entities/homework/api/queryKeys";
 import { routes } from "@/shared/config/routes";
+import { useToast } from "@/shared/hooks/use-toast";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { DataTable } from "@/shared/ui/data-table";
@@ -19,17 +22,11 @@ export function TeacherHomeworkPage() {
   const params = useParams();
   const homeworkId = Number(params.homeworkId);
 
-  const hwQuery = useQuery({
-    queryKey: ["teacher", "homework", homeworkId, "detail"],
-    queryFn: async () => await homeworkApi.get(homeworkId),
-    enabled: Number.isFinite(homeworkId) && homeworkId > 0,
-  });
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const problemsQuery = useQuery({
-    queryKey: ["teacher", "homework", homeworkId, "problems"],
-    queryFn: async () => await homeworkApi.getProblems(homeworkId),
-    enabled: Number.isFinite(homeworkId) && homeworkId > 0,
-  });
+  const hwQuery = useHomeworkQuery(homeworkId);
+  const problemsQuery = useHomeworkProblemsQuery(homeworkId);
 
   const statsQuery = useQuery({
     queryKey: ["teacher", "homework", homeworkId, "stats"],
@@ -57,9 +54,6 @@ export function TeacherHomeworkPage() {
     return m;
   }, [studentsQuery.data]);
 
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [maxScoreText, setMaxScoreText] = useState("");
@@ -75,36 +69,27 @@ export function TeacherHomeworkPage() {
     setDeadline(d.deadline ?? "");
   }, [hwQuery.data?.id, hwQuery.data?.updated_at]);
 
-  const onSave = async () => {
-    setSaveError(null);
-    setSaving(true);
-    try {
-      await homeworkApi.update(homeworkId, {
-        title: title || null,
-        description: description || null,
-        max_score: maxScoreText ? Number(maxScoreText) : null,
-        deadline: deadline || null,
-      });
-      await hwQuery.refetch();
-    } catch (e) {
-      setSaveError(getErrorMessage(e));
-    } finally {
-      setSaving(false);
-    }
+  const updateMutation = useMutation({
+    mutationFn: async (payload: Parameters<typeof homeworkApi.update>[1]) => await homeworkApi.update(homeworkId, payload),
+    onSuccess: async () => {
+      toast({ title: "Сохранено" });
+      await queryClient.invalidateQueries({ queryKey: homeworkQueryKeys.byId(homeworkId) });
+    },
+    onError: (e) => toast({ title: "Ошибка", description: getErrorMessage(e), variant: "destructive" }),
+  });
+
+  const onSave = () => {
+    updateMutation.mutate({
+      title: title || null,
+      description: description || null,
+      max_score: maxScoreText ? Number(maxScoreText) : null,
+      deadline: deadline || null,
+    });
   };
 
-  const onTogglePublish = async () => {
-    setSaveError(null);
-    setSaving(true);
-    try {
-      const isPublished = Boolean(hwQuery.data?.is_published);
-      await homeworkApi.update(homeworkId, { is_published: !isPublished });
-      await hwQuery.refetch();
-    } catch (e) {
-      setSaveError(getErrorMessage(e));
-    } finally {
-      setSaving(false);
-    }
+  const onTogglePublish = () => {
+    const isPublished = Boolean(hwQuery.data?.is_published);
+    updateMutation.mutate({ is_published: !isPublished });
   };
 
   const columns = useMemo<Array<ColumnDef<StatisticsResponse>>>(
@@ -155,8 +140,8 @@ export function TeacherHomeworkPage() {
         </Button>
       </div>
 
-      {hwQuery.error ? <ErrorState message={String((hwQuery.error as Error)?.message || hwQuery.error)} onRetry={() => hwQuery.refetch()} /> : null}
-      {saveError ? <div className="text-sm text-destructive">{saveError}</div> : null}
+      {hwQuery.error ? <ErrorState message={getErrorMessage(hwQuery.error)} onRetry={() => hwQuery.refetch()} /> : null}
+      {updateMutation.error ? <div className="text-sm text-destructive">{getErrorMessage(updateMutation.error)}</div> : null}
 
       <Card>
         <CardHeader>
@@ -186,10 +171,10 @@ export function TeacherHomeworkPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => void onSave()} disabled={saving}>
+            <Button onClick={() => onSave()} disabled={updateMutation.isLoading}>
               Сохранить
             </Button>
-            <Button variant="secondary" onClick={() => void onTogglePublish()} disabled={saving || hwQuery.isLoading}>
+            <Button variant="secondary" onClick={() => onTogglePublish()} disabled={updateMutation.isLoading || hwQuery.isLoading}>
               {hwQuery.data?.is_published ? "Снять с публикации" : "Опубликовать"}
             </Button>
           </div>
@@ -204,7 +189,7 @@ export function TeacherHomeworkPage() {
         <CardContent className="grid gap-2 text-sm">
           {problemsQuery.isLoading ? <div className="text-muted-foreground">Загрузка...</div> : null}
           {problemsQuery.error ? (
-            <ErrorState message={String((problemsQuery.error as Error)?.message || problemsQuery.error)} onRetry={() => problemsQuery.refetch()} />
+            <ErrorState message={getErrorMessage(problemsQuery.error)} onRetry={() => problemsQuery.refetch()} />
           ) : null}
           {(problemsQuery.data ?? []).length === 0 && !problemsQuery.isLoading ? (
             <div className="text-muted-foreground">Пока нет задач в ДЗ</div>
@@ -228,7 +213,7 @@ export function TeacherHomeworkPage() {
         <CardContent className="grid gap-3">
           {statsQuery.isLoading ? <div className="text-sm text-muted-foreground">Загрузка...</div> : null}
           {statsQuery.error ? (
-            <ErrorState message={String((statsQuery.error as Error)?.message || statsQuery.error)} onRetry={() => statsQuery.refetch()} />
+            <ErrorState message={getErrorMessage(statsQuery.error)} onRetry={() => statsQuery.refetch()} />
           ) : null}
           {statsQuery.data ? (
             <>

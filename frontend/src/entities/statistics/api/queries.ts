@@ -10,4 +10,11 @@ export function useMyProgressQuery() {
   });
 }
 
+export function useMyStatisticsListQuery(params: { skip: number; limit: number }) {
+  return useQuery({
+    queryKey: statisticsQueryKeys.myList(params),
+    queryFn: async () => await statisticsApi.listMine(params),
+  });
+}
+
 

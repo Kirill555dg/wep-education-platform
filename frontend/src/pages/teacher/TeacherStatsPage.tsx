@@ -1,18 +1,15 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 
-import { classroomsApi } from "@/shared/api";
+import { getErrorMessage } from "@/shared/api";
+import { useMyClassroomsQuery } from "@/entities/classroom/api/queries";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { ErrorState } from "@/shared/ui/error-state";
 
 export function TeacherStatsPage() {
-  const classroomsQuery = useQuery({
-    queryKey: ["stats", "teacher", "classrooms"],
-    queryFn: async () => await classroomsApi.listMine({ skip: 0, limit: 100 }),
-  });
+  const classroomsQuery = useMyClassroomsQuery({ skip: 0, limit: 100 });
 
   const classrooms = useMemo(() => classroomsQuery.data?.items ?? [], [classroomsQuery.data]);
 
@@ -24,7 +21,7 @@ export function TeacherStatsPage() {
       </div>
 
       {classroomsQuery.error ? (
-        <ErrorState message={String((classroomsQuery.error as Error)?.message || classroomsQuery.error)} onRetry={() => classroomsQuery.refetch()} />
+        <ErrorState message={getErrorMessage(classroomsQuery.error)} onRetry={() => classroomsQuery.refetch()} />
       ) : null}
 
       <Card>
