@@ -1,408 +1,255 @@
-# 🎓 Web Education Platform — Frontend
+# Web Education Platform — Frontend (архитектурный обзор)
 
-Фронтенд образовательной веб-платформы, построенный на React + TypeScript с использованием архитектуры Feature-Sliced Design (FSD).
+Документ описывает **frontend-проект** как самостоятельный архитектурный компонент системы WEP LMS: роль фронтенда, принципы Feature‑Sliced Design (FSD), правила зависимостей между слоями, ключевые пользовательские сценарии и границы ответственности.
 
-## 🛠 Технологии
-
-- **React 18** — UI библиотека
-- **TypeScript** — типизация
-- **Vite** — сборщик
-- **React Router v6** — маршрутизация
-- **Zustand** — state management
-- **React Hook Form + Zod** — формы и валидация
-- **Tailwind CSS** — стилизация
-- **Radix UI** — UI компоненты
-- **Vitest + Cypress** — тестирование
-
-## 🚀 Быстрый старт
-
-### Установка зависимостей
-
-```bash
-bun install
-```
-
-### Запуск dev-сервера
-
-```bash
-bun run dev
-```
-
-Приложение будет доступно по адресу: http://localhost:5173
-
-## ⚙️ Переменные окружения
-
-Создайте `frontend/.env` (или используйте `frontend/env.example` как шаблон — `.env*` файлы могут быть заблокированы в репозитории).
-
-- **`VITE_API_URL`**: base URL API.
-  - dev по умолчанию: `http://127.0.0.1:8023`
-  - prod по умолчанию: `""` (same-origin, nginx proxy `/api`)
-- **`VITE_USE_MOCK_API=true|false`**: включает детерминированные mock-фолбэки для части API (сейчас: статистика).
-- **`VITE_MOCK_SEED`**: сид для мок-данных (одинаковый сид → одинаковые данные).
-
-### Генерация клиента из OpenAPI (рекомендуется)
-
-```bash
-# OpenAPI обновляется строго из backend
-bun run api:regen
-```
-
-### Сборка для продакшена
-
-```bash
-bun run build
-```
-
-### Предпросмотр production сборки
-
-```bash
-bun run preview
-```
-
-## 🧪 Тестирование
-
-### Unit-тесты (bun:test)
-
-```bash
-# Запуск тестов
-bun test
-
-# Watch режим
-bun run test:watch
-```
-
-### E2E-тесты (Cypress)
-
-```bash
-# Backend должен быть запущен. По умолчанию Cypress ходит на http://127.0.0.1:8023
-#
-# Если backend работает на другом порту/хосте — переопредели:
-CYPRESS_BACKEND_URL="http://127.0.0.1:8023" VITE_API_URL="http://127.0.0.1:8023" bun run test:e2e
-
-# Открыть Cypress UI
-bun run cypress
-```
-
-## 📁 Структура проекта (FSD)
-
-```
-frontend/
-├── src/
-│   ├── app/                 # Инициализация приложения (router/guards, providers)
-│   │   ├── index.tsx        # Root routes
-│   │   ├── providers/       # Bootstrapper'ы
-│   │   └── router/          # Guards (RequireAuth/RequireRole)
-│   │
-│   ├── pages/               # Страницы приложения
-│   │   ├── auth/            # Login / Register
-│   │   ├── common/          # Redirects
-│   │   ├── student/         # Student flows
-│   │   └── teacher/         # Teacher flows
-│   │
-│   ├── widgets/             # Комплексные UI-блоки
-│   │   ├── chat/            # ClassroomChat (WS + HTTP fallback)
-│   │   ├── header/          # AppHeader
-│   │   └── layout/          # AppLayout
-│   │
-│   ├── entities/            # Бизнес-сущности
-│   │   └── session/         # Session store (user + auth bootstrap)
-│   │
-│   └── shared/            # Переиспользуемый код
-│       ├── ui/            # UI-компоненты
-│       ├── hooks/         # Хуки
-│       ├── lib/           # Утилиты
-│       ├── api/           # OpenAPI client (generated) + wrappers + errors
-│       └── styles/        # Глобальные стили
-│
-├── public/                # Статические файлы
-├── cypress/               # E2E тесты
-└── ... (конфигурационные файлы)
-```
-
-## ✨ Функционал
-
-### 🔐 Авторизация
-- Регистрация (student/teacher)
-- Вход в систему (JWT в `localStorage`)
-- Role-based routing (student/teacher)
-
-### 👩‍🏫 Teacher MVP
-- Создание класса
-- Создание урока (автопубликация для student)
-- База задач: список/поиск/редактор
-- Создание ДЗ на отдельной странице (выбор задач из базы + баллы + публикация)
-- Страница ДЗ учителя (редактирование метаданных + статистика выполнения)
-- Статистика по классу/ДЗ/ученику (графики + матрица прогресса)
-
-### 👨‍🎓 Student MVP
-- Вступление в класс по invite code
-- Просмотр уроков и ДЗ
-- Homework Player (stepper, autosave draft, submit per-task + final submit)
-
-### 💬 Чат
-- Realtime чат класса через WebSocket
-- Reconnect/backoff + polling fallback (если realtime недоступен)
-- Защищенные маршруты
-
-### 👤 Профиль
-- Редактирование данных
-- Выбор аватара
-- Персональная информация
-
-### 🏫 Классы
-- Просмотр классов
-- Присоединение к классу (студенты)
-- Управление классами (преподаватели)
-
-### 🔔 Уведомления
-- Система уведомлений
-- Фильтрация по типам
-- Отметка о прочтении
-
-## 🔧 Скрипты
-
-| Команда | Описание |
-|---------|----------|
-| `bun run dev` | Запуск dev-сервера |
-| `bun run build` | Сборка для production |
-| `bun run preview` | Предпросмотр production |
-| `bun test` | Запуск unit-тестов |
-| `bun run test:watch` | Тесты в watch-режиме |
-| `bun run test:e2e` | E2E-тесты |
-| `bun run cypress` | Cypress UI |
-
-## 📝 Path Aliases
-
-В проекте настроены path aliases:
-- `@/*` → `src/*`
-
-Пример:
-```typescript
-import { Button } from "@/shared/ui/button";
-import { useAuth } from "@/features/auth/model/store";
-```
-
-## ⚙️ Mock API (детерминированно)
-
-Mock включается через `VITE_USE_MOCK_API=true`. Реализован в `src/shared/api/mock/*` и используется как **fallback** в wrapper'ах `src/shared/api/*` для неготовых/отсутствующих эндпоинтов.
-
-## 🌐 API-слой (Работа с Backend)
-
-Фронтенд имеет полноценный типизированный API-клиент для работы с FastAPI бекендом.
-
-### Генерация клиента из OpenAPI (рекомендуется)
-
-```bash
-# backend должен быть запущен на http://localhost:8023
-bun run api:regen
-```
-
-### Структура API-слоя
-
-```
-src/shared/api/
-├── generated/              # OpenAPI-generated клиент (НЕ редактировать вручную)
-├── openapi.ts              # конфиг OpenAPI (BASE/TOKEN/HEADERS)
-├── errors.ts               # разбор error envelope + helpers
-├── pagination.ts           # clampLimit + fetchAllPages
-├── mock/                   # детерминированные mock generators (опционально, dev)
-├── auth.ts                 # доменный wrapper над generated
-├── classrooms.ts
-├── lessons.ts
-├── homework.ts
-├── problems.ts
-├── statistics.ts
-└── index.ts                # централизованный экспорт
-```
-
-### Использование API
-
-#### 1. Авторизация
-
-```typescript
-import { authApi } from "@/shared/api";
-
-// Регистрация
-const user = await authApi.register({
-  username: "john_doe",
-  email: "john@example.com",
-  password: "securepass123",
-  full_name: "John Doe",
-  is_teacher: false,
-});
-
-// Вход (JWT токен автоматически сохраняется)
-const { access_token, user } = await authApi.login({
-  username_or_email: "john_doe",
-  password: "securepass123",
-});
-
-// Получить текущего пользователя
-const currentUser = await authApi.getCurrentUser();
-
-// Получить роль
-const { role } = await authApi.getCurrentUserRole(); // "teacher" | "student"
-
-// Выход
-authApi.logout();
-```
-
-#### 2. Классы
-
-```typescript
-import { classroomsApi } from "@/shared/api";
-
-// Создать класс (учитель)
-const classroom = await classroomsApi.create({
-  name: "Математика 10А",
-  subject: "Математика",
-  grade_level: 10,
-  description: "Алгебра и геометрия",
-});
-
-// Получить все классы пользователя
-const classrooms = await classroomsApi.getAll();
-
-// Присоединиться к классу (студент)
-const joined = await classroomsApi.join({
-  invite_code: "ABC123XYZ",
-});
-
-// Получить студентов класса (учитель)
-const students = await classroomsApi.getStudents(classroomId);
-```
-
-#### 3. Уроки
-
-```typescript
-import { lessonsApi } from "@/shared/api";
-
-// Создать урок (учитель)
-const lesson = await lessonsApi.create({
-  classroom_id: 1,
-  title: "Тригонометрия",
-  description: "Основы тригонометрических функций",
-  theory_material_ids: [5, 6, 7],
-});
-
-// Получить уроки класса
-const lessons = await lessonsApi.getByClassroom(classroomId);
-
-// Обновить урок
-await lessonsApi.update(lessonId, { is_published: true });
-```
-
-#### 4. Домашние задания
-
-```typescript
-import { homeworkApi } from "@/shared/api";
-
-// Создать ДЗ (учитель)
-const homework = await homeworkApi.create({
-  lesson_id: 1,
-  title: "Задачи на синус и косинус",
-  max_score: 100,
-  deadline: "2024-12-20T23:59:00",
-  problem_ids: [10, 11, 12],
-  problem_points: [30, 30, 40],
-});
-
-// Получить задачи ДЗ
-const problems = await homeworkApi.getProblems(homeworkId);
-
-// Отправить ответ (студент)
-const stats = await homeworkApi.submitAnswer({
-  homework_id: 1,
-  problem_id: 10,
-  answer: "0.5",
-  time_spent_minutes: 15,
-});
-
-// Финальная отправка ДЗ
-await homeworkApi.submitHomework(homeworkId);
-
-// Проверить статус
-const status = await homeworkApi.getStatus(homeworkId);
-```
-
-#### 5. Статистика
-
-```typescript
-import { statisticsApi } from "@/shared/api";
-
-// Получить свою статистику (студент)
-const myStats = await statisticsApi.getMy();
-
-// Получить свой прогресс
-const progress = await statisticsApi.getMyProgress();
-// {
-//   total_homeworks: 15,
-//   completed: 10,
-//   in_progress: 3,
-//   not_started: 2,
-//   average_score_percentage: 87.5
-// }
-
-// Получить статистику по ДЗ (учитель)
-const homeworkStats = await statisticsApi.getHomeworkStats(homeworkId);
-
-// Прогресс класса (учитель)
-const classProgress = await statisticsApi.getClassroomProgress(classroomId);
-```
-
-### TypeScript типы
-
-Все типы автоматически синхронизированы с Pydantic схемами бекенда:
-
-```typescript
-import type {
-  User,
-  Classroom,
-  Lesson,
-  Homework,
-  Problem,
-  Statistics,
-} from "@/shared/api";
-
-const user: User = {
-  id: 1,
-  username: "john_doe",
-  email: "john@example.com",
-  full_name: "John Doe",
-  // ... и т.д. (полностью типизировано)
-};
-```
-
-### JWT Authentication
-
-- JWT токен берётся из `localStorage` (см. `src/shared/api/openapi.ts`)
-- При 401/403 пользователь должен заново войти (guards/handlers)
-
-### Интеграция с React Query
-
-Рекомендуется использовать API-клиенты вместе с TanStack Query:
-
-```typescript
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { classroomsApi } from "@/shared/api";
-
-// Получение данных
-const { data: classrooms, isLoading } = useQuery({
-  queryKey: ["classrooms"],
-  queryFn: () => classroomsApi.getAll(),
-});
-
-// Мутации
-const joinMutation = useMutation({
-  mutationFn: (code: string) => classroomsApi.join({ invite_code: code }),
-  onSuccess: () => {
-    // Обновить список классов
-    queryClient.invalidateQueries({ queryKey: ["classrooms"] });
-  },
-});
-```
+Фокус — **архитектурная ясность** и возможность восстановить **UML component diagram**. Инструкций по запуску намеренно нет.
 
 ---
 
-**Приятной разработки! 🚀**
+## 1) Роль фронтенда в системе LMS
+
+Frontend — клиентский компонент LMS, который:
+
+- реализует **UI/UX** и пользовательские сценарии для ролей *teacher* и *student*;
+- обеспечивает **навигацию** и роль‑ориентированные ограничения доступа (routing + guards);
+- управляет **клиентским состоянием** (session) и **кэшированием данных** (HTTP cache);
+- визуализирует **статистику** (графики/таблицы) и управляет presentation logic;
+- интегрируется с backend через **типизированный API‑контракт** (OpenAPI → generated client) и **WebSocket** (чат).
+
+Фронтенд **не является источником истины** по данным LMS: канонические данные, права доступа и бизнес‑правила обеспечиваются backend + DB.
+
+---
+
+## 2) Архитектурный подход: Feature‑Sliced Design (FSD)
+
+Проект следует **Feature‑Sliced Design**, где структура задаётся не “по типам файлов”, а по **ответственности и направлению зависимостей**.
+
+Основная идея:
+
+- “верхние” слои **композируют** функциональность,
+- “нижние” слои **поставляют** примитивы, сущности и сценарии,
+- зависимости направлены **строго вниз**: `app → pages → widgets → features → entities → shared`.
+
+Текущая структура `src/`:
+
+- `app/` — bootstrap приложения: роутинг, guards, провайдеры.
+- `pages/` — страницы (маршрутизируемые экраны).
+- `widgets/` — крупные блоки UI (layout/navigation/chat/statistics).
+- `features/` — сценарии/действия пользователя (use‑cases на клиенте).
+- `entities/` — сущности домена на клиенте (session + query hooks/keys для доменных данных).
+- `shared/` — инфраструктура и UI‑кит (api, ui, lib, hooks, config).
+
+---
+
+## 3) Слои FSD: назначение, типы компонентов, допустимые зависимости
+
+Ниже правила достаточно точны, чтобы по ним строить компонентную диаграмму и проводить архитектурное ревью.
+
+### 3.1 `shared/` — инфраструктура и дизайн‑система
+
+- **Назначение**: переиспользуемые “кирпичики” без знания предметной области LMS.
+- **Типы компонентов**:
+  - `shared/ui/*`: дизайн‑система (buttons/cards/forms/dialogs/skeletons/toasts/error boundary).
+  - `shared/api/*`: API‑интеграция (generated client + thin wrappers + error/pagination policy + mock).
+  - `shared/config/*`: env, routes, logging policy.
+  - `shared/lib/*`: утилиты (logger, promise pool, форматтеры, `cn`).
+  - `shared/hooks/*`: общие хуки (media query, toast).
+- **Допустимые зависимости**:
+  - может зависеть только от внешних библиотек;
+  - **не зависит** от `entities/features/widgets/pages/app`.
+
+### 3.2 `entities/` — сущности и “доменный доступ” на клиенте
+
+- **Назначение**: инкапсулировать работу с доменными сущностями (на уровне клиента) и их данные.
+- **Типы компонентов**:
+  - `entities/*/api/queryKeys.ts`: единые ключи кэша.
+  - `entities/*/api/queries.ts`: React Query hooks (fetch/caching policy).
+  - `entities/session/*`: session store (user/role/token bootstrap).
+- **Допустимые зависимости**:
+  - может зависеть от `shared/*`;
+  - **не зависит** от `features/widgets/pages/app`.
+
+### 3.3 `features/` — пользовательские действия (use‑cases на клиенте)
+
+- **Назначение**: оформить “действие пользователя” как модуль (например, выполнение ДЗ).
+- **Типы компонентов**:
+  - сценарный UI (например, `features/homework/player/ui/*`);
+  - сценарная логика, локальное состояние/черновики, обработка ошибок UX‑уровня.
+- **Допустимые зависимости**:
+  - может зависеть от `entities/*` и `shared/*`;
+  - **не зависит** от `widgets/pages/app`.
+
+### 3.4 `widgets/` — композиционные блоки страниц
+
+- **Назначение**: большие UI‑блоки, которые используются на страницах.
+- **Типы компонентов**:
+  - `widgets/layout/*`: каркас приложения (shell).
+  - `widgets/navigation/*`: sidebar/mobile nav/role nav.
+  - `widgets/chat/*`: realtime чат (WS + fallback).
+  - `widgets/statistics/*`: графики/таблицы (recharts + tanstack table).
+- **Допустимые зависимости**:
+  - может зависеть от `features/*`, `entities/*`, `shared/*`;
+  - **не зависит** от `pages/app`.
+
+### 3.5 `pages/` — маршрутизируемые экраны
+
+- **Назначение**: конечные страницы, соответствующие URL‑маршрутам.
+- **Типы компонентов**:
+  - `pages/teacher/*`, `pages/student/*`, `pages/chat/*`, `pages/auth/*`.
+- **Где бизнес‑логика**:
+  - на страницах допустима **orchestration‑логика**: извлечь `:id` из URL, выбрать виджет, связать параметры;
+  - “логика данных” и доменные операции — в `entities/features/shared/api`.
+- **Допустимые зависимости**:
+  - может зависеть от `widgets/*`, `features/*`, `entities/*`, `shared/*`.
+
+### 3.6 `app/` — точка сборки приложения
+
+- **Назначение**: верхний слой, который собирает всё вместе.
+- **Типы компонентов**:
+  - роутинг: `app/index.tsx`;
+  - guards: `app/router/guards.tsx` (`RequireAuth`, `RequireRole`);
+  - providers: `app/providers/*` (React Query provider, session bootstrap).
+- **Допустимые зависимости**:
+  - может зависеть от всех слоёв (верхняя точка композиции).
+
+---
+
+## 4) Компоненты интеграции с backend API
+
+### 4.1 API компонент фронтенда
+
+Расположение: `src/shared/api/*`.
+
+- **`shared/api/generated/*`** — OpenAPI‑generated клиент (типизированный контракт).
+- **`shared/api/openapi.ts`** — конфигурация клиента:
+  - base URL (dev vs prod same‑origin),
+  - токен (JWT из `localStorage`),
+  - трассировка `X-Request-ID`.
+- **`shared/api/*` wrappers** (`auth`, `classrooms`, `lessons`, `homework`, `problems`, `statistics`):
+  - нормализуют параметры (например, `limit <= 100`),
+  - содержат “domain-friendly” методы (`fetchAllPages`/`list*All`),
+  - могут включать controlled mock‑fallback (см. ниже).
+- **`shared/api/errors.ts`** — разбор error envelope `{ error, request_id }` и выделение `role_changed`.
+
+### 4.2 Mock API (детерминированно)
+
+Расположение: `src/shared/api/mock/*`.
+
+Назначение: позволить фронтенду развиваться, когда часть backend‑эндпоинтов временно отсутствует/не готова.
+
+Архитектурный контракт:
+
+- mock включается **конфигурацией окружения** (`VITE_USE_MOCK_API`) и использует сид (`VITE_MOCK_SEED`) для детерминизма;
+- mock применяется как **fallback** в wrappers `shared/api/*` (а не “магией” в UI).
+
+### 4.3 Контракты взаимодействия (важно для диаграммы)
+
+- **REST**: `/api/v1/*` — основной канал данных.
+- **WebSocket**: чат `/api/v1/classrooms/{id}/chat/ws` + HTTP fallback `/chat/messages`.
+- **Ошибки**: единый envelope (и `request_id`), фронт показывает `request_id` в UX.
+- **Пагинация**: `skip/limit`, лимит жёстко ограничен backend’ом (`limit <= 100`) — фронт обязан соблюдать.
+- **OpenAPI**: `shared/api/openapi.json` — артефакт контракта; генерируется backend‑скриптом (фронт не должен добывать контракт “curl’ом”).
+
+---
+
+## 5) Ключевые пользовательские сценарии (слои, логика, API)
+
+Сценарии описаны как трассы по слоям — это удобный формат для защиты архитектуры и построения UML.
+
+### 5.1 Auth: login/register + guards
+
+- **Участвуют**: `pages/auth` → `entities/session` → `shared/api/auth` → backend.
+- **Бизнес‑логика**:
+  - backend: проверка учётных данных, роль в JWT;
+  - frontend: UX форм, хранение токена/пользователя, guards.
+- **Интеграция**:
+  - REST `auth` endpoints;
+  - обработка `role_changed`: UX‑реакция (toast/logout/redirect).
+
+### 5.2 Teacher: классы → уроки → ДЗ → база задач
+
+- **Участвуют**:
+  - страницы: `pages/teacher/*`;
+  - данные: `entities/classroom`, `entities/lesson`, `entities/homework`, `entities/problem`;
+  - UI: `widgets/navigation`, `shared/ui`;
+  - API: `shared/api/*` (classrooms/lessons/homework/problems).
+- **Где логика**:
+  - pages: orchestration (идентификаторы из URL, выбор страницы/виджетов);
+  - entities/shared: fetching + кэш + инвалидации;
+  - backend: права доступа (teacher owns classroom), правила публикации.
+
+### 5.3 Student: вступление → уроки → выполнение ДЗ
+
+- **Участвуют**:
+  - страницы: `pages/student/*`;
+  - сценарий: `features/homework/player/*`;
+  - данные: `entities/homework` (+ classroom/lesson);
+  - API: `shared/api/homework` + `shared/api/testing` (submit/status).
+- **Где логика**:
+  - frontend: UX “плеера” (stepper, drafts, progressive submit, сообщения/ошибки);
+  - backend: оценивание/статусы попыток, итоговые значения статистики.
+
+### 5.4 Статистика: student/teacher
+
+- **Участвуют**:
+  - страницы: `pages/*Stats*`;
+  - данные: `entities/statistics`;
+  - визуализация: `widgets/statistics/*`;
+  - API: `shared/api/statistics`.
+- **Где логика**:
+  - frontend: presentation logic (серии данных, проценты, таблицы, drill‑down навигация);
+  - backend: агрегаты и данные статистики.
+
+### 5.5 Чат: отдельная страница + preview в классе
+
+- **Участвуют**:
+  - страница: `pages/chat/ChatPage.tsx` (единый чат, выбор класса через query params),
+  - виджеты: `widgets/chat/ClassroomChat.tsx` (WS), `ClassroomChatPreview.tsx`,
+  - данные: `entities/chat` (tail messages),
+  - API: `shared/api/classrooms` (HTTP messages) + backend WS.
+- **Где логика**:
+  - frontend: reconnect/backoff/polling fallback, UI состояния realtime;
+  - backend: авторизация WS, persistence сообщений, fanout (опционально через Redis).
+
+---
+
+## 6) Границы ответственности фронтенда
+
+Frontend отвечает за:
+
+- UI/UX, навигацию и layout;
+- клиентскую валидацию и формы;
+- кэширование/повторы запросов/инвалидации (HTTP cache);
+- визуализацию статистики и presentation logic;
+- устойчивость UX при ошибках (error boundary, toast, empty/error states).
+
+Frontend не отвечает за:
+
+- авторизацию/разрешения на уровне предметной области (это backend);
+- консистентность и целостность данных (это backend + DB);
+- вычисление оценок/статусов попыток как доменных фактов (это backend);
+- миграции/управление схемой данных.
+
+---
+
+## 7) Компонентная диаграмма фронтенда (что рисовать)
+
+Минимальный набор компонентов (UML-friendly):
+
+- **App Shell** (`app/*` + `widgets/layout/*` + `widgets/navigation/*`)
+  - Router/Guards
+  - Layout + role navigation
+- **Screens** (`pages/*`)
+  - Teacher / Student / Auth / Chat
+- **Domain Access** (`entities/*`)
+  - query hooks/keys, session store
+- **API Integration** (`shared/api/*`)
+  - generated OpenAPI client + wrappers + error/pagination policy + mock fallback
+- **UI Kit & Utilities** (`shared/ui/*`, `shared/lib/*`, `shared/hooks/*`)
+- **Realtime UI** (`widgets/chat/*`) ⇄ backend (WS/HTTP)
+
+Типовой поток данных:
+
+`pages/widgets` → `entities (queries)` → `shared/api wrappers` → `shared/api/generated` → backend.
+
 
