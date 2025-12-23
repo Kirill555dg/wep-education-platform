@@ -1,111 +1,90 @@
 @startuml
-title WEP LMS — Диаграмма основных компонентов системы
+title WEP LMS — System component diagram (MVP, code-based)
 
 skinparam componentStyle rectangle
 skinparam shadowing false
-skinparam wrapWidth 240
+skinparam wrapWidth 220
 skinparam maxMessageSize 120
 
-package "Клиент" as client {
+package "Client" as client {
   component "GUI\n(Web Client, React/TS SPA)" as GUI <<component>>
 }
 
-package "Сервер" as server {
-  component "API Controller\n(FastAPI, /api/v1)" as API <<component>>
+package "Server (Backend API)" as server {
+  package "Transport layer" as transport {
+    component "API Controller\n(FastAPI routers + dependencies)" as API <<component>>
+    component "Realtime endpoints\n(WebSocket handlers)" as WS <<component>>
+  }
 
-  component "Auth Module" as AUTH <<component>>
-  component "Access Control Module" as ACL <<component>>
-  component "Classroom Module\n(classes + membership + invites)" as CLASSROOM <<component>>
-  component "Lesson Module" as LESSON <<component>>
-  component "Homework Module" as HOMEWORK <<component>>
-  component "Problem Module\n(problem library)" as PROBLEM <<component>>
-  component "Testing Module\n(answer submit/check)" as TESTING <<component>>
-  component "Result/Statistics Module" as STATS <<component>>
-  component "Theory Module" as THEORY <<component>>
-  component "Chat Module\n(HTTP messages)" as CHAT <<component>>
-  component "Realtime Chat Subsystem\n(WS + presence/typing)" as REALTIME <<component>>
+  package "Service layer" as services {
+    component "AuthService" as AUTH <<component>>
+    component "ClassroomService" as CLASSROOM <<component>>
+    component "LessonService" as LESSON <<component>>
+    component "HomeworkService" as HOMEWORK <<component>>
+    component "ProblemService" as PROBLEM <<component>>
+    component "TestingService" as TESTING <<component>>
+    component "ResultService\n(progress/statistics)" as STATS <<component>>
+    component "TheoryService" as THEORY <<component>>
+    component "ChatService\n(HTTP chat history)" as CHAT <<component>>
 
-  () "IAuth" as IAuth
-  () "IAccessControl" as IAccessControl
-  () "IClassroom" as IClassroom
-  () "ILesson" as ILesson
-  () "IHomework" as IHomework
-  () "IProblem" as IProblem
-  () "ITesting" as ITesting
-  () "IStatistics" as IStatistics
-  () "ITheory" as ITheory
-  () "IChat" as IChat
-  () "IRealtimeChat" as IRealtimeChat
-  () "IDatabase" as IDatabase
-  () "IPubSub" as IPubSub
+    component "Access control helpers\n(services/access_control.py)" as ACL <<component>>
+    component "Realtime chat runtime\n(manager + broker)" as REALTIME <<component>>
+  }
+
+  package "Data access layer" as dal {
+    component "SQLAlchemy AsyncSession\n(db/session.py)" as SESSION <<component>>
+    component "Repositories\n(app/repositories/*)" as REPOS <<component>>
+  }
 }
 
-package "Хранилище" as storage {
-  database "Database System\n(PostgreSQL)" as DB <<database>>
+package "Storage" as storage {
+  database "PostgreSQL" as DB <<database>>
   component "Redis\n(Pub/Sub + ephemeral presence)" as REDIS <<component>>
 }
 
-' Client ↔ Server (client–server interaction model)
-GUI --> API : HTTP/REST (JSON DTO)
-GUI <--> API : WebSocket (chat)
+' Client ↔ Server
+GUI --> API : HTTP/REST (JSON)
+GUI <--> WS : WebSocket (chat)
 
-' API Controller uses domain modules through provided interfaces
-API -- IAuth
-API -- IAccessControl
-API -- IClassroom
-API -- ILesson
-API -- IHomework
-API -- IProblem
-API -- ITesting
-API -- IStatistics
-API -- ITheory
-API -- IChat
-API -- IRealtimeChat
+' Transport → Services (FastAPI Depends + DTO mapping)
+API --> AUTH
+API --> CLASSROOM
+API --> LESSON
+API --> HOMEWORK
+API --> PROBLEM
+API --> TESTING
+API --> STATS
+API --> THEORY
+API --> CHAT
 
-IAuth -- AUTH
-IAccessControl -- ACL
-IClassroom -- CLASSROOM
-ILesson -- LESSON
-IHomework -- HOMEWORK
-IProblem -- PROBLEM
-ITesting -- TESTING
-IStatistics -- STATS
-ITheory -- THEORY
-IChat -- CHAT
-IRealtimeChat -- REALTIME
+WS --> REALTIME
+WS --> CHAT : persist history (fallback)
 
-' Inter-module dependencies (based on implemented MVP logic)
-LESSON --> CLASSROOM : classroom context
-HOMEWORK --> LESSON : homework belongs to lesson
-HOMEWORK --> CLASSROOM : ownership/publish checks
-HOMEWORK --> PROBLEM : homework composition (problem list)
-TESTING --> HOMEWORK : validate homework
-TESTING --> PROBLEM : validate problem + check answer
-TESTING --> STATS : update attempts/status/score
-STATS --> CLASSROOM : classroom progress via memberships
-CHAT --> CLASSROOM : access rules (owner/member)
-REALTIME --> CHAT : persist & broadcast messages
-CLASSROOM --> ACL : access checks
-LESSON --> ACL : access checks
-HOMEWORK --> ACL : access checks
-CHAT --> ACL : access checks
+' Services → shared access rules (used only where imported in code)
+CLASSROOM --> ACL
+LESSON --> ACL
+HOMEWORK --> ACL
+CHAT --> ACL
 
-' Data persistence and realtime infrastructure
-AUTH -- IDatabase
-ACL -- IDatabase
-CLASSROOM -- IDatabase
-LESSON -- IDatabase
-HOMEWORK -- IDatabase
-PROBLEM -- IDatabase
-TESTING -- IDatabase
-STATS -- IDatabase
-THEORY -- IDatabase
-CHAT -- IDatabase
+' Services → DAL
+AUTH --> REPOS
+CLASSROOM --> REPOS
+LESSON --> REPOS
+HOMEWORK --> REPOS
+PROBLEM --> REPOS
+TESTING --> REPOS
+STATS --> REPOS
+THEORY --> REPOS
+CHAT --> REPOS
 
-REALTIME -- IPubSub
+REPOS --> SESSION : uses
+API --> SESSION : get_db()
+WS --> SESSION : get_db()
 
-IDatabase -- DB : SQL
-IPubSub -- REDIS : Pub/Sub
+SESSION --> DB : SQL
+
+' Realtime infrastructure
+REALTIME <--> REDIS : Pub/Sub + presence/typing
 
 @enduml
 
