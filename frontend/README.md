@@ -30,10 +30,20 @@ bun run dev
 
 Приложение будет доступно по адресу: http://localhost:5173
 
+## ⚙️ Переменные окружения
+
+Создайте `frontend/.env` (или используйте `frontend/env.example` как шаблон — `.env*` файлы могут быть заблокированы в репозитории).
+
+- **`VITE_API_URL`**: base URL API.
+  - dev по умолчанию: `http://127.0.0.1:8023`
+  - prod по умолчанию: `""` (same-origin, nginx proxy `/api`)
+- **`VITE_USE_MOCK_API=true|false`**: включает детерминированные mock-фолбэки для части API (сейчас: статистика).
+- **`VITE_MOCK_SEED`**: сид для мок-данных (одинаковый сид → одинаковые данные).
+
 ### Генерация клиента из OpenAPI (рекомендуется)
 
 ```bash
-# backend должен быть запущен
+# OpenAPI обновляется строго из backend
 bun run api:regen
 ```
 
@@ -64,10 +74,10 @@ bun run test:watch
 ### E2E-тесты (Cypress)
 
 ```bash
-# Backend должен быть запущен. По умолчанию фронт ждёт API на http://localhost:8023
+# Backend должен быть запущен. По умолчанию Cypress ходит на http://127.0.0.1:8023
 #
-# Если backend работает на другом порту/хосте — укажи оба env:
-BACKEND_URL="http://localhost:8023" VITE_API_URL="http://localhost:8023" bun run test:e2e
+# Если backend работает на другом порту/хосте — переопредели:
+CYPRESS_BACKEND_URL="http://127.0.0.1:8023" VITE_API_URL="http://127.0.0.1:8023" bun run test:e2e
 
 # Открыть Cypress UI
 bun run cypress
@@ -119,16 +129,19 @@ frontend/
 ### 👩‍🏫 Teacher MVP
 - Создание класса
 - Создание урока (автопубликация для student)
-- Создание ДЗ с одной задачей (создаётся задача + ДЗ, ДЗ публикуется)
+- База задач: список/поиск/редактор
+- Создание ДЗ на отдельной странице (выбор задач из базы + баллы + публикация)
+- Страница ДЗ учителя (редактирование метаданных + статистика выполнения)
+- Статистика по классу/ДЗ/ученику (графики + матрица прогресса)
 
 ### 👨‍🎓 Student MVP
 - Вступление в класс по invite code
 - Просмотр уроков и ДЗ
-- Отправка ответа на задачу
+- Homework Player (stepper, autosave draft, submit per-task + final submit)
 
 ### 💬 Чат
 - Realtime чат класса через WebSocket
-- Fallback на HTTP (если realtime недоступен)
+- Reconnect/backoff + polling fallback (если realtime недоступен)
 - Защищенные маршруты
 
 ### 👤 Профиль
@@ -169,13 +182,9 @@ import { Button } from "@/shared/ui/button";
 import { useAuth } from "@/features/auth/model/store";
 ```
 
-## ⚙️ Mock API
+## ⚙️ Mock API (детерминированно)
 
-Проект использует mock API для разработки:
-- `src/features/auth/api/api-mock.ts`
-- `src/features/profile/api/profile-api-mock.ts`
-
-Переключение на реальное API выполняется в `src/main.tsx`.
+Mock включается через `VITE_USE_MOCK_API=true`. Реализован в `src/shared/api/mock/*` и используется как **fallback** в wrapper'ах `src/shared/api/*` для неготовых/отсутствующих эндпоинтов.
 
 ## 🌐 API-слой (Работа с Backend)
 
@@ -192,21 +201,18 @@ bun run api:regen
 
 ```
 src/shared/api/
-├── types/                  # TypeScript типы (синхронизированы с Pydantic)
-│   ├── user.types.ts       # User, Teacher, Student, Auth
-│   ├── classroom.types.ts  # Classroom, Invite
-│   ├── lesson.types.ts     # Lesson, TheoryMaterial
-│   ├── homework.types.ts   # Homework, Problem
-│   ├── statistics.types.ts # Statistics, Progress
-│   └── index.ts            # Централизованный экспорт типов
-│
-├── auth.api.ts             # Авторизация и регистрация
-├── classrooms.api.ts       # Управление классами
-├── lessons.api.ts          # Уроки и материалы
-├── homework.api.ts         # Домашние задания и тестирование
-├── statistics.api.ts       # Статистика и прогресс
-├── axios.ts                # Настройка Axios (JWT interceptors)
-└── index.ts                # Централизованный экспорт API
+├── generated/              # OpenAPI-generated клиент (НЕ редактировать вручную)
+├── openapi.ts              # конфиг OpenAPI (BASE/TOKEN/HEADERS)
+├── errors.ts               # разбор error envelope + helpers
+├── pagination.ts           # clampLimit + fetchAllPages
+├── mock/                   # детерминированные mock generators (опционально, dev)
+├── auth.ts                 # доменный wrapper над generated
+├── classrooms.ts
+├── lessons.ts
+├── homework.ts
+├── problems.ts
+├── statistics.ts
+└── index.ts                # централизованный экспорт
 ```
 
 ### Использование API
@@ -367,22 +373,10 @@ const user: User = {
 };
 ```
 
-### Конфигурация
-
-Backend URL настраивается через переменную окружения:
-
-```bash
-# .env
-VITE_API_URL=http://localhost:8023
-```
-
-По умолчанию: `http://localhost:8023`
-
 ### JWT Authentication
 
-- JWT токен автоматически добавляется ко всем запросам через Axios interceptor
-- При 401 ошибке пользователь автоматически перенаправляется на `/login`
-- Токен хранится в `localStorage`
+- JWT токен берётся из `localStorage` (см. `src/shared/api/openapi.ts`)
+- При 401/403 пользователь должен заново войти (guards/handlers)
 
 ### Интеграция с React Query
 

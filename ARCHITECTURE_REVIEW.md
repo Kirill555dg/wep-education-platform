@@ -28,15 +28,14 @@
 - ✅ Features не содержат UI компонентов (только hooks/store)
 - ✅ Pages используют features и widgets, не вызывают API напрямую
 
-**Найденные нарушения и исправления:**
-1. ❌ `pages/student/homework/StudentHomeworkPage.tsx` — прямые вызовы `homeworkApi`  
-   ✅ Исправлено: создан `features/view-homework/model/useViewHomework.ts`
-   
-2. ❌ `pages/teacher/manage/TeacherManagePage.tsx` — прямой импорт `problemsApi`  
-   ✅ Исправлено: создан `features/manage-problems/model/useManageProblems.ts`
-   
-3. ❌ `pages/profile/ProfilePage.tsx` — прямой вызов `profileApi.updateProfile()`  
-   ✅ Исправлено: создан `features/profile/model/useUpdateProfile.ts`
+**Найденные нарушения и исправления (актуально на декабрь 2025):**
+- ✅ Введён единый `shared/api/*` слой: только OpenAPI-generated клиент + thin wrappers
+- ✅ Добавлены guards (`RequireAuth/RequireRole`) и role-based navigation
+- ✅ Реализованы teacher/student flows как отдельные pages
+- ✅ Реализован `features/homework/player` (Homework Player UX)
+
+**Оставшиеся зоны роста:**
+- ⚠️ Часть страниц всё ещё использует `useEffect + useState` вместо `@tanstack/react-query` (можно унифицировать постепенно)
 
 ### 3. **Тестирование**
 
@@ -49,10 +48,8 @@
 **Результат запуска**: 12 тестов собрано, 1 успешный, 11 требуют обновления схем
 
 #### Frontend (vitest + bun)
-- ✅ Существующие тесты: `features/auth`, `entities/notification`
-- ⚠️  Статус: тесты запускаются, требуется настройка DOM окружения (jsdom)
-
-**Результат запуска**: Тесты работают, падают из-за отсутствия `localStorage`/`document` (требуется конфигурация)
+- ✅ Есть unit-тесты для `shared/api/errors`
+- ✅ DOM окружение настроено (`jsdom`), тесты запускаются через `bun test`
 
 ### 4. **Линтинг и форматирование**
 
@@ -123,10 +120,9 @@
 - Автоматически исправлено 408 lint-ошибок
 
 ### Frontend
-- Создан `features/view-homework/model/useViewHomework.ts` для просмотра домашки
-- Создан `features/manage-problems/model/useManageProblems.ts` для управления задачами
-- Создан `features/profile/model/useUpdateProfile.ts` для обновления профиля
-- Обновлены страницы: `StudentHomeworkPage`, `TeacherManagePage`, `ProfilePage` для использования features
+- Добавлен `features/homework/player` (stepper, autosave, submit)
+- Добавлены страницы статистики teacher/student + drill-down + charts
+- Добавлена база задач + страница создания ДЗ из базы
 
 ### Документация
 - Создан `ARCHITECTURE_REVIEW.md` — данный отчёт

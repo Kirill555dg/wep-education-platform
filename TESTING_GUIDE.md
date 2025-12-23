@@ -19,8 +19,9 @@ uvicorn app.main:app --reload
 2. **Frontend запущен с real API:**
 ```bash
 cd frontend
-# Создайте .env если еще не создан
-echo "VITE_USE_REAL_API=true" > .env
+# Создайте .env (пример: frontend/env.example)
+# Важно: mock API должен быть выключен для real-backend тестов
+echo "VITE_USE_MOCK_API=false" > .env
 echo "VITE_API_URL=http://127.0.0.1:8023" >> .env
 
 # Запустите frontend
@@ -42,7 +43,7 @@ bun run dev
 
 ### Шаг 2: Создание курса (преподаватель)
 
-1. Перейдите на `/teacher/manage`
+1. Перейдите на `/teacher`
 2. **Создайте класс:**
    - Название: "Математика 10А"
    - Предмет: "Математика"
@@ -90,8 +91,8 @@ bun run dev
 
 ### Шаг 5: Выполнение домашнего задания (студент)
 
-1. Перейдите на `/student/homework/{ID}` (используйте ID из Шага 2)
-   - Например: `http://localhost:5173/student/homework/1`
+1. Перейдите на `/student/homeworks/{ID}` (используйте ID из Шага 2)
+   - Например: `http://localhost:5173/student/homeworks/1`
 
 2. Вы увидите список задач
 
