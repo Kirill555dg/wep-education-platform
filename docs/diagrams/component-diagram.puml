@@ -14,6 +14,7 @@ package "Сервер" as server {
   component "API Controller\n(FastAPI, /api/v1)" as API <<component>>
 
   component "Auth Module" as AUTH <<component>>
+  component "Access Control Module" as ACL <<component>>
   component "Classroom Module\n(classes + membership + invites)" as CLASSROOM <<component>>
   component "Lesson Module" as LESSON <<component>>
   component "Homework Module" as HOMEWORK <<component>>
@@ -25,6 +26,7 @@ package "Сервер" as server {
   component "Realtime Chat Subsystem\n(WS + presence/typing)" as REALTIME <<component>>
 
   () "IAuth" as IAuth
+  () "IAccessControl" as IAccessControl
   () "IClassroom" as IClassroom
   () "ILesson" as ILesson
   () "IHomework" as IHomework
@@ -53,6 +55,7 @@ GUI <--> API : WebSocket (chat)
 
 ' API Controller uses domain modules through provided interfaces
 API -- IAuth
+API -- IAccessControl
 API -- IClassroom
 API -- ILesson
 API -- IHomework
@@ -64,6 +67,7 @@ API -- IChat
 API -- IRealtimeChat
 
 IAuth -- AUTH
+IAccessControl -- ACL
 IClassroom -- CLASSROOM
 ILesson -- LESSON
 IHomework -- HOMEWORK
@@ -74,8 +78,25 @@ ITheory -- THEORY
 IChat -- CHAT
 IRealtimeChat -- REALTIME
 
+' Inter-module dependencies (based on implemented MVP logic)
+LESSON --> CLASSROOM : classroom context
+HOMEWORK --> LESSON : homework belongs to lesson
+HOMEWORK --> CLASSROOM : ownership/publish checks
+HOMEWORK --> PROBLEM : homework composition (problem list)
+TESTING --> HOMEWORK : validate homework
+TESTING --> PROBLEM : validate problem + check answer
+TESTING --> STATS : update attempts/status/score
+STATS --> CLASSROOM : classroom progress via memberships
+CHAT --> CLASSROOM : access rules (owner/member)
+REALTIME --> CHAT : persist & broadcast messages
+CLASSROOM --> ACL : access checks
+LESSON --> ACL : access checks
+HOMEWORK --> ACL : access checks
+CHAT --> ACL : access checks
+
 ' Data persistence and realtime infrastructure
 AUTH -- IDatabase
+ACL -- IDatabase
 CLASSROOM -- IDatabase
 LESSON -- IDatabase
 HOMEWORK -- IDatabase
