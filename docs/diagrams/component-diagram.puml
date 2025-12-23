@@ -45,10 +45,6 @@ package "Хранилище" as storage {
   component "Redis\n(Pub/Sub + ephemeral presence)" as REDIS <<component>>
 }
 
-package "Инструменты (опционально)" as tools {
-  component "pgAdmin\n(DB Administration UI)" as PGADMIN <<component>>
-}
-
 ' Client ↔ Server (client–server interaction model)
 GUI --> API : HTTP/REST (JSON DTO)
 GUI <--> API : WebSocket (chat)
@@ -110,8 +106,6 @@ REALTIME -- IPubSub
 
 IDatabase -- DB : SQL
 IPubSub -- REDIS : Pub/Sub
-
-PGADMIN --> DB : SQL (admin)
 
 @enduml
 
