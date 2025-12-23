@@ -1,0 +1,50 @@
+@startuml
+title WEP LMS — Диаграмма основных компонентов системы
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 240
+skinparam maxMessageSize 120
+
+package "Клиент" as client {
+  component "Web Client\n(React/TypeScript SPA)" as FE <<client>>
+}
+
+package "Пограничный слой\n(доставка UI и проксирование API)" as edge {
+  component "Frontend Web Server\n(Nginx)" as NGINX <<gateway>>
+}
+
+package "Сервер" as server {
+  component "Backend API\n(FastAPI)" as BE <<server>>
+  component "DB Migrations\n(Alembic)" as ALEMBIC <<tooling>>
+}
+
+package "Хранилище" as storage {
+  database "PostgreSQL\n(Relational DB)" as PG
+  component "Redis\n(Pub/Sub)" as REDIS <<optional>>
+}
+
+package "Инструменты\n(опционально)" as tools {
+  component "pgAdmin\n(DB Administration UI)" as PGADMIN <<optional>>
+}
+
+' Client access to UI and API via frontend web server
+FE --> NGINX : HTTP(S)\n(загрузка SPA)
+FE --> NGINX : HTTP/REST\n(JSON DTO)\n/api/...
+FE <--> NGINX : WebSocket\n(chat events)\n/api/...
+
+' Nginx proxies API and WebSocket traffic to backend
+NGINX --> BE : HTTP/REST\n(JSON DTO)
+NGINX <--> BE : WebSocket\n(Upgrade)
+
+' Backend persistence and realtime infrastructure
+BE --> PG : SQL\n(read/write)
+BE <--> REDIS : Pub/Sub\n(chat fanout)
+
+' Tooling interactions (present in repository configuration)
+ALEMBIC --> PG : SQL\n(schema migration)
+PGADMIN --> PG : SQL\n(admin operations)
+
+@enduml
+
+
