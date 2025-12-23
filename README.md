@@ -1,245 +1,144 @@
-# 🎓 Web Education Platform — Monorepo
+### Web Education Platform (WEP) — LMS (системный архитектурный обзор)
 
-Образовательная веб-платформа для взаимодействия студентов и преподавателей.
-
-## 📁 Структура проекта
-
-Проект организован как **monorepo** с следующей структурой:
-
-```
-wep-education-platform/
-├── frontend/          # React + TypeScript фронтенд
-│   ├── src/          # Исходный код (FSD архитектура)
-│   ├── public/       # Статические файлы
-│   ├── cypress/      # E2E тесты
-│   └── README.md     # Документация фронтенда
-│
-└── backend/           # FastAPI backend
-    ├── app/          # Исходный код
-    │   ├── api/      # API endpoints (контроллеры)
-    │   ├── services/ # Бизнес-логика
-    │   ├── repositories/ # Работа с БД
-    │   ├── models/   # SQLAlchemy ORM модели
-    │   └── schemas/  # Pydantic схемы
-    ├── pyproject.toml
-    └── README.md     # Документация backend
-```
-
-## 🚀 Быстрый старт
-
-### 🐳 Docker (Рекомендуется)
-
-**Самый простой способ запустить всю систему:**
-
-```bash
-# 1. Скопируйте пример конфигурации
-cp .env.example .env
-
-# 2. Запустите все сервисы
-docker-compose up -d
-
-# 3. Проверьте статус
-docker-compose ps
-```
-
-**Доступ к сервисам:**
-- 🌐 **Frontend**: http://localhost
-- 🚀 **Backend API**: http://localhost:8023
-- 📖 **API Docs (Swagger)**: http://localhost:8023/api/docs
-- 🗄️ **pgAdmin** (опционально): http://localhost:5050
-
-**Полезные команды:**
-```bash
-# Просмотр логов
-docker-compose logs -f
-
-# Остановить сервисы
-docker-compose down
-
-# Пересобрать при изменениях
-docker-compose up -d --build
-
-# Запустить с pgAdmin
-docker-compose --profile tools up -d
-```
-
-### 💻 Локальная разработка
-
-#### Фронтенд
-
-```bash
-cd frontend
-bun install
-
-# (опционально) Сгенерировать клиента из OpenAPI запущенного backend
-# bun run api:regen
-
-bun run dev
-```
-
-Подробная документация: [`frontend/README.md`](./frontend/README.md)
-
-#### Backend
-
-```bash
-cd backend
-# Создать venv и поставить зависимости (uv + Python 3.13)
-make install
-
-# Поднять dev-БД, применить миграции и засидировать данные
-make bootstrap
-
-# Запустить API локально
-make dev
-```
-
-Подробная документация: [`backend/README.md`](./backend/README.md)
-
-## 🛠 Технологии
-
-### Frontend
-- React 18 + TypeScript
-- Vite
-- Zustand + TanStack Query
-- Tailwind CSS + Radix UI
-- Vitest + Cypress
-
-### Backend
-- FastAPI
-- SQLAlchemy
-- PostgreSQL
-- REST API
-- Pydantic
-
-## 📄 Требования
-
-### Для Docker (рекомендуется)
-- **Docker** >= 20.10
-- **Docker Compose** >= 2.0
-
-### Для локальной разработки
-- **Bun** >= 1.0.0 (для фронтенда)
-- **Python** == 3.13 (для бекенда)
-- **uv** (менеджер окружения/пакетов для Python)
-- **PostgreSQL** >= 16 (для базы данных)
-- **Git**
-
-### Установка Docker
-
-```bash
-# macOS (Homebrew)
-brew install --cask docker
-
-# Ubuntu/Debian
-curl -fsSL https://get.docker.com | sh
-
-# Проверка
-docker --version
-docker-compose --version
-```
-
-### Установка Bun (для локальной разработки)
-
-```bash
-# macOS/Linux
-curl -fsSL https://bun.sh/install | bash
-
-# Проверка
-bun --version
-```
-
-## 🎯 Функционал
-
-- ✅ Авторизация и регистрация (студенты/преподаватели)
-- ✅ Профили пользователей
-- ✅ Создание и управление классами
-- ✅ Уроки и домашние задания
-- ✅ Автоматическая проверка ответов
-- ✅ Статистика и прогресс студентов
-- ✅ Система уведомлений
-- ✅ REST API (FastAPI)
-- ✅ PostgreSQL база данных
-- ✅ Docker-контейнеризация
-
-## 📝 Git Workflow
-
-Основная ветка: `master`  
-Рабочая ветка: `acsa-coursework` (курсовая работа ACSA)
-
-```bash
-# Переключиться на рабочую ветку
-git checkout acsa-coursework
-
-# Создать новую feature-ветку
-git checkout -b feature/название-функции
-```
-
-## 🤝 Contributing
-
-1. Создайте feature-ветку от `acsa-coursework`
-2. Следуйте архитектуре FSD для фронтенда
-3. Покрывайте код тестами
-4. Создайте Pull Request
-
-## 📚 Документация
-
-- [Frontend Documentation](./frontend/README.md) — React + TypeScript + FSD
-- [Backend Documentation](./backend/README.md) — FastAPI + SQLAlchemy
-- [Database Setup](./database/README.md) — PostgreSQL + Docker
-- [Testing Guide](./TESTING_GUIDE.md) — E2E сценарий тестирования
-
-## 🏗️ Архитектура
-
-```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│   Frontend  │      │   Backend   │      │  PostgreSQL │
-│   (React)   │◄────►│  (FastAPI)  │◄────►│     DB      │
-│   Port 80   │      │  Port 8023  │      │  Port 5432  │
-└─────────────┘      └─────────────┘      └─────────────┘
-     │                     │                     │
-     └─────────────────────┴─────────────────────┘
-                  Docker Network
-```
-
-**Frontend** → Nginx + React SPA  
-**Backend** → FastAPI + Uvicorn  
-**Database** → PostgreSQL 16  
-**API Docs** → Swagger UI (OpenAPI 3.0)
-
-## 🔧 Конфигурация
-
-### Переменные окружения
-
-Создайте файл `.env` в корне проекта:
-
-```bash
-# Database
-POSTGRES_USER=wep_user
-POSTGRES_PASSWORD=secure_password
-POSTGRES_DB=wep_education
-
-# Backend
-SECRET_KEY=your-super-secret-jwt-key
-DEBUG=false
-
-# Optional: pgAdmin
-PGADMIN_EMAIL=admin@wep.local
-PGADMIN_PASSWORD=admin
-```
-
-### Порты
-
-- **80** — Frontend (Nginx)
-- **8023** — Backend API
-- **5432** — PostgreSQL
-- **5050** — pgAdmin (опционально, только с `--profile tools`)
-
-## 📄 License
-
-MIT
+Этот документ описывает проект WEP как **целостную систему управления онлайн‑обучением (LMS)**: назначение, основные архитектурные компоненты, их роли и интерфейсы взаимодействия.  
+Фокус — **уровень абстракции “архитектура системы”**, чтобы текст можно было напрямую использовать как описание для **UML‑диаграммы компонентов** в отчёте.
 
 ---
 
-**Разработка: МИРЭА — РТУ**  
-**Проект: Курсовая работа ACSA**
+### 1) Назначение системы (кратко)
+
+WEP LMS — веб‑система для организации учебного процесса, в которой:
+
+- **преподаватель** управляет классами, уроками, домашними заданиями и базой задач, а также анализирует прогресс;
+- **студент** вступает в классы, проходит уроки, выполняет домашние задания и видит личный прогресс;
+- система предоставляет **коммуникации** (чат класса) и **статистику** (по ученику/классу/заданию).
+
+---
+
+### 2) Основные компоненты системы
+
+Система состоит из следующих ключевых компонентов:
+
+- **Клиентская часть (Web Client / Frontend)**
+- **Серверная часть (Backend API / Domain Service)**
+- **База данных (Relational Database)**
+- **Внешние зависимости (опциональные инфраструктурные сервисы)**
+
+---
+
+### 3) Компоненты: роль, функции, интерфейсы взаимодействия
+
+#### 3.1 Клиентская часть (Frontend / Web Client)
+
+- **Роль в системе**: интерфейс пользователя и оркестратор пользовательских сценариев.
+- **Основные функции**:
+  - представление сценариев teacher/student (навигация, формы, состояния загрузки/ошибок);
+  - визуализация данных и аналитики (графики/таблицы), presentation logic;
+  - управление клиентским состоянием (сессия, локальные черновики) и кэширование данных;
+  - realtime UX для чата (подключение, отображение сообщений, fallback-поведение на клиенте).
+- **Интерфейсы взаимодействия**:
+  - **REST/HTTP(S)**: запросы к backend API (JSON DTO);
+  - **WebSocket**: realtime‑канал чата (события сообщений/присутствия);
+  - **OpenAPI контракт**: frontend потребляет спецификацию API (для типизированной интеграции).
+
+#### 3.2 Серверная часть (Backend API / Domain Service)
+
+- **Роль в системе**: доменное ядро и публичный API системы обучения.
+- **Основные функции**:
+  - проверка прав доступа и ролей, обеспечение доменных инвариантов;
+  - реализация use‑cases: классы, уроки, ДЗ, задачи, попытки, прогресс, чат;
+  - публикация стабильного контракта API (REST + WS), единых форматов ошибок и пагинации;
+  - интеграция с хранилищем данных (транзакции, согласованный доступ к БД).
+- **Интерфейсы взаимодействия**:
+  - **REST/HTTP(S)**: публичные endpoints для UI;
+  - **WebSocket**: канал чата для клиентов;
+  - **SQL**: доступ к данным в БД (backend → DB);
+  - **Pub/Sub (опционально)**: fanout realtime‑событий между инстансами backend (backend → external broker).
+
+#### 3.3 База данных (Relational Database)
+
+- **Роль в системе**: персистентный источник истины по доменной модели LMS.
+- **Основные функции**:
+  - хранение доменных сущностей (пользователи/профили, классы, уроки, ДЗ, задачи, статистика, сообщения);
+  - обеспечение целостности (ограничения, связи, индексы) и историчности фактов (попытки/статусы).
+- **Интерфейсы взаимодействия**:
+  - **SQL**: взаимодействие осуществляется **только** через backend (frontend не имеет прямого доступа).
+
+#### 3.4 Внешние зависимости (если есть)
+
+- **Realtime broker (опционально)**:
+  - **Роль**: масштабирование realtime (чат) при нескольких инстансах backend.
+  - **Интерфейс**: Pub/Sub протокол (backend ↔ broker).
+- **Reverse proxy / static hosting (инфраструктурный компонент, опционально)**:
+  - **Роль**: доставка статических файлов фронтенда и проксирование запросов к backend.
+  - **Интерфейсы**: HTTP(S) ingress.
+
+---
+
+### 4) Характер взаимодействия компонентов (инициаторы, данные, протоколы)
+
+#### 4.1 Кто инициирует запросы
+
+- **Пользователь** инициирует действия через UI.
+- **Frontend** инициирует:
+  - REST запросы к backend (получение/изменение данных),
+  - WebSocket подключение для чата (инициация handshake).
+- **Backend** инициирует:
+  - ответы на REST запросы,
+  - push‑события в WebSocket (сообщения, presence/typing и т.п.).
+
+#### 4.2 Какие данные передаются
+
+- **REST (Frontend → Backend)**:
+  - команды и запросы в виде JSON DTO (например: создать класс/урок/ДЗ, отправить ответ, получить статистику).
+- **REST (Backend → Frontend)**:
+  - доменные данные в виде JSON DTO;
+  - для списков — paginated‑ответы (`items/total/skip/limit`);
+  - для ошибок — единый envelope с диагностическим идентификатором запроса (`request_id`).
+- **WebSocket (Frontend ↔ Backend)**:
+  - события чата (новое сообщение, статус присутствия, typing‑состояние).
+- **Backend ↔ Database**:
+  - доменные операции чтения/записи через SQL (транзакционно).
+- **Backend ↔ Realtime broker (опционально)**:
+  - публикация/подписка на события для fanout realtime.
+
+#### 4.3 Какие протоколы используются
+
+- **HTTP(S) + JSON** — основной протокол взаимодействия UI ↔ API.
+- **WebSocket** — realtime‑канал для чата.
+- **SQL** — взаимодействие backend ↔ DB.
+- **Pub/Sub** (опционально) — backend ↔ broker для realtime масштабирования.
+
+---
+
+### 5) Описание для UML‑диаграммы компонентов (готовый текст)
+
+Ниже формулировки, которые можно напрямую переносить на UML component diagram:
+
+- **Web Client** — клиентский компонент, реализующий сценарии teacher/student и визуализацию данных.  
+  Зависит от: **Backend API** по REST/HTTP(S) и WebSocket.
+
+- **Backend API (Domain Service)** — серверный компонент, реализующий бизнес‑правила LMS и публикующий контракт API.  
+  Зависит от: **Relational Database** (SQL) и опционально от **Realtime Broker** (Pub/Sub).
+
+- **Relational Database** — компонент хранения доменных данных и фактов.  
+  Используется только **Backend API**.
+
+- **Realtime Broker (optional)** — компонент инфраструктуры для fanout realtime‑событий между инстансами Backend API.  
+  Используется только **Backend API**.
+
+Каналы связи:
+
+- `Web Client → Backend API`: REST/HTTP(S), JSON DTO
+- `Web Client ↔ Backend API`: WebSocket events (chat)
+- `Backend API ↔ Relational Database`: SQL
+- `Backend API ↔ Realtime Broker (optional)`: Pub/Sub
+
+---
+
+### 6) Архитектурные документы компонентов
+
+- `frontend/README.md` — архитектура клиентского компонента (FSD, сценарии, границы ответственности).
+- `backend/README.md` — архитектура серверного компонента (слои API/Services/Repositories, realtime subsystem, границы).
+
 
